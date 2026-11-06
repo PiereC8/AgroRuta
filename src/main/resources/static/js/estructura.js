@@ -80,7 +80,9 @@ window.Estructura = (function () {
             const pronto = seccion.ruta === null;
             const enlace = document.createElement(pronto ? 'span' : 'a');
             enlace.className = 'menu__enlace' + (pronto ? ' menu__enlace--pronto' : '');
+            enlace.setAttribute('aria-label', pronto ? seccion.texto + ' (próximamente)' : seccion.texto);
             if (!pronto) {
+                enlace.title = seccion.texto;
                 enlace.href = seccion.ruta;
                 if (seccion.id === activo) {
                     enlace.setAttribute('aria-current', 'page');
@@ -89,7 +91,7 @@ window.Estructura = (function () {
             enlace.appendChild(icono(seccion.id));
             enlace.appendChild(elemento('span', 'menu__texto', seccion.texto));
             if (pronto) {
-                enlace.appendChild(elemento('span', 'menu__pronto', 'Próximamente'));
+                enlace.appendChild(elemento('span', 'menu__pronto', 'Pronto'));
                 enlace.title = seccion.texto + ': próximamente';
             }
             item.appendChild(enlace);
@@ -105,6 +107,9 @@ window.Estructura = (function () {
 
         const izquierda = document.createElement('div');
         izquierda.appendChild(elemento('h1', null, titulo(datos)));
+        if (datos && datos.identificadorNegocio) {
+            izquierda.appendChild(elemento('p', 'suave', datos.identificadorNegocio));
+        }
 
         const sesion = elemento('div', 'encabezado__sesion');
         const usuario = elemento('div', 'encabezado__usuario');
@@ -129,7 +134,7 @@ window.Estructura = (function () {
         }
         dibujarMenu(document.getElementById('menu'), opciones.activo);
         dibujarEncabezado(document.getElementById('encabezado'), opciones.titulo
-            || ((datos) => saludo() + (datos ? ', ' + datos.nombreUsuario : '')));
+            || (() => saludo()));
         return true;
     }
 

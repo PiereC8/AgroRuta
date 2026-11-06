@@ -256,7 +256,7 @@ a {
 }
 
 .cifra {
-    font-size: 2.5rem;
+    font-size: clamp(1.5rem, 2vw, 2.25rem);
     line-height: 1.1;
     font-weight: 800;
     letter-spacing: -0.03em;
@@ -560,7 +560,8 @@ a {
         padding: 24px;
     }
 
-    .rejilla-cifras {
+    .rejilla-cifras,
+    .rejilla-cifras--tres {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
@@ -592,7 +593,8 @@ a {
         padding: 16px;
     }
 
-    .rejilla-cifras {
+    .rejilla-cifras,
+    .rejilla-cifras--tres {
         grid-template-columns: minmax(0, 1fr);
     }
 
@@ -610,4 +612,90 @@ a {
         animation: none !important;
         transition: none !important;
     }
+}
+
+/* ---------- Panel de inicio ---------- */
+
+.esqueleto--cifra {
+    width: 60%;
+    height: 2.5rem;
+}
+
+.tarjeta .cifra {
+    margin: 10px 0 6px;
+}
+
+.tarjeta--atencion {
+    border-left: 6px solid var(--amarillo);
+}
+
+.rejilla-cifras--tres {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.rejilla-principal--una {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.tendencia--sube {
+    color: var(--verde-hover);
+    font-weight: 700;
+}
+
+.tendencia--baja {
+    color: var(--terracota-texto);
+    font-weight: 700;
+}
+
+.dato-perdida {
+    color: var(--terracota-texto);
+    font-weight: 700;
+}
+
+.grafico {
+    margin-top: 12px;
+}
+
+.grafico svg {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.grafico text {
+    font-family: inherit;
+    font-size: 13px;
+    fill: var(--texto-suave);
+}
+
+.grafico .grafico__valor {
+    font-weight: 700;
+    fill: var(--texto);
+}
+
+.grafico .grafico__eje {
+    stroke: var(--borde);
+    stroke-width: 1;
+}
+
+.grafico .barra {
+    fill: var(--verde-claro);
+    stroke: var(--verde);
+    stroke-width: 1.5;
+}
+
+.grafico .barra--actual {
+    fill: var(--verde);
+}
+
+#error {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+#error.oculto {
+    display: none;
 }

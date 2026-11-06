@@ -59,6 +59,29 @@ class PaginasWebTest {
     }
 
     @Test
+    void inicio_es_publico_sin_codigo_en_linea_con_los_cuatro_indicadores() throws Exception {
+        String html = mvc.perform(get("/inicio.html")).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(html).doesNotContainPattern("<script(?![^>]*\\bsrc=)");
+        assertThat(html).doesNotContain(" style=").doesNotContain("onclick=").doesNotContain("<style");
+        assertThat(html).contains("/css/sistema.css").contains("/js/estructura.js").contains("/js/inicio.js");
+        for (String id : new String[]{"ganancia-mes", "envios-en-curso", "merma", "cobros-pendientes",
+                "grafico-ganancia", "tabla-envios"}) {
+            assertThat(html).contains("id=\"" + id + "\"");
+        }
+    }
+
+    @Test
+    void inicio_pinta_los_datos_con_textcontent_y_nunca_con_innerhtml() throws Exception {
+        String js = mvc.perform(get("/js/inicio.js")).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(js).contains("textContent").doesNotContain("innerHTML").doesNotContain("insertAdjacentHTML")
+                .doesNotContain("document.write");
+    }
+
+    @Test
     void el_logo_los_estilos_y_las_utilidades_se_sirven() throws Exception {
         mvc.perform(get("/img/logo.png")).andExpect(status().isOk());
         mvc.perform(get("/css/sistema.css")).andExpect(status().isOk());

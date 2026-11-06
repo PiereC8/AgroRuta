@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex">
+    <title>Inicio - AgroRuta</title>
+    <link rel="icon" href="/img/logo.png" type="image/png">
+    <link rel="preload" href="/fonts/fuente.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/css/sistema.css">
+</head>
+<body>
+<div class="estructura">
+    <nav id="menu"></nav>
+
+    <main class="contenido">
+        <header id="encabezado"></header>
+
+        <div id="error" class="aviso aviso--error oculto" role="alert">
+            <span id="error-texto"></span>
+            <button class="boton boton-secundario" id="reintentar" type="button">Volver a cargar</button>
+        </div>
+
+        <section class="rejilla-cifras" aria-label="Resumen del mes">
+            <article class="tarjeta" id="tarjeta-ganancia">
+                <h2 class="tarjeta__titulo" id="titulo-ganancia">Ganancia del mes</h2>
+                <p class="cifra" id="ganancia-mes"><span class="esqueleto esqueleto--cifra"></span></p>
+                <p class="suave" id="ganancia-detalle"></p>
+            </article>
+
+            <article class="tarjeta">
+                <h2 class="tarjeta__titulo">Envíos en curso</h2>
+                <p class="cifra" id="envios-en-curso"><span class="esqueleto esqueleto--cifra"></span></p>
+                <p class="suave" id="envios-detalle"></p>
+            </article>
+
+            <article class="tarjeta">
+                <h2 class="tarjeta__titulo" id="titulo-merma">Merma del mes</h2>
+                <p class="cifra" id="merma"><span class="esqueleto esqueleto--cifra"></span></p>
+                <p class="suave" id="merma-detalle"></p>
+            </article>
+
+            <article class="tarjeta" id="tarjeta-cobros">
+                <h2 class="tarjeta__titulo">Cobros pendientes</h2>
+                <p class="cifra" id="cobros-pendientes"><span class="esqueleto esqueleto--cifra"></span></p>
+                <p class="suave" id="cobros-detalle"></p>
+            </article>
+        </section>
+
+        <div class="rejilla-principal" id="rejilla-principal">
+            <section class="tarjeta" id="tarjeta-grafico">
+                <h2>Ganancia de los últimos 6 meses</h2>
+                <p class="suave" id="grafico-resumen">Después de flete, merma y rechazo.</p>
+                <div id="grafico-ganancia" class="grafico"></div>
+            </section>
+
+            <section class="tarjeta">
+                <h2>Envíos en camino</h2>
+                <div id="tabla-envios"></div>
+            </section>
+        </div>
+    </main>
+</div>
+<script src="/js/api.js"></script>
+<script src="/js/estructura.js"></script>
+<script src="/js/inicio.js"></script>
+</body>
+</html>
