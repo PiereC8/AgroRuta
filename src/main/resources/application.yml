@@ -22,12 +22,10 @@ agroruta:
     usuario: ${ADMIN_PLATAFORMA_USUARIO:}
     clave: ${ADMIN_PLATAFORMA_CLAVE:}
   pagos:
-    culqi:
-      url-base: ${CULQI_URL_BASE:https://api.culqi.com/v2}
-      llave-publica: ${CULQI_LLAVE_PUBLICA:}
-      llave-secreta: ${CULQI_LLAVE_SECRETA:}
-      rsa-id: ${CULQI_RSA_ID:}
-      rsa-publica: ${CULQI_RSA_PUBLICA:}
+    mercadopago:
+      url-base: ${MERCADOPAGO_URL_BASE:https://api.mercadopago.com}
+      llave-publica: ${MERCADOPAGO_LLAVE_PUBLICA:}
+      token-acceso: ${MERCADOPAGO_TOKEN_ACCESO:}
   comprobantes:
     serie-boleta: ${COMPROBANTES_SERIE_BOLETA:B001}
     serie-factura: ${COMPROBANTES_SERIE_FACTURA:F001}

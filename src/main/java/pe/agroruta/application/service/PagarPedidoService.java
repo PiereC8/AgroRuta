@@ -90,6 +90,12 @@ public class PagarPedidoService implements PagarPedidoUseCase {
         if (comando.tokenTarjeta() == null || comando.tokenTarjeta().isBlank() || comando.tokenTarjeta().length() > 100) {
             throw new DominioException("Falta el token de la tarjeta");
         }
+        if (comando.metodoPago() != null && !comando.metodoPago().matches("[a-z_]{2,30}")) {
+            throw new DominioException("El medio de pago no es válido");
+        }
+        if (comando.emisor() != null && !comando.emisor().matches("\\d{1,10}")) {
+            throw new DominioException("El emisor de la tarjeta no es válido");
+        }
         // Se valida antes de cobrar: no tiene sentido cobrar si luego no se puede emitir el comprobante.
         ReglasComprobante.tipoPara(contexto.comprador(), contexto.liquidacion().ingresoReal());
 
@@ -97,7 +103,8 @@ public class PagarPedidoService implements PagarPedidoUseCase {
                 Pago.nuevo(contexto.liquidacion(), comando.email(), comando.claveIdempotencia(), reloj.instant()));
         SolicitudCobro solicitud = new SolicitudCobro(pago.monto(), pago.emailPagador(), comando.tokenTarjeta(),
                 pago.claveIdempotencia(), "AgroRuta - pedido " + contexto.pedido().idPedido(),
-                Map.of("negocio", sesion.identificadorNegocio(), "idPago", String.valueOf(pago.idPago())));
+                Map.of("negocio", sesion.identificadorNegocio(), "idPago", String.valueOf(pago.idPago())),
+                comando.metodoPago(), comando.emisor());
 
         ResultadoCobro resultadoCobro;
         try {

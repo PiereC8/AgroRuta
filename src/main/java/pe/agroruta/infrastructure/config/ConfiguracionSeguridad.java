@@ -36,12 +36,13 @@ public class ConfiguracionSeguridad {
                 .csrf(AbstractHttpConfigurer::disable)
                 .headers(cabeceras -> cabeceras.contentSecurityPolicy(politica -> politica.policyDirectives(
                         "default-src 'self'; "
-                                + "script-src 'self' https://cdnjs.cloudflare.com https://checkout.culqi.com; "
-                                + "style-src 'self' https://cdnjs.cloudflare.com https://*.culqi.com; "
+                                + "script-src 'self' https://cdnjs.cloudflare.com https://sdk.mercadopago.com "
+                                + "https://*.mlstatic.com; "
+                                + "style-src 'self' https://cdnjs.cloudflare.com https://*.mlstatic.com; "
                                 + "img-src 'self' data: https://tile.openstreetmap.org "
-                                + "https://*.tile.openstreetmap.org https://*.culqi.com; "
-                                + "connect-src 'self' ws: wss: https://*.culqi.com; "
-                                + "frame-src https://*.culqi.com; "
+                                + "https://*.tile.openstreetmap.org https://*.mlstatic.com https://*.mercadopago.com; "
+                                + "connect-src 'self' ws: wss: https://*.mercadopago.com https://*.mercadolibre.com; "
+                                + "frame-src https://*.mercadopago.com https://*.mercadolibre.com; "
                                 + "frame-ancestors 'none'; base-uri 'self'; form-action 'self'")))
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(a -> a

@@ -8,7 +8,7 @@
     const token = new URLSearchParams(location.hash.slice(1)).get('t');
     const dinero = new Intl.NumberFormat('es-PE', {style: 'currency', currency: 'PEN'});
 
-    const estado = {datos: null, clave: null, enCurso: false, culqiListo: false, revisiones: 0};
+    const estado = {datos: null, clave: null, enCurso: false, brickMontado: false, revisiones: 0};
 
     const ESTADOS_COMPROBANTE = {
         PENDIENTE: 'Pendiente: lo estamos enviando a SUNAT',
@@ -51,7 +51,11 @@
         return estado.datos;
     }
 
-    async function enviarPago(tokenTarjeta, email) {
+    /**
+     * Envía el pago. Devuelve verdadero si el servidor dio una respuesta de negocio (aprobado, rechazado o pendiente)
+     * y falso si hubo un problema técnico, para que el formulario de la pasarela sepa si debe seguir activo.
+     */
+    async function enviarPago(datosPago) {
         estado.enCurso = true;
         $('pagar').disabled = true;
         try {
@@ -62,16 +66,18 @@
                     'X-Token-Seguimiento': token,
                     'Idempotency-Key': estado.clave
                 },
-                body: JSON.stringify({tokenTarjeta, email})
+                body: JSON.stringify(datosPago)
             });
             const cuerpo = await respuesta.json().catch(() => ({}));
             if (!respuesta.ok) {
                 mostrarResultado(cuerpo.error || 'No se pudo procesar el pago. Intenta de nuevo.', true);
-                return;
+                return false;
             }
             await alResultado(cuerpo);
+            return true;
         } catch (e) {
             mostrarResultado('No pudimos conectar. Revisa tu señal e intenta de nuevo: no se cobrará dos veces.', true);
+            return false;
         } finally {
             estado.enCurso = false;
             $('pagar').disabled = false;
@@ -111,11 +117,7 @@
         setTimeout(async () => {
             try {
                 const datos = await cargar();
-                if (datos && datos.ultimoPago && datos.ultimoPago.estadoPago === 'APROBADO') {
-                    pintar(datos);
-                    return;
-                }
-                if (datos && datos.ultimoPago && datos.ultimoPago.estadoPago === 'RECHAZADO') {
+                if (datos && datos.ultimoPago && datos.ultimoPago.estadoPago !== 'PENDIENTE') {
                     pintar(datos);
                     return;
                 }
@@ -172,10 +174,18 @@
             const simulado = datos.modo === 'SIMULADO';
             mostrar('zona-pago', true);
             mostrar('zona-simulada', simulado);
-            mostrar('nota-culqi', !simulado);
+            mostrar('zona-tarjeta', !simulado);
+            // Con Mercado Pago, el botón de pagar lo pone su propio formulario seguro.
+            mostrar('pagar', simulado);
             resumen('Tu pedido fue entregado. Ya puedes pagarlo.', 'ok');
             if (ultimo && ultimo.estadoPago === 'RECHAZADO') {
                 mostrarResultado(ultimo.mensaje, false);
+            }
+            if (!simulado) {
+                montarFormularioSeguro(datos).catch(() => {
+                    mostrarResultado('No se pudo cargar el formulario de pago. Revisa tu conexión y recarga la página.',
+                        false);
+                });
             }
         } else {
             mostrar('zona-pago', false);
@@ -185,7 +195,7 @@
         }
     }
 
-    // ---------- Pago ----------
+    // ---------- Pago simulado ----------
 
     function pagarSimulado() {
         const email = $('simulado-email').value.trim();
@@ -193,73 +203,72 @@
             mostrarResultado('Escribe tu correo para enviarte el comprobante.', false);
             return;
         }
-        enviarPago($('simulado-resultado').value, email);
+        enviarPago({tokenTarjeta: $('simulado-resultado').value, email});
     }
 
-    function cargarCulqi(datos) {
+    // ---------- Mercado Pago: formulario seguro de tarjeta ----------
+
+    function cargarSdk() {
         return new Promise((ok, mal) => {
-            if (estado.culqiListo) {
+            if (window.MercadoPago) {
                 ok();
                 return;
             }
             const script = document.createElement('script');
-            script.src = 'https://checkout.culqi.com/js/v4';
-            script.onload = () => {
-                window.Culqi.publicKey = datos.llavePublica;
-                const opciones = {
-                    title: 'AgroRuta',
-                    currency: datos.moneda,
-                    amount: Math.round(datos.monto * 100)
-                };
-                if (datos.rsaId && datos.rsaPublica) {
-                    opciones.xculqirsaid = datos.rsaId;
-                    opciones.rsapublickey = datos.rsaPublica;
-                }
-                window.Culqi.settings(opciones);
-                window.Culqi.options({lang: 'auto', installments: false, paymentMethods: {tarjeta: true}});
-                // Culqi llama a esta función cuando el comprador terminó de escribir su tarjeta.
-                window.culqi = alTokenCulqi;
-                estado.culqiListo = true;
-                ok();
-            };
-            script.onerror = () => mal(new Error('No se pudo cargar Culqi'));
+            script.src = 'https://sdk.mercadopago.com/js/v2';
+            script.onload = () => ok();
+            script.onerror = () => mal(new Error('No se pudo cargar Mercado Pago'));
             document.head.appendChild(script);
         });
     }
 
-    function alTokenCulqi() {
-        const culqi = window.Culqi;
-        if (culqi.token) {
-            const idToken = culqi.token.id;
-            const email = culqi.token.email;
-            culqi.close();
-            enviarPago(idToken, email);
-        } else if (culqi.error) {
-            mostrarResultado(culqi.error.user_message || 'No pudimos validar la tarjeta. Revisa los datos.', true);
+    /**
+     * Los datos de la tarjeta se escriben en campos que Mercado Pago muestra dentro de su propio marco: esta página
+     * nunca los ve. Al enviar, Mercado Pago entrega un token de un solo uso, el medio de pago y el correo.
+     */
+    async function montarFormularioSeguro(datos) {
+        if (estado.brickMontado) {
+            return;
         }
-    }
-
-    async function pagarConCulqi() {
-        try {
-            await cargarCulqi(estado.datos);
-            window.Culqi.open();
-        } catch (e) {
-            mostrarResultado('No se pudo abrir la ventana de pago. Revisa tu conexión e intenta de nuevo.', true);
-        }
+        estado.brickMontado = true;
+        await cargarSdk();
+        const mp = new window.MercadoPago(datos.llavePublica, {locale: 'es-PE'});
+        await mp.bricks().create('cardPayment', 'brick-tarjeta', {
+            initialization: {amount: Number(datos.monto)},
+            callbacks: {
+                onReady: () => {
+                },
+                onSubmit: (entrega) => new Promise((resolver, rechazar) => {
+                    const formulario = entrega && entrega.formData ? entrega.formData : entrega;
+                    if (estado.enCurso) {
+                        rechazar();
+                        return;
+                    }
+                    if (!estado.clave) {
+                        estado.clave = nuevaClave();
+                    }
+                    enviarPago({
+                        tokenTarjeta: formulario.token,
+                        email: formulario.payer && formulario.payer.email,
+                        metodoPago: formulario.payment_method_id,
+                        emisor: formulario.issuer_id ? String(formulario.issuer_id) : null
+                    }).then((respuestaDeNegocio) => respuestaDeNegocio ? resolver() : rechazar());
+                }),
+                onError: () => {
+                    mostrarResultado('No pudimos validar la tarjeta. Revisa los datos e inténtalo de nuevo.', false);
+                }
+            }
+        });
     }
 
     function alPulsarPagar() {
-        if (estado.enCurso || !estado.datos) {
+        if (estado.enCurso || !estado.datos || estado.datos.modo !== 'SIMULADO') {
             return;
         }
         if (!estado.clave) {
             estado.clave = nuevaClave();
         }
-        if (estado.datos.modo === 'SIMULADO') {
-            pagarSimulado();
-        } else {
-            pagarConCulqi();
-        }
+        pagarSimulado();
     }
 
     async function iniciar() {

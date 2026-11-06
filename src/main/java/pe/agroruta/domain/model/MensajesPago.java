@@ -11,18 +11,27 @@ public final class MensajesPago {
 
     public static String paraUsuario(String codigo, String mensajePasarela) {
         String texto = normalizar((codigo == null ? "" : codigo) + " " + (mensajePasarela == null ? "" : mensajePasarela));
-        if (texto.contains("fondo")) {
+        if (texto.contains("fondo") || texto.contains("insufficient")) {
             return "La tarjeta no tiene fondos suficientes. Prueba con otra tarjeta.";
         }
         if (texto.contains("vencid") || texto.contains("expir")) {
             return "La tarjeta está vencida. Prueba con otra tarjeta.";
         }
+        if (texto.contains("max_attempts") || texto.contains("maximo de intentos")) {
+            return "Superaste el máximo de intentos con esa tarjeta. Espera unos minutos o usa otra tarjeta.";
+        }
+        if (texto.contains("duplicated")) {
+            return "Ya se registró un pago igual hace poco. Revisa si ya se cobró antes de intentar de nuevo.";
+        }
         if (texto.contains("robad") || texto.contains("perdid") || texto.contains("fraud")
-                || texto.contains("stolen") || texto.contains("lost") || texto.contains("restring")) {
+                || texto.contains("stolen") || texto.contains("lost") || texto.contains("restring")
+                || texto.contains("call_for_authorize") || texto.contains("card_disabled")
+                || texto.contains("blacklist") || texto.contains("high_risk")) {
             return "Tu banco no autorizó la operación. Comunícate con tu banco o usa otra tarjeta.";
         }
-        if (texto.contains("cvv") || texto.contains("invalid") || texto.contains("incorrect")
-                || texto.contains("numero") || texto.contains("datos")) {
+        if (texto.contains("cvv") || texto.contains("security_code") || texto.contains("bad_filled")
+                || texto.contains("invalid") || texto.contains("incorrect") || texto.contains("numero")
+                || texto.contains("datos")) {
             return "Revisa los datos de la tarjeta e inténtalo de nuevo.";
         }
         return "No pudimos procesar el pago. Intenta con otra tarjeta.";

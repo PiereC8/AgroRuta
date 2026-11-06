@@ -72,7 +72,7 @@ class PagoWebTest {
 
         @Bean
         ConfiguracionPasarela configuracionPasarela() {
-            return new ConfiguracionPasarela(ConfiguracionPasarela.CULQI, "pk_test_publica", null, null);
+            return new ConfiguracionPasarela(ConfiguracionPasarela.MERCADOPAGO, "TEST-publica");
         }
     }
 
@@ -131,8 +131,8 @@ class PagoWebTest {
                 .andExpect(jsonPath("$.pagable").value(true))
                 .andExpect(jsonPath("$.monto").value(6372.00))
                 .andExpect(jsonPath("$.moneda").value("PEN"))
-                .andExpect(jsonPath("$.modo").value("CULQI"))
-                .andExpect(jsonPath("$.llavePublica").value("pk_test_publica"))
+                .andExpect(jsonPath("$.modo").value("MERCADOPAGO"))
+                .andExpect(jsonPath("$.llavePublica").value("TEST-publica"))
                 .andReturn().getResponse().getContentAsString();
 
         assertThat(json).doesNotContain("sk_", "secret", "llaveSecreta", "idLiquidacion", "idPago");
@@ -237,22 +237,22 @@ class PagoWebTest {
 
     @Test
     void el_webhook_es_publico_y_solo_toma_el_identificador_del_cargo() throws Exception {
-        when(confirmar.confirmar("chr_test_Abc123XYZ")).thenReturn(true);
+        when(confirmar.confirmar("1234567890")).thenReturn(true);
 
         mvc.perform(post("/api/webhooks/pago").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"object\":\"event\",\"type\":\"charge.creation.succeeded\","
-                                + "\"data\":\"{\\\"id\\\":\\\"chr_test_Abc123XYZ\\\",\\\"amount\\\":637200}\"}"))
+                        .content("{\"type\":\"payment\",\"action\":\"payment.created\","
+                                + "\"data\":{\"id\":\"1234567890\"}}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.procesado").value(true));
         mvc.perform(post("/api/webhooks/pago").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"data\":{\"id\":\"chr_test_Abc123XYZ\"}}"))
+                        .content("{\"data\":{\"id\":\"1234567890\"}}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.procesado").value(true));
 
-        verify(confirmar, org.mockito.Mockito.times(2)).confirmar("chr_test_Abc123XYZ");
+        verify(confirmar, org.mockito.Mockito.times(2)).confirmar("1234567890");
     }
 
     @Test
     void el_webhook_ignora_lo_que_no_parece_un_cargo_y_rechaza_cuerpos_que_no_son_json() throws Exception {
-        for (String cuerpo : List.of("{\"data\":{\"id\":\"tkn_test_abc\"}}", "{\"data\":{\"id\":\"../../etc\"}}",
+        for (String cuerpo : List.of("{\"type\":\"merchant_order\",\"data\":{\"id\":\"1234567890\"}}", "{\"data\":{\"id\":\"../../etc\"}}",
                 "{\"data\":\"no json\"}", "{}")) {
             mvc.perform(post("/api/webhooks/pago").contentType(MediaType.APPLICATION_JSON).content(cuerpo))
                     .andExpect(status().isOk()).andExpect(jsonPath("$.procesado").value(false));
@@ -264,10 +264,10 @@ class PagoWebTest {
 
     @Test
     void si_no_se_puede_verificar_el_cargo_con_la_pasarela_se_pide_que_la_notificacion_se_reintente() throws Exception {
-        when(confirmar.confirmar("chr_test_Abc123XYZ")).thenThrow(new ServicioExternoNoDisponibleException("caída"));
+        when(confirmar.confirmar("1234567890")).thenThrow(new ServicioExternoNoDisponibleException("caída"));
 
         mvc.perform(post("/api/webhooks/pago").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"data\":{\"id\":\"chr_test_Abc123XYZ\"}}"))
+                        .content("{\"data\":{\"id\":\"1234567890\"}}"))
                 .andExpect(status().isServiceUnavailable());
     }
 
@@ -311,12 +311,12 @@ class PagoWebTest {
     // ---------- página ----------
 
     @Test
-    void la_pagina_de_pago_es_publica_sin_codigo_en_el_html_y_su_politica_permite_a_culqi() throws Exception {
+    void la_pagina_de_pago_es_publica_sin_codigo_en_el_html_y_su_politica_permite_a_mercado_pago() throws Exception {
         String html = mvc.perform(get("/pago.html")).andExpect(status().isOk())
                 .andExpect(header().string("Content-Security-Policy",
-                        org.hamcrest.Matchers.containsString("https://checkout.culqi.com")))
+                        org.hamcrest.Matchers.containsString("https://sdk.mercadopago.com")))
                 .andExpect(header().string("Content-Security-Policy",
-                        org.hamcrest.Matchers.containsString("frame-src https://*.culqi.com")))
+                        org.hamcrest.Matchers.containsString("frame-src https://*.mercadopago.com")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Pago de tu pedido")))
                 .andReturn().getResponse().getContentAsString();
 

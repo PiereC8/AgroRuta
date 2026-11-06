@@ -5,7 +5,7 @@ import java.util.Optional;
 import pe.agroruta.domain.model.ResultadoCobro;
 import pe.agroruta.domain.model.SolicitudCobro;
 
-/** La pasarela de pago. Hoy puede ser el simulador o Culqi; cambiarla no toca el dominio (RNF-17). */
+/** La pasarela de pago. Hoy puede ser el simulador o Mercado Pago; cambiarla no toca el dominio (RNF-17). */
 public interface PagoPort {
 
     /**

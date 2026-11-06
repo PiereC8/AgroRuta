@@ -50,9 +50,8 @@ public class PublicoPagoController {
         SesionEnlace sesion = sesion(token);
         var estado = TenantContext.ejecutarEn(sesion.identificadorNegocio(), () -> pagar.estado(sesion));
         return new EstadoRespuesta(estado.estadoEnvio(), estado.pagable(), estado.monto().monto(), "PEN",
-                estado.descripcion(), pasarela.modo(), pasarela.llavePublica(), pasarela.rsaId(),
-                pasarela.rsaPublica(), PagoRespuesta.de(estado.ultimoPago()),
-                ComprobanteRespuesta.de(estado.comprobante()));
+                estado.descripcion(), pasarela.modo(), pasarela.llavePublica(),
+                PagoRespuesta.de(estado.ultimoPago()), ComprobanteRespuesta.de(estado.comprobante()));
     }
 
     @PostMapping
@@ -62,7 +61,7 @@ public class PublicoPagoController {
         SesionEnlace sesion = sesion(token);
         var resultado = TenantContext.ejecutarEn(sesion.identificadorNegocio(),
                 () -> pagar.pagar(new PagarPedidoUseCase.Comando(sesion, solicitud.tokenTarjeta(),
-                        solicitud.email(), claveIdempotencia)));
+                        solicitud.email(), claveIdempotencia, solicitud.metodoPago(), solicitud.emisor())));
         return new ResultadoRespuesta(resultado.estadoPago(), resultado.mensaje(), resultado.monto().monto(),
                 ComprobanteRespuesta.de(resultado.comprobante()));
     }
@@ -73,7 +72,9 @@ public class PublicoPagoController {
                 .orElseThrow(() -> new RecursoNoEncontradoException("El enlace no es válido o ya venció"));
     }
 
-    public record PagoSolicitud(@NotBlank String tokenTarjeta, @NotBlank String email) {
+    /** metodoPago (por ejemplo "visa") y emisor los entrega el formulario seguro de la pasarela. */
+    public record PagoSolicitud(@NotBlank String tokenTarjeta, @NotBlank String email, String metodoPago,
+                                String emisor) {
     }
 
     public record PagoRespuesta(EstadoPago estadoPago, String mensaje, String marcaTarjeta, String ultimosCuatro,
@@ -94,8 +95,8 @@ public class PublicoPagoController {
     }
 
     public record EstadoRespuesta(EstadoEnvio estadoEnvio, boolean pagable, BigDecimal monto, String moneda,
-                                  String descripcion, String modo, String llavePublica, String rsaId,
-                                  String rsaPublica, PagoRespuesta ultimoPago, ComprobanteRespuesta comprobante) {
+                                  String descripcion, String modo, String llavePublica, PagoRespuesta ultimoPago,
+                                  ComprobanteRespuesta comprobante) {
     }
 
     public record ResultadoRespuesta(EstadoPago estadoPago, String mensaje, BigDecimal monto,

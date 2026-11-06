@@ -14,7 +14,13 @@ public interface PagarPedidoUseCase {
 
     EstadoPagoPublico estado(SesionEnlace sesion);
 
-    record Comando(SesionEnlace sesion, String tokenTarjeta, String email, String claveIdempotencia) {
+    /** {@code metodoPago} y {@code emisor} los entrega el formulario de la pasarela; pueden ser nulos. */
+    record Comando(SesionEnlace sesion, String tokenTarjeta, String email, String claveIdempotencia,
+                   String metodoPago, String emisor) {
+
+        public Comando(SesionEnlace sesion, String tokenTarjeta, String email, String claveIdempotencia) {
+            this(sesion, tokenTarjeta, email, claveIdempotencia, null, null);
+        }
     }
 
     record ResultadoPago(Long idPago, EstadoPago estadoPago, String mensaje, Dinero monto, Comprobante comprobante) {
