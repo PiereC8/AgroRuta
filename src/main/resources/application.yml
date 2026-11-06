@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: agroruta
+  jackson:
+    time-zone: America/Lima
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

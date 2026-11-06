@@ -1,0 +1,21 @@
+target/
+!.mvn/wrapper/maven-wrapper.properties
+
+# Entorno y secretos
+.env
+*.pem
+*.key
+*.jks
+*.p12
+
+# Notas y contexto locales
+CLAUDE.md
+.claude/
+contexto.md
+
+# IDE
+.vscode/
+.idea/
+*.iml
+.DS_Store
+*.log
