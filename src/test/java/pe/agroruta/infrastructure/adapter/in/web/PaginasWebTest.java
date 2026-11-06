@@ -42,6 +42,23 @@ class PaginasWebTest {
     ConsultarPanelUseCase consultarPanel;
 
     @Test
+    void login_es_publico_sin_codigo_en_linea_y_con_etiquetas_visibles() throws Exception {
+        String html = mvc.perform(get("/login.html")).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(html).doesNotContainPattern("<script(?![^>]*\\bsrc=)");
+        assertThat(html).doesNotContain(" style=").doesNotContain("onclick=").doesNotContain("<style");
+        assertThat(html).contains("/css/sistema.css").contains("/img/logo.png");
+        for (String campo : new String[]{"negocio", "usuario", "clave"}) {
+            assertThat(html).contains("for=\"" + campo + "\"").contains("id=\"" + campo + "\"");
+        }
+        assertThat(html).contains("Entrar");
+        mvc.perform(get("/js/login.js")).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.containsString("innerHTML"))));
+    }
+
+    @Test
     void el_logo_los_estilos_y_las_utilidades_se_sirven() throws Exception {
         mvc.perform(get("/img/logo.png")).andExpect(status().isOk());
         mvc.perform(get("/css/sistema.css")).andExpect(status().isOk());

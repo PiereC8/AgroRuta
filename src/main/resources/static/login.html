@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex">
+    <title>Entrar - AgroRuta</title>
+    <link rel="icon" href="/img/logo.png" type="image/png">
+    <link rel="preload" href="/fonts/fuente.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/css/sistema.css">
+</head>
+<body>
+<div class="entrada">
+    <section class="entrada__lado" aria-label="AgroRuta">
+        <img src="/img/logo.png" alt="AgroRuta">
+        <h1>Sabe cuánto ganas de verdad.</h1>
+        <p>Controla tus lotes, tus envíos y tus cobros. AgroRuta calcula la ganancia real después de flete, merma y
+            rechazo.</p>
+    </section>
+
+    <main class="entrada__formulario">
+        <div class="entrada__caja">
+            <h2>Entrar a tu negocio</h2>
+            <p class="suave">Usa los datos que te dio AgroRuta.</p>
+
+            <div id="aviso" class="aviso aviso--error oculto" role="alert" tabindex="-1"></div>
+
+            <form id="formulario" novalidate>
+                <div class="campo" id="campo-negocio">
+                    <label class="campo__etiqueta" for="negocio">Negocio</label>
+                    <input class="campo__entrada" id="negocio" name="negocio" type="text" autocomplete="organization"
+                           autocapitalize="none" spellcheck="false" aria-describedby="negocio-ayuda negocio-error"
+                           autofocus>
+                    <span class="campo__ayuda" id="negocio-ayuda">Es el código de tu negocio, por ejemplo
+                        chacra_demo.</span>
+                    <span class="campo__error oculto" id="negocio-error"></span>
+                </div>
+
+                <div class="campo" id="campo-usuario">
+                    <label class="campo__etiqueta" for="usuario">Usuario</label>
+                    <input class="campo__entrada" id="usuario" name="usuario" type="text" autocomplete="username"
+                           autocapitalize="none" spellcheck="false" aria-describedby="usuario-error">
+                    <span class="campo__error oculto" id="usuario-error"></span>
+                </div>
+
+                <div class="campo" id="campo-clave">
+                    <label class="campo__etiqueta" for="clave">Contraseña</label>
+                    <div class="campo__control">
+                        <input class="campo__entrada" id="clave" name="clave" type="password"
+                               autocomplete="current-password" aria-describedby="clave-error">
+                        <button class="campo__ojo" id="ver-clave" type="button" aria-controls="clave"
+                                aria-pressed="false">Mostrar</button>
+                    </div>
+                    <span class="campo__error oculto" id="clave-error"></span>
+                </div>
+
+                <button class="boton boton-ancho" id="entrar" type="submit">Entrar</button>
+            </form>
+        </div>
+    </main>
+</div>
+<script src="/js/api.js"></script>
+<script src="/js/login.js"></script>
+</body>
+</html>
