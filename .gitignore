@@ -8,11 +8,6 @@ target/
 *.jks
 *.p12
 
-# Notas y contexto locales
-CLAUDE.md
-.claude/
-contexto.md
-
 # IDE
 .vscode/
 .idea/
