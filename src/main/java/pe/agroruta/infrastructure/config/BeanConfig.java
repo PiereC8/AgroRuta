@@ -7,7 +7,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import pe.agroruta.application.service.AltaNegocioService;
+import pe.agroruta.application.service.AdministrarDestinosService;
 import pe.agroruta.application.service.ConsultarLotesService;
+import pe.agroruta.application.service.CotizarFleteService;
+import pe.agroruta.domain.port.in.AdministrarDestinosUseCase;
+import pe.agroruta.domain.port.in.CotizarFleteUseCase;
+import pe.agroruta.domain.port.out.DestinoRepositoryPort;
+import pe.agroruta.domain.port.out.TarifaPort;
 import pe.agroruta.application.service.IniciarSesionService;
 import pe.agroruta.application.service.RegistrarLoteService;
 import pe.agroruta.domain.port.in.AltaNegocioUseCase;
@@ -43,6 +49,17 @@ public class BeanConfig {
     @Bean
     ConsultarLotesUseCase consultarLotesUseCase(LoteRepositoryPort lotes) {
         return new ConsultarLotesService(lotes);
+    }
+
+    @Bean
+    CotizarFleteUseCase cotizarFleteUseCase(LoteRepositoryPort lotes, DestinoRepositoryPort destinos,
+                                            TarifaPort tarifas) {
+        return new CotizarFleteService(lotes, destinos, tarifas);
+    }
+
+    @Bean
+    AdministrarDestinosUseCase administrarDestinosUseCase(DestinoRepositoryPort destinos) {
+        return new AdministrarDestinosService(destinos);
     }
 
     @Bean

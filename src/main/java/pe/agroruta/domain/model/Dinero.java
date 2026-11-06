@@ -36,6 +36,10 @@ public record Dinero(BigDecimal monto) implements Comparable<Dinero> {
         return monto.signum() < 0;
     }
 
+    public boolean esPositivo() {
+        return monto.signum() > 0;
+    }
+
     @Override
     public int compareTo(Dinero otro) {
         return monto.compareTo(otro.monto);

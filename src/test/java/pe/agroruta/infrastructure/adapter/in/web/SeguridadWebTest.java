@@ -2,6 +2,8 @@ package pe.agroruta.infrastructure.adapter.in.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -14,6 +16,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -27,7 +30,10 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import pe.agroruta.domain.model.Cotizacion;
 import pe.agroruta.domain.model.CredencialesInvalidasException;
+import pe.agroruta.domain.model.DestinoVenta;
+import pe.agroruta.domain.model.Dinero;
 import pe.agroruta.domain.model.DominioException;
 import pe.agroruta.domain.model.EstadoLote;
 import pe.agroruta.domain.model.Lote;
@@ -35,15 +41,18 @@ import pe.agroruta.domain.model.LoteNoEncontradoException;
 import pe.agroruta.domain.model.Negocio;
 import pe.agroruta.domain.model.Plan;
 import pe.agroruta.domain.model.Rol;
+import pe.agroruta.domain.port.in.AdministrarDestinosUseCase;
 import pe.agroruta.domain.port.in.AltaNegocioUseCase;
 import pe.agroruta.domain.port.in.ConsultarLotesUseCase;
+import pe.agroruta.domain.port.in.CotizarFleteUseCase;
 import pe.agroruta.domain.port.in.IniciarSesionUseCase;
 import pe.agroruta.domain.port.in.RegistrarLoteUseCase;
 import pe.agroruta.infrastructure.adapter.out.seguridad.ServicioJwt;
 import pe.agroruta.infrastructure.config.ConfiguracionSeguridad;
 import pe.agroruta.infrastructure.config.TenantContext;
 
-@WebMvcTest(controllers = {NegocioController.class, AuthController.class, LoteController.class})
+@WebMvcTest(controllers = {NegocioController.class, AuthController.class, LoteController.class,
+        DestinoController.class, CotizacionController.class})
 @Import({ConfiguracionSeguridad.class, ManejadorErrores.class, SeguridadWebTest.Reloj.class})
 @TestPropertySource(properties = {
         "agroruta.jwt.secreto=secreto-de-prueba-con-mas-de-32-caracteres!!",
@@ -74,6 +83,10 @@ class SeguridadWebTest {
     RegistrarLoteUseCase registrarLote;
     @MockitoBean
     ConsultarLotesUseCase consultarLotes;
+    @MockitoBean
+    AdministrarDestinosUseCase administrarDestinos;
+    @MockitoBean
+    CotizarFleteUseCase cotizarFlete;
 
     private static final String LOTE = """
             {"productoLote":"Palta Hass","cantidadKg":1250.5,"fechaCosecha":"2026-11-05","chacraOrigen":"Chacra Sur"}""";
@@ -180,6 +193,52 @@ class SeguridadWebTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"productoLote\":\"Palta\",\"cantidadKg\":\"mucho\",\"fechaCosecha\":\"2026-11-05\",\"chacraOrigen\":\"Sur\"}"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void solo_el_dueno_configura_destinos_pero_el_operador_los_consulta() throws Exception {
+        when(administrarDestinos.registrarDestino(any(), any(), anyBoolean()))
+                .thenReturn(new DestinoVenta(1L, "Mercado Lima", "Lima", false, true));
+        String destino = "{\"nombreDestino\":\"Mercado Lima\",\"ciudadDestino\":\"Lima\",\"esLocal\":false}";
+        String operador = bearer("chacra_demo", "operador.demo", Rol.OPERADOR);
+        String dueno = bearer("chacra_demo", "dueno.demo", Rol.DUENO);
+
+        mvc.perform(post("/api/destinos").header("Authorization", operador)
+                .contentType(MediaType.APPLICATION_JSON).content(destino)).andExpect(status().isForbidden());
+        mvc.perform(put("/api/destinos/1/tarifa").header("Authorization", operador)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"costoFletePorKg\":1.2}"))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/destinos").header("Authorization", operador)).andExpect(status().isOk());
+        mvc.perform(post("/api/destinos").header("Authorization", dueno)
+                .contentType(MediaType.APPLICATION_JSON).content(destino))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.nombreDestino").value("Mercado Lima"));
+        mvc.perform(put("/api/destinos/1/tarifa").header("Authorization", dueno)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"costoFletePorKg\":1.2}"))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void el_operador_cotiza_un_lote_y_ve_la_mejor_opcion() throws Exception {
+        Lote lote = new Lote(1L, "Palta Hass", new BigDecimal("1000"), LocalDate.of(2026, 11, 5), "Sur",
+                EstadoLote.REGISTRADO, "dueno.demo", Instant.now());
+        var lima = new DestinoVenta(2L, "Mercado Lima", "Lima", false, true);
+        var tacna = new DestinoVenta(1L, "Mercado Tacna", "Tacna", true, true);
+        var cusco = new DestinoVenta(3L, "Mercado Cusco", "Cusco", false, true);
+        when(cotizarFlete.cotizar(1L)).thenReturn(new Cotizacion(lote, List.of(
+                new Cotizacion.Opcion(lima, Dinero.de("5.50"), Dinero.de("1.20"), Dinero.de("5500"),
+                        Dinero.de("1200"), Dinero.de("4300")),
+                new Cotizacion.Opcion(tacna, Dinero.de("3.00"), Dinero.CERO, Dinero.de("3000"), Dinero.CERO,
+                        Dinero.de("3000"))),
+                List.of(new Cotizacion.Omitido(cusco, Cotizacion.Motivo.SIN_TARIFA))));
+
+        mvc.perform(get("/api/lotes/1/cotizacion")
+                        .header("Authorization", bearer("chacra_demo", "operador.demo", Rol.OPERADOR)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.mejorDestino").value("Mercado Lima"))
+                .andExpect(jsonPath("$.opciones[0].conviene").value(true))
+                .andExpect(jsonPath("$.opciones[0].gananciaNeta").value(4300.00))
+                .andExpect(jsonPath("$.opciones[1].conviene").value(false))
+                .andExpect(jsonPath("$.destinosSinDatos[0].motivo").value("SIN_TARIFA"));
     }
 
     @Test

@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import pe.agroruta.domain.model.CredencialesInvalidasException;
+import pe.agroruta.domain.model.DestinoNoEncontradoException;
+import pe.agroruta.domain.model.DestinoYaExisteException;
 import pe.agroruta.domain.model.DominioException;
 import pe.agroruta.domain.model.LoteNoEncontradoException;
 import pe.agroruta.domain.model.NegocioYaExisteException;
@@ -27,9 +29,14 @@ public class ManejadorErrores {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", e.getMessage()));
     }
 
-    @ExceptionHandler(LoteNoEncontradoException.class)
-    ResponseEntity<Map<String, String>> loteNoEncontrado(LoteNoEncontradoException e) {
+    @ExceptionHandler({LoteNoEncontradoException.class, DestinoNoEncontradoException.class})
+    ResponseEntity<Map<String, String>> noEncontrado(DominioException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+    }
+
+    @ExceptionHandler(DestinoYaExisteException.class)
+    ResponseEntity<Map<String, String>> destinoYaExiste(DestinoYaExisteException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", e.getMessage()));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
