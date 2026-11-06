@@ -69,6 +69,17 @@ class ServicioJwtTest {
     }
 
     @Test
+    void funciona_con_un_secreto_de_64_caracteres_en_base64() {
+        String secreto = "k3Jx9+Qm2Zp7/Lw8Vn4Rt6Yb1Hc5Gd0Fs3Aa9Ue2Io8Ml7Kj6Nh5Bg4Vf3Cx2Dz1Sq0Wr9Ey8Tu7I==";
+        ServicioJwt servicio = servicio(INICIO, secreto);
+
+        var datos = servicio.leer(servicio.emitir("empresa_demo", "dueno.empresa", Rol.DUENO));
+
+        assertThat(datos).isPresent();
+        assertThat(datos.get().identificadorNegocio()).isEqualTo("empresa_demo");
+    }
+
+    @Test
     void exige_un_secreto_largo() {
         assertThatThrownBy(() -> servicio(INICIO, "corto")).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(() -> servicio(INICIO, null)).isInstanceOf(IllegalStateException.class);

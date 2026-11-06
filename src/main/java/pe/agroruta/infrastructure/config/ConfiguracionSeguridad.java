@@ -1,6 +1,7 @@
 package pe.agroruta.infrastructure.config;
 
 import java.time.Clock;
+import jakarta.servlet.DispatcherType;
 import java.time.Duration;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -34,6 +35,7 @@ public class ConfiguracionSeguridad {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(a -> a
+                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers("/api/auth/login", "/actuator/health").permitAll()
                         .requestMatchers("/api/plataforma/**").hasRole(Rol.ADMINISTRADOR_PLATAFORMA.name())
                         .requestMatchers("/api/lotes/**").hasAnyRole(Rol.DUENO.name(), Rol.OPERADOR.name())
