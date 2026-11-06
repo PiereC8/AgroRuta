@@ -116,6 +116,9 @@
         const aviso = $('aviso-senal');
         aviso.classList.add('oculto');
 
+        mostrar('enlace-pago', datos.estadoEnvio === 'ENTREGADO');
+        $('ir-a-pagar').href = '/pago.html#t=' + encodeURIComponent(token);
+
         if (datos.estadoEnvio === 'ENTREGADO') {
             resumen.textContent = 'Tu pedido fue entregado.';
             resumen.className = 'mensaje ok';

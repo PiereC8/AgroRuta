@@ -69,6 +69,12 @@ public class LiquidacionJdbcAdapter implements LiquidacionRepositoryPort {
     }
 
     @Override
+    public Optional<Liquidacion> buscarPorId(Long idLiquidacion) {
+        return jdbc.query("SELECT " + COLUMNAS + " FROM liquidacion WHERE id_liquidacion = ?", FILA, idLiquidacion)
+                .stream().findFirst();
+    }
+
+    @Override
     public List<Liquidacion> listar(int pagina, int tamano) {
         return jdbc.query("SELECT " + COLUMNAS + " FROM liquidacion ORDER BY id_liquidacion DESC LIMIT ? OFFSET ?",
                 FILA, tamano, (long) pagina * tamano);

@@ -14,6 +14,7 @@ import pe.agroruta.domain.model.ConflictoDominioException;
 import pe.agroruta.domain.model.CredencialesInvalidasException;
 import pe.agroruta.domain.model.DominioException;
 import pe.agroruta.domain.model.RecursoNoEncontradoException;
+import pe.agroruta.domain.model.ServicioExternoNoDisponibleException;
 
 @RestControllerAdvice
 public class ManejadorErrores {
@@ -31,6 +32,12 @@ public class ManejadorErrores {
     @ExceptionHandler(ConflictoDominioException.class)
     ResponseEntity<Map<String, String>> conflicto(ConflictoDominioException e) {
         return respuesta(HttpStatus.CONFLICT, e.getMessage());
+    }
+
+    /** La pasarela o el proveedor no respondieron: quien llama debe reintentar. */
+    @ExceptionHandler(ServicioExternoNoDisponibleException.class)
+    ResponseEntity<Map<String, String>> servicioExterno(ServicioExternoNoDisponibleException e) {
+        return respuesta(HttpStatus.SERVICE_UNAVAILABLE, "El servicio externo no está disponible, intenta de nuevo");
     }
 
     /** Red de seguridad: si dos peticiones chocan en una restricción única, responde 409 y no 500. */

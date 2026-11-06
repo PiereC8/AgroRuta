@@ -36,27 +36,31 @@ public class ConfiguracionSeguridad {
                 .csrf(AbstractHttpConfigurer::disable)
                 .headers(cabeceras -> cabeceras.contentSecurityPolicy(politica -> politica.policyDirectives(
                         "default-src 'self'; "
-                                + "script-src 'self' https://cdnjs.cloudflare.com; "
-                                + "style-src 'self' https://cdnjs.cloudflare.com; "
-                                + "img-src 'self' data: https://tile.openstreetmap.org https://*.tile.openstreetmap.org; "
-                                + "connect-src 'self' ws: wss:; "
+                                + "script-src 'self' https://cdnjs.cloudflare.com https://checkout.culqi.com; "
+                                + "style-src 'self' https://cdnjs.cloudflare.com https://*.culqi.com; "
+                                + "img-src 'self' data: https://tile.openstreetmap.org "
+                                + "https://*.tile.openstreetmap.org https://*.culqi.com; "
+                                + "connect-src 'self' ws: wss: https://*.culqi.com; "
+                                + "frame-src https://*.culqi.com; "
                                 + "frame-ancestors 'none'; base-uri 'self'; form-action 'self'")))
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(a -> a
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers("/api/auth/login", "/actuator/health").permitAll()
                         // Páginas del conductor y del comprador, sus recursos y el WebSocket (se autentica por token).
-                        .requestMatchers("/", "/conductor.html", "/seguimiento.html", "/js/**", "/css/**",
-                                "/favicon.ico", "/ws/**").permitAll()
+                        .requestMatchers("/", "/conductor.html", "/seguimiento.html", "/pago.html", "/js/**",
+                                "/css/**", "/favicon.ico", "/ws/**").permitAll()
                         // El enlace con token del comprador: el propio caso de uso valida el token.
                         .requestMatchers("/api/publico/**").permitAll()
+                        // Notificaciones de la pasarela: no se confía en ellas, se verifican contra la pasarela.
+                        .requestMatchers("/api/webhooks/**").permitAll()
                         .requestMatchers("/api/plataforma/**").hasRole(Rol.ADMINISTRADOR_PLATAFORMA.name())
                         .requestMatchers("/api/lotes/**").hasAnyRole(Rol.DUENO.name(), Rol.OPERADOR.name())
                         .requestMatchers(HttpMethod.GET, "/api/destinos/**")
                         .hasAnyRole(Rol.DUENO.name(), Rol.OPERADOR.name())
                         .requestMatchers("/api/destinos/**").hasRole(Rol.DUENO.name())
                         .requestMatchers("/api/compradores/**", "/api/pedidos/**", "/api/envios/**",
-                                "/api/liquidaciones/**")
+                                "/api/liquidaciones/**", "/api/pagos/**", "/api/comprobantes/**")
                         .hasAnyRole(Rol.DUENO.name(), Rol.OPERADOR.name())
                         .requestMatchers(HttpMethod.GET, "/api/transportistas/**", "/api/vehiculos/**")
                         .hasAnyRole(Rol.DUENO.name(), Rol.OPERADOR.name())

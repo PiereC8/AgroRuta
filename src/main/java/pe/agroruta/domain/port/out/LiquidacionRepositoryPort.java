@@ -11,5 +11,7 @@ public interface LiquidacionRepositoryPort {
 
     Optional<Liquidacion> buscarPorLote(Long idLote);
 
+    Optional<Liquidacion> buscarPorId(Long idLiquidacion);
+
     List<Liquidacion> listar(int pagina, int tamano);
 }

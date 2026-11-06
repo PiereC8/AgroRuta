@@ -1,0 +1,47 @@
+CREATE TABLE pago (
+    id_pago             BIGINT         NOT NULL AUTO_INCREMENT,
+    id_liquidacion      BIGINT         NOT NULL,
+    id_pedido           BIGINT         NOT NULL,
+    monto               DECIMAL(18, 2) NOT NULL,
+    moneda              CHAR(3)        NOT NULL DEFAULT 'PEN',
+    estado_pago         VARCHAR(20)    NOT NULL,
+    clave_idempotencia  VARCHAR(64)    NOT NULL,
+    id_cargo_pasarela   VARCHAR(64)    NULL,
+    codigo_respuesta    VARCHAR(80)    NULL,
+    mensaje_usuario     VARCHAR(255)   NULL,
+    marca_tarjeta       VARCHAR(30)    NULL,
+    ultimos_cuatro      CHAR(4)        NULL,
+    email_pagador       VARCHAR(120)   NOT NULL,
+    fecha_creacion      TIMESTAMP(3)   NOT NULL,
+    fecha_actualizacion TIMESTAMP(3)   NOT NULL,
+    -- Solo vale cuando el pago está aprobado: la restricción única impide dos pagos aprobados de la misma liquidación.
+    liquidacion_aprobada BIGINT AS (IF(estado_pago = 'APROBADO', id_liquidacion, NULL)) VIRTUAL,
+    PRIMARY KEY (id_pago),
+    UNIQUE KEY uk_pago_clave (clave_idempotencia),
+    UNIQUE KEY uk_pago_aprobado (liquidacion_aprobada),
+    KEY ix_pago_liquidacion (id_liquidacion),
+    KEY ix_pago_cargo (id_cargo_pasarela),
+    CONSTRAINT fk_pago_liquidacion FOREIGN KEY (id_liquidacion) REFERENCES liquidacion (id_liquidacion),
+    CONSTRAINT fk_pago_pedido FOREIGN KEY (id_pedido) REFERENCES pedido (id_pedido)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+
+CREATE TABLE comprobante (
+    id_comprobante     BIGINT       NOT NULL AUTO_INCREMENT,
+    id_pago            BIGINT       NOT NULL,
+    tipo_comprobante   VARCHAR(10)  NOT NULL,
+    serie              CHAR(4)      NOT NULL,
+    numero             INT          NOT NULL,
+    estado_comprobante VARCHAR(20)  NOT NULL,
+    enlace_pdf         VARCHAR(500) NULL,
+    enlace_xml         VARCHAR(500) NULL,
+    mensaje_sunat      VARCHAR(500) NULL,
+    intentos           INT          NOT NULL DEFAULT 0,
+    proximo_intento    TIMESTAMP(3) NULL,
+    fecha_emision      DATE         NOT NULL,
+    fecha_creacion     TIMESTAMP(3) NOT NULL,
+    PRIMARY KEY (id_comprobante),
+    UNIQUE KEY uk_comprobante_pago (id_pago),
+    UNIQUE KEY uk_comprobante_serie_numero (serie, numero),
+    KEY ix_comprobante_pendiente (estado_comprobante, proximo_intento),
+    CONSTRAINT fk_comprobante_pago FOREIGN KEY (id_pago) REFERENCES pago (id_pago)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;

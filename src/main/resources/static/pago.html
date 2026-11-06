@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="no-referrer">
+    <meta name="robots" content="noindex">
+    <title>AgroRuta - Pago de tu pedido</title>
+    <link rel="stylesheet" href="/css/base.css">
+</head>
+<body>
+<main>
+    <h1>Pago de tu pedido</h1>
+
+    <section id="enlace-invalido" class="mensaje error oculto" role="alert">
+        Este enlace no es válido o ya venció. Pide uno nuevo a quien te vende.
+    </section>
+
+    <section id="contenido" class="oculto">
+        <p id="resumen" class="mensaje" role="status" aria-live="polite">Cargando...</p>
+
+        <section id="zona-pago" class="tarjeta oculto">
+            <dl class="datos">
+                <dt>Pedido</dt>
+                <dd id="dato-descripcion">-</dd>
+                <dt>Total a pagar</dt>
+                <dd id="dato-monto">-</dd>
+            </dl>
+
+            <div id="zona-simulada" class="oculto">
+                <p class="mensaje aviso">Modo de prueba: el pago es simulado y no se cobra nada.</p>
+                <label for="simulado-resultado">Resultado que quieres simular</label>
+                <select id="simulado-resultado">
+                    <option value="sim_aprobada">Pago aprobado</option>
+                    <option value="sim_sin_fondos">Tarjeta sin fondos</option>
+                    <option value="sim_vencida">Tarjeta vencida</option>
+                    <option value="sim_sin_respuesta">La pasarela no responde</option>
+                </select>
+                <label for="simulado-email">Correo para el comprobante</label>
+                <input id="simulado-email" type="email" autocomplete="email" placeholder="tucorreo@ejemplo.com">
+            </div>
+
+            <p id="nota-culqi" class="suave oculto">Pagas con tu tarjeta en la ventana segura de Culqi.
+                AgroRuta no ve ni guarda los datos de tu tarjeta.</p>
+
+            <button id="pagar" class="boton" type="button">Pagar</button>
+        </section>
+
+        <section id="zona-resultado" class="tarjeta oculto" aria-live="polite">
+            <p id="resultado-mensaje"></p>
+            <button id="reintentar" class="boton oculto" type="button">Intentar con otra tarjeta</button>
+        </section>
+
+        <section id="zona-comprobante" class="tarjeta oculto">
+            <h2>Tu comprobante</h2>
+            <dl class="datos">
+                <dt>Documento</dt>
+                <dd id="comp-numero">-</dd>
+                <dt>Estado</dt>
+                <dd id="comp-estado">-</dd>
+            </dl>
+            <p id="comp-mensaje" class="suave"></p>
+            <p id="comp-enlaces"></p>
+        </section>
+
+        <p><a id="volver" href="#">Volver al seguimiento</a></p>
+    </section>
+</main>
+<script src="/js/pago.js"></script>
+</body>
+</html>

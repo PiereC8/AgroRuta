@@ -8,6 +8,22 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import pe.agroruta.domain.model.Comprobante;
+import pe.agroruta.domain.model.EstadoPago;
+import pe.agroruta.domain.model.DatosComprobante;
+import pe.agroruta.domain.model.EstadoComprobante;
+import pe.agroruta.domain.model.Pago;
+import pe.agroruta.domain.model.ResultadoCobro;
+import pe.agroruta.domain.model.ResultadoEmision;
+import pe.agroruta.domain.model.ServicioExternoNoDisponibleException;
+import pe.agroruta.domain.model.SolicitudCobro;
+import pe.agroruta.domain.model.TipoComprobante;
+import pe.agroruta.domain.port.out.ComprobantePort;
+import pe.agroruta.domain.port.out.ComprobanteRepositoryPort;
+import pe.agroruta.domain.port.out.CorrelativoPort;
+import pe.agroruta.domain.port.out.EjecutorPorNegocioPort;
+import pe.agroruta.domain.port.out.PagoPort;
+import pe.agroruta.domain.port.out.PagoRepositoryPort;
 import pe.agroruta.domain.model.AlertaEnvio;
 import pe.agroruta.domain.model.EnlaceEnvio;
 import pe.agroruta.domain.model.Posicion;
@@ -270,8 +286,169 @@ final class Falsos {
         }
 
         @Override
+        public Optional<Liquidacion> buscarPorId(Long idLiquidacion) {
+            return liquidaciones.stream().filter(l -> l.idLiquidacion().equals(idLiquidacion)).findFirst();
+        }
+
+        @Override
         public List<Liquidacion> listar(int pagina, int tamano) {
             return liquidaciones.stream().skip((long) pagina * tamano).limit(tamano).toList();
+        }
+    }
+
+    static class PagosEnMemoria implements PagoRepositoryPort {
+        final List<Pago> pagos = new ArrayList<>();
+
+        @Override
+        public Pago guardarNuevo(Pago pago) {
+            Pago guardado = pago.conId((long) pagos.size() + 1);
+            pagos.add(guardado);
+            return guardado;
+        }
+
+        @Override
+        public void actualizar(Pago pago) {
+            for (int i = 0; i < pagos.size(); i++) {
+                if (pagos.get(i).idPago().equals(pago.idPago())) {
+                    pagos.set(i, pago);
+                }
+            }
+        }
+
+        @Override
+        public Optional<Pago> buscarPorId(Long idPago) {
+            return pagos.stream().filter(p -> p.idPago().equals(idPago)).findFirst();
+        }
+
+        @Override
+        public Optional<Pago> buscarPorClave(String clave) {
+            return pagos.stream().filter(p -> p.claveIdempotencia().equals(clave)).findFirst();
+        }
+
+        @Override
+        public boolean existeAprobadoDe(Long idLiquidacion) {
+            return pagos.stream().anyMatch(p -> p.idLiquidacion().equals(idLiquidacion)
+                    && p.estadoPago() == EstadoPago.APROBADO);
+        }
+
+        @Override
+        public boolean existePendienteDe(Long idLiquidacion) {
+            return pagos.stream().anyMatch(p -> p.idLiquidacion().equals(idLiquidacion)
+                    && p.estadoPago() == EstadoPago.PENDIENTE);
+        }
+
+        @Override
+        public Optional<Pago> ultimoDeLiquidacion(Long idLiquidacion) {
+            return pagos.stream().filter(p -> p.idLiquidacion().equals(idLiquidacion))
+                    .reduce((primero, segundo) -> segundo);
+        }
+
+        @Override
+        public List<Pago> listar(int pagina, int tamano) {
+            return pagos.stream().skip((long) pagina * tamano).limit(tamano).toList();
+        }
+    }
+
+    static class ComprobantesEnMemoria implements ComprobanteRepositoryPort {
+        final List<Comprobante> comprobantes = new ArrayList<>();
+
+        @Override
+        public Comprobante guardarNuevo(Comprobante comprobante) {
+            Comprobante guardado = comprobante.conId((long) comprobantes.size() + 1);
+            comprobantes.add(guardado);
+            return guardado;
+        }
+
+        @Override
+        public void actualizar(Comprobante comprobante) {
+            for (int i = 0; i < comprobantes.size(); i++) {
+                if (comprobantes.get(i).idComprobante().equals(comprobante.idComprobante())) {
+                    comprobantes.set(i, comprobante);
+                }
+            }
+        }
+
+        @Override
+        public Optional<Comprobante> buscarPorId(Long idComprobante) {
+            return comprobantes.stream().filter(c -> c.idComprobante().equals(idComprobante)).findFirst();
+        }
+
+        @Override
+        public Optional<Comprobante> buscarPorPago(Long idPago) {
+            return comprobantes.stream().filter(c -> c.idPago().equals(idPago)).findFirst();
+        }
+
+        @Override
+        public List<Comprobante> pendientesParaReintento(Instant ahora, int limite) {
+            return comprobantes.stream().filter(c -> c.esPendiente() && c.proximoIntento() != null
+                    && !c.proximoIntento().isAfter(ahora)).limit(limite).toList();
+        }
+    }
+
+    static class CorrelativoEnMemoria implements CorrelativoPort {
+        final java.util.Map<String, Integer> ultimos = new java.util.HashMap<>();
+
+        @Override
+        public int siguiente(String serie) {
+            return ultimos.merge(serie, 1, Integer::sum);
+        }
+    }
+
+    /** Pasarela que graba lo que se le pide y responde lo que se le configure. */
+    static class PasarelaGrabadora implements PagoPort {
+        final List<SolicitudCobro> solicitudes = new ArrayList<>();
+        final java.util.Map<String, ResultadoCobro> cargos = new java.util.HashMap<>();
+        java.util.function.Function<SolicitudCobro, ResultadoCobro> comportamiento = solicitud ->
+                ResultadoCobro.aprobado("chr_test_abc123", "Visa", "4242", solicitud.metadatos());
+        boolean noResponde = false;
+
+        @Override
+        public ResultadoCobro cobrar(SolicitudCobro solicitud) {
+            solicitudes.add(solicitud);
+            ResultadoCobro resultado = comportamiento.apply(solicitud);
+            cargos.put(resultado.idCargo(), resultado);
+            if (noResponde) {
+                throw new ServicioExternoNoDisponibleException("sin respuesta");
+            }
+            return resultado;
+        }
+
+        @Override
+        public Optional<ResultadoCobro> consultarCargo(String idCargo) {
+            return Optional.ofNullable(cargos.get(idCargo));
+        }
+    }
+
+    static class EmisorGrabador implements ComprobantePort {
+        final List<DatosComprobante> emitidos = new ArrayList<>();
+        boolean caido = false;
+        EstadoComprobante respuesta = EstadoComprobante.ACEPTADO;
+
+        @Override
+        public ResultadoEmision emitir(DatosComprobante datos) {
+            if (caido) {
+                throw new ServicioExternoNoDisponibleException("proveedor caído");
+            }
+            emitidos.add(datos);
+            return new ResultadoEmision(respuesta, "https://pdf/" + datos.serie() + "-" + datos.numero(), null, "ok");
+        }
+
+        @Override
+        public ResultadoEmision consultar(TipoComprobante tipo, String serie, int numero) {
+            if (caido) {
+                throw new ServicioExternoNoDisponibleException("proveedor caído");
+            }
+            return new ResultadoEmision(respuesta, null, null, "consultado");
+        }
+    }
+
+    static class EjecutorDirecto implements EjecutorPorNegocioPort {
+        final List<String> negocios = new ArrayList<>();
+
+        @Override
+        public <T> T ejecutarEn(String identificadorNegocio, Supplier<T> accion) {
+            negocios.add(identificadorNegocio);
+            return accion.get();
         }
     }
 

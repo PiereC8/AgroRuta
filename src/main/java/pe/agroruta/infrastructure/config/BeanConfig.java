@@ -7,6 +7,21 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import pe.agroruta.application.service.AltaNegocioService;
+import pe.agroruta.application.service.ConfirmarPagoService;
+import pe.agroruta.application.service.ConsultarPagosService;
+import pe.agroruta.application.service.EmitirComprobanteService;
+import pe.agroruta.application.service.PagarPedidoService;
+import pe.agroruta.domain.model.SeriesComprobante;
+import pe.agroruta.domain.port.in.ConfirmarPagoUseCase;
+import pe.agroruta.domain.port.in.ConsultarPagosUseCase;
+import pe.agroruta.domain.port.in.EmitirComprobanteUseCase;
+import pe.agroruta.domain.port.in.PagarPedidoUseCase;
+import pe.agroruta.domain.port.out.ComprobantePort;
+import pe.agroruta.domain.port.out.ComprobanteRepositoryPort;
+import pe.agroruta.domain.port.out.CorrelativoPort;
+import pe.agroruta.domain.port.out.EjecutorPorNegocioPort;
+import pe.agroruta.domain.port.out.PagoPort;
+import pe.agroruta.domain.port.out.PagoRepositoryPort;
 import pe.agroruta.application.service.AutenticarEnlaceService;
 import pe.agroruta.application.service.ConsultarSeguimientoService;
 import pe.agroruta.application.service.GenerarEnlacesEnvioService;
@@ -156,6 +171,38 @@ public class BeanConfig {
                                                             DestinoRepositoryPort destinos,
                                                             SeguimientoRepositoryPort seguimiento, Clock reloj) {
         return new ConsultarSeguimientoService(envios, pedidos, destinos, seguimiento, reloj);
+    }
+
+    @Bean
+    EmitirComprobanteUseCase emitirComprobanteUseCase(PagoRepositoryPort pagos, ComprobanteRepositoryPort comprobantes,
+                                                      LiquidacionRepositoryPort liquidaciones,
+                                                      PedidoRepositoryPort pedidos, CompradorRepositoryPort compradores,
+                                                      LoteRepositoryPort lotes, CorrelativoPort correlativos,
+                                                      ComprobantePort emisor, SeriesComprobante series, Clock reloj) {
+        return new EmitirComprobanteService(pagos, comprobantes, liquidaciones, pedidos, compradores, lotes,
+                correlativos, emisor, series, reloj);
+    }
+
+    @Bean
+    PagarPedidoUseCase pagarPedidoUseCase(EnvioRepositoryPort envios, PedidoRepositoryPort pedidos,
+                                          LiquidacionRepositoryPort liquidaciones, CompradorRepositoryPort compradores,
+                                          PagoRepositoryPort pagos, ComprobanteRepositoryPort comprobantes,
+                                          PagoPort pasarela, EmitirComprobanteUseCase emitirComprobante, Clock reloj) {
+        return new PagarPedidoService(envios, pedidos, liquidaciones, compradores, pagos, comprobantes, pasarela,
+                emitirComprobante, reloj);
+    }
+
+    @Bean
+    ConfirmarPagoUseCase confirmarPagoUseCase(PagoPort pasarela, PagoRepositoryPort pagos,
+                                              EmitirComprobanteUseCase emitirComprobante,
+                                              EjecutorPorNegocioPort ejecutor, Clock reloj) {
+        return new ConfirmarPagoService(pasarela, pagos, emitirComprobante, ejecutor, reloj);
+    }
+
+    @Bean
+    ConsultarPagosUseCase consultarPagosUseCase(PagoRepositoryPort pagos, ComprobanteRepositoryPort comprobantes,
+                                                LiquidacionRepositoryPort liquidaciones) {
+        return new ConsultarPagosService(pagos, comprobantes, liquidaciones);
     }
 
     @Bean
