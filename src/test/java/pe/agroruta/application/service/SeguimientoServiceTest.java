@@ -53,8 +53,8 @@ class SeguimientoServiceTest {
     @BeforeEach
     void preparar() {
         conductor = new SeguimientoConductorService(envios, pedidos, destinos, seguimiento, publicador, RELOJ);
-        consulta = new ConsultarSeguimientoService(envios, pedidos, destinos, seguimiento, RELOJ);
-        new AdministrarDestinosService(destinos).registrarDestino("Mercado Tacna", "Tacna", false);
+        consulta = new ConsultarSeguimientoService(envios, pedidos, destinos, destinos, seguimiento, RELOJ);
+        new AdministrarDestinosService(destinos, destinos, destinos).registrarDestino("Mercado Tacna", "Tacna", false);
         destinos.guardarCoordenada(1L, TACNA);
         Lote lote = Lote.nuevo("Palta", new BigDecimal("1000"), LocalDate.of(2026, 11, 5), "Sur", "dueno.demo",
                 AHORA.minus(Duration.ofDays(1)), LocalDate.of(2026, 11, 6)).conId(1L);

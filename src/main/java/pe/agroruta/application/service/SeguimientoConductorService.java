@@ -21,7 +21,7 @@ import pe.agroruta.domain.model.SesionEnlace;
 import pe.agroruta.domain.model.TipoAlerta;
 import pe.agroruta.domain.model.TipoEnlace;
 import pe.agroruta.domain.port.in.SeguimientoConductorUseCase;
-import pe.agroruta.domain.port.out.DestinoRepositoryPort;
+import pe.agroruta.domain.port.out.UbicacionDestinoPort;
 import pe.agroruta.domain.port.out.EnvioRepositoryPort;
 import pe.agroruta.domain.port.out.PedidoRepositoryPort;
 import pe.agroruta.domain.port.out.PublicadorSeguimientoPort;
@@ -35,17 +35,17 @@ public class SeguimientoConductorService implements SeguimientoConductorUseCase 
 
     private final EnvioRepositoryPort envios;
     private final PedidoRepositoryPort pedidos;
-    private final DestinoRepositoryPort destinos;
+    private final UbicacionDestinoPort ubicaciones;
     private final SeguimientoRepositoryPort seguimiento;
     private final PublicadorSeguimientoPort publicador;
     private final Clock reloj;
 
     public SeguimientoConductorService(EnvioRepositoryPort envios, PedidoRepositoryPort pedidos,
-                                       DestinoRepositoryPort destinos, SeguimientoRepositoryPort seguimiento,
+                                       UbicacionDestinoPort ubicaciones, SeguimientoRepositoryPort seguimiento,
                                        PublicadorSeguimientoPort publicador, Clock reloj) {
         this.envios = envios;
         this.pedidos = pedidos;
-        this.destinos = destinos;
+        this.ubicaciones = ubicaciones;
         this.seguimiento = seguimiento;
         this.publicador = publicador;
         this.reloj = reloj;
@@ -150,7 +150,7 @@ public class SeguimientoConductorService implements SeguimientoConductorUseCase 
 
     private Optional<Coordenada> coordenadaDestino(Envio envio) {
         return pedidos.buscarPorId(envio.idPedido()).map(Pedido::idDestinoVenta)
-                .flatMap(destinos::buscarCoordenada);
+                .flatMap(ubicaciones::buscarCoordenada);
     }
 
     private Envio envioDelConductor(SesionEnlace sesion) {

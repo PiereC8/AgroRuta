@@ -63,6 +63,8 @@ import pe.agroruta.application.service.CotizarFleteService;
 import pe.agroruta.domain.port.in.AdministrarDestinosUseCase;
 import pe.agroruta.domain.port.in.CotizarFleteUseCase;
 import pe.agroruta.domain.port.out.DestinoRepositoryPort;
+import pe.agroruta.domain.port.out.PreciosDestinoPort;
+import pe.agroruta.domain.port.out.UbicacionDestinoPort;
 import pe.agroruta.domain.port.out.TarifaPort;
 import pe.agroruta.application.service.IniciarSesionService;
 import pe.agroruta.application.service.RegistrarLoteService;
@@ -103,13 +105,15 @@ public class BeanConfig {
 
     @Bean
     CotizarFleteUseCase cotizarFleteUseCase(LoteRepositoryPort lotes, DestinoRepositoryPort destinos,
-                                            TarifaPort tarifas) {
-        return new CotizarFleteService(lotes, destinos, tarifas);
+                                            PreciosDestinoPort precios, TarifaPort tarifas) {
+        return new CotizarFleteService(lotes, destinos, precios, tarifas);
     }
 
     @Bean
-    AdministrarDestinosUseCase administrarDestinosUseCase(DestinoRepositoryPort destinos) {
-        return new AdministrarDestinosService(destinos);
+    AdministrarDestinosUseCase administrarDestinosUseCase(DestinoRepositoryPort destinos,
+                                                          PreciosDestinoPort precios,
+                                                          UbicacionDestinoPort ubicaciones) {
+        return new AdministrarDestinosService(destinos, precios, ubicaciones);
     }
 
     @Bean
@@ -170,17 +174,18 @@ public class BeanConfig {
 
     @Bean
     SeguimientoConductorUseCase seguimientoConductorUseCase(EnvioRepositoryPort envios, PedidoRepositoryPort pedidos,
-                                                            DestinoRepositoryPort destinos,
+                                                            UbicacionDestinoPort ubicaciones,
                                                             SeguimientoRepositoryPort seguimiento,
                                                             PublicadorSeguimientoPort publicador, Clock reloj) {
-        return new SeguimientoConductorService(envios, pedidos, destinos, seguimiento, publicador, reloj);
+        return new SeguimientoConductorService(envios, pedidos, ubicaciones, seguimiento, publicador, reloj);
     }
 
     @Bean
     ConsultarSeguimientoUseCase consultarSeguimientoUseCase(EnvioRepositoryPort envios, PedidoRepositoryPort pedidos,
                                                             DestinoRepositoryPort destinos,
+                                                            UbicacionDestinoPort ubicaciones,
                                                             SeguimientoRepositoryPort seguimiento, Clock reloj) {
-        return new ConsultarSeguimientoService(envios, pedidos, destinos, seguimiento, reloj);
+        return new ConsultarSeguimientoService(envios, pedidos, destinos, ubicaciones, seguimiento, reloj);
     }
 
     @Bean

@@ -25,12 +25,14 @@ import pe.agroruta.domain.model.EventoLote;
 import pe.agroruta.domain.model.Lote;
 import pe.agroruta.domain.model.LoteNoEncontradoException;
 import pe.agroruta.domain.port.out.DestinoRepositoryPort;
+import pe.agroruta.domain.port.out.PreciosDestinoPort;
+import pe.agroruta.domain.port.out.UbicacionDestinoPort;
 import pe.agroruta.domain.port.out.LoteRepositoryPort;
 import pe.agroruta.domain.port.out.TarifaPort;
 
 class DestinosServiceTest {
 
-    static class DestinosEnMemoria implements DestinoRepositoryPort {
+    static class DestinosEnMemoria implements DestinoRepositoryPort, PreciosDestinoPort, UbicacionDestinoPort {
         final List<DestinoVenta> destinos = new ArrayList<>();
         final Map<String, Dinero> precios = new HashMap<>();
         final Map<Long, Dinero> tarifas = new HashMap<>();
@@ -130,7 +132,7 @@ class DestinosServiceTest {
     }
 
     private final DestinosEnMemoria destinos = new DestinosEnMemoria();
-    private final AdministrarDestinosService administrar = new AdministrarDestinosService(destinos);
+    private final AdministrarDestinosService administrar = new AdministrarDestinosService(destinos, destinos, destinos);
 
     @Test
     void registra_un_destino_y_no_permite_repetir_el_nombre() {
@@ -186,7 +188,7 @@ class DestinosServiceTest {
             return resultado;
         };
 
-        var cotizacion = new CotizarFleteService(new LotesFijos(lote(EstadoLote.REGISTRADO)), destinos, tarifas)
+        var cotizacion = new CotizarFleteService(new LotesFijos(lote(EstadoLote.REGISTRADO)), destinos, destinos, tarifas)
                 .cotizar(1L);
 
         assertThat(pedidos).hasSize(1);
@@ -199,9 +201,9 @@ class DestinosServiceTest {
     void no_cotiza_lotes_inexistentes_ni_ya_despachados() {
         TarifaPort sinTarifas = ids -> Map.of();
 
-        assertThatThrownBy(() -> new CotizarFleteService(new LotesFijos(null), destinos, sinTarifas).cotizar(1L))
+        assertThatThrownBy(() -> new CotizarFleteService(new LotesFijos(null), destinos, destinos, sinTarifas).cotizar(1L))
                 .isInstanceOf(LoteNoEncontradoException.class);
-        assertThatThrownBy(() -> new CotizarFleteService(new LotesFijos(lote(EstadoLote.DESPACHADO)), destinos,
+        assertThatThrownBy(() -> new CotizarFleteService(new LotesFijos(lote(EstadoLote.DESPACHADO)), destinos, destinos,
                 sinTarifas).cotizar(1L)).isInstanceOf(DominioException.class);
     }
 }

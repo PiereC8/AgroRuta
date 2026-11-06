@@ -51,7 +51,7 @@ class DespachoServiceTest {
         gestionarPedidos = new GestionarPedidosService(pedidos, compradores, lotes, destinos, RELOJ);
         despacho = new DespacharEnvioService(pedidos, lotes, transporte, envios, transaccion, RELOJ);
 
-        new AdministrarDestinosService(destinos).registrarDestino("Mercado Lima", "Lima", false);
+        new AdministrarDestinosService(destinos, destinos, destinos).registrarDestino("Mercado Lima", "Lima", false);
         new AdministrarCompradoresService(compradores).registrar("Mercado Central SAC", TipoComprador.MERCADO,
                 "20123456789", "987654321", "Lima");
         var admin = new AdministrarTransporteService(transporte);

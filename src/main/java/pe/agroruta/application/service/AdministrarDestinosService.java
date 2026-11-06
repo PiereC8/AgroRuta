@@ -10,13 +10,20 @@ import pe.agroruta.domain.model.Dinero;
 import pe.agroruta.domain.model.DominioException;
 import pe.agroruta.domain.port.in.AdministrarDestinosUseCase;
 import pe.agroruta.domain.port.out.DestinoRepositoryPort;
+import pe.agroruta.domain.port.out.PreciosDestinoPort;
+import pe.agroruta.domain.port.out.UbicacionDestinoPort;
 
 public class AdministrarDestinosService implements AdministrarDestinosUseCase {
 
     private final DestinoRepositoryPort destinos;
+    private final PreciosDestinoPort precios;
+    private final UbicacionDestinoPort ubicaciones;
 
-    public AdministrarDestinosService(DestinoRepositoryPort destinos) {
+    public AdministrarDestinosService(DestinoRepositoryPort destinos, PreciosDestinoPort precios,
+                                      UbicacionDestinoPort ubicaciones) {
         this.destinos = destinos;
+        this.precios = precios;
+        this.ubicaciones = ubicaciones;
     }
 
     @Override
@@ -42,7 +49,7 @@ public class AdministrarDestinosService implements AdministrarDestinosUseCase {
         if (precioPorKg == null || !precioPorKg.esPositivo()) {
             throw new DominioException("El precio esperado por kg debe ser mayor que cero");
         }
-        destinos.guardarPrecioEsperado(idDestinoVenta, productoLote.strip(), precioPorKg);
+        precios.guardarPrecioEsperado(idDestinoVenta, productoLote.strip(), precioPorKg);
     }
 
     @Override
@@ -54,13 +61,13 @@ public class AdministrarDestinosService implements AdministrarDestinosUseCase {
         if (costoFletePorKg == null || costoFletePorKg.esNegativo()) {
             throw new DominioException("El flete por kg no puede ser negativo");
         }
-        destinos.guardarTarifaFlete(idDestinoVenta, costoFletePorKg);
+        precios.guardarTarifaFlete(idDestinoVenta, costoFletePorKg);
     }
 
     @Override
     public void fijarCoordenadas(Long idDestinoVenta, double latitud, double longitud) {
         obtener(idDestinoVenta);
-        destinos.guardarCoordenada(idDestinoVenta, new Coordenada(latitud, longitud));
+        ubicaciones.guardarCoordenada(idDestinoVenta, new Coordenada(latitud, longitud));
     }
 
     private DestinoVenta obtener(Long idDestinoVenta) {

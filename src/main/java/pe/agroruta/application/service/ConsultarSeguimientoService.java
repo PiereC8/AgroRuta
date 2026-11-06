@@ -20,21 +20,25 @@ import pe.agroruta.domain.port.out.DestinoRepositoryPort;
 import pe.agroruta.domain.port.out.EnvioRepositoryPort;
 import pe.agroruta.domain.port.out.PedidoRepositoryPort;
 import pe.agroruta.domain.port.out.SeguimientoRepositoryPort;
+import pe.agroruta.domain.port.out.UbicacionDestinoPort;
 
 public class ConsultarSeguimientoService implements ConsultarSeguimientoUseCase {
 
     private final EnvioRepositoryPort envios;
     private final PedidoRepositoryPort pedidos;
     private final DestinoRepositoryPort destinos;
+    private final UbicacionDestinoPort ubicaciones;
     private final SeguimientoRepositoryPort seguimiento;
     private final Clock reloj;
 
     public ConsultarSeguimientoService(EnvioRepositoryPort envios, PedidoRepositoryPort pedidos,
-                                       DestinoRepositoryPort destinos, SeguimientoRepositoryPort seguimiento,
+                                       DestinoRepositoryPort destinos, UbicacionDestinoPort ubicaciones,
+                                       SeguimientoRepositoryPort seguimiento,
                                        Clock reloj) {
         this.envios = envios;
         this.pedidos = pedidos;
         this.destinos = destinos;
+        this.ubicaciones = ubicaciones;
         this.seguimiento = seguimiento;
         this.reloj = reloj;
     }
@@ -46,7 +50,7 @@ public class ConsultarSeguimientoService implements ConsultarSeguimientoUseCase 
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe el pedido " + envio.idPedido()));
         DestinoVenta destino = destinos.buscarPorId(pedido.idDestinoVenta())
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe el destino " + pedido.idDestinoVenta()));
-        Coordenada coordenada = destinos.buscarCoordenada(destino.idDestinoVenta()).orElse(null);
+        Coordenada coordenada = ubicaciones.buscarCoordenada(destino.idDestinoVenta()).orElse(null);
 
         List<Posicion> trazo = seguimiento.ultimasPosiciones(idEnvio, POSICIONES_DEL_TRAZO);
         Posicion ultima = trazo.isEmpty() ? null : trazo.get(trazo.size() - 1);

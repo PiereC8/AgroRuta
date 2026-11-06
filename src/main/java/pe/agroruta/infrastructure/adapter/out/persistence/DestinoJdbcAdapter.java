@@ -20,9 +20,11 @@ import pe.agroruta.domain.model.Coordenada;
 import pe.agroruta.domain.model.DestinoVenta;
 import pe.agroruta.domain.model.Dinero;
 import pe.agroruta.domain.port.out.DestinoRepositoryPort;
+import pe.agroruta.domain.port.out.PreciosDestinoPort;
+import pe.agroruta.domain.port.out.UbicacionDestinoPort;
 
 @Component
-public class DestinoJdbcAdapter implements DestinoRepositoryPort {
+public class DestinoJdbcAdapter implements DestinoRepositoryPort, PreciosDestinoPort, UbicacionDestinoPort {
 
     private static final String COLUMNAS = "id_destino_venta, nombre_destino, ciudad_destino, es_local, destino_activo";
 

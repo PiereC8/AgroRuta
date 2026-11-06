@@ -74,7 +74,7 @@ class EntregaServiceTest {
 
     @BeforeEach
     void destinosBase() {
-        var admin = new AdministrarDestinosService(destinos);
+        var admin = new AdministrarDestinosService(destinos, destinos, destinos);
         admin.registrarDestino("Mercado Lima", "Lima", false);
         admin.registrarDestino("Mercado Tacna", "Tacna", true);
         montar(ids -> Map.of(1L, Dinero.de("1.20")));
