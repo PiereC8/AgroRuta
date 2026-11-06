@@ -16,6 +16,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Component;
 
+import pe.agroruta.domain.model.Coordenada;
 import pe.agroruta.domain.model.DestinoVenta;
 import pe.agroruta.domain.model.Dinero;
 import pe.agroruta.domain.port.out.DestinoRepositoryPort;
@@ -90,6 +91,24 @@ public class DestinoJdbcAdapter implements DestinoRepositoryPort {
                     precios.put(rs.getLong("id_destino_venta"), new Dinero(rs.getBigDecimal("precio_esperado_kg")));
                 }, productoLote);
         return precios;
+    }
+
+    @Override
+    public void guardarCoordenada(Long idDestinoVenta, Coordenada coordenada) {
+        jdbc.update("INSERT INTO coordenada_destino (id_destino_venta, latitud, longitud) VALUES (?, ?, ?) AS nueva "
+                        + "ON DUPLICATE KEY UPDATE latitud = nueva.latitud, longitud = nueva.longitud",
+                idDestinoVenta, grados(coordenada.latitud()), grados(coordenada.longitud()));
+    }
+
+    @Override
+    public Optional<Coordenada> buscarCoordenada(Long idDestinoVenta) {
+        return jdbc.query("SELECT latitud, longitud FROM coordenada_destino WHERE id_destino_venta = ?",
+                (rs, fila) -> new Coordenada(rs.getDouble("latitud"), rs.getDouble("longitud")),
+                idDestinoVenta).stream().findFirst();
+    }
+
+    static BigDecimal grados(double valor) {
+        return BigDecimal.valueOf(valor).setScale(6, java.math.RoundingMode.HALF_UP);
     }
 
     @Override

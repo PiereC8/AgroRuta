@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="no-referrer">
+    <meta name="robots" content="noindex">
+    <title>AgroRuta - Seguimiento de tu pedido</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"
+          integrity="sha384-c6Rcwz4e4CITMbu/NBmnNS8yN2sC3cUElMEMfP3vqqKFp7GOYaaBBCqmaWBjmkjb"
+          crossorigin="anonymous">
+    <link rel="stylesheet" href="/css/base.css">
+</head>
+<body>
+<main>
+    <h1>Seguimiento de tu pedido</h1>
+
+    <section id="enlace-invalido" class="mensaje error oculto" role="alert">
+        Este enlace no es válido o ya venció. Pide uno nuevo a quien te vende.
+    </section>
+
+    <section id="contenido" class="oculto">
+        <p id="resumen" class="mensaje ok" role="status" aria-live="polite">Cargando...</p>
+        <p id="aviso-senal" class="mensaje aviso oculto" role="status" aria-live="polite"></p>
+        <div id="mapa" role="img" aria-label="Mapa con la ubicación del vehículo"></div>
+        <section class="tarjeta">
+            <dl class="datos">
+                <dt>Destino</dt>
+                <dd id="dato-destino">-</dd>
+                <dt>Llegada estimada</dt>
+                <dd id="dato-eta">-</dd>
+                <dt>Última actualización</dt>
+                <dd id="dato-actualizacion">-</dd>
+                <dt>Estado</dt>
+                <dd id="dato-estado">-</dd>
+            </dl>
+        </section>
+    </section>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"
+        integrity="sha384-NElt3Op+9NBMCYaef5HxeJmU4Xeard/Lku8ek6hoPTvYkQPh3zLIrJP7KiRocsxO"
+        crossorigin="anonymous"></script>
+<script src="/js/stomp.js"></script>
+<script src="/js/seguimiento.js"></script>
+</body>
+</html>

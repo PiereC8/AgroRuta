@@ -34,6 +34,17 @@ class DestinosServiceTest {
         final List<DestinoVenta> destinos = new ArrayList<>();
         final Map<String, Dinero> precios = new HashMap<>();
         final Map<Long, Dinero> tarifas = new HashMap<>();
+        final Map<Long, pe.agroruta.domain.model.Coordenada> coordenadas = new HashMap<>();
+
+        @Override
+        public void guardarCoordenada(Long id, pe.agroruta.domain.model.Coordenada coordenada) {
+            coordenadas.put(id, coordenada);
+        }
+
+        @Override
+        public Optional<pe.agroruta.domain.model.Coordenada> buscarCoordenada(Long id) {
+            return Optional.ofNullable(coordenadas.get(id));
+        }
 
         @Override
         public boolean existePorNombre(String nombreDestino) {

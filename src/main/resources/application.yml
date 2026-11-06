@@ -22,6 +22,12 @@ agroruta:
     usuario: ${ADMIN_PLATAFORMA_USUARIO:}
     clave: ${ADMIN_PLATAFORMA_CLAVE:}
 
+server:
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+
 management:
   endpoints:
     web:

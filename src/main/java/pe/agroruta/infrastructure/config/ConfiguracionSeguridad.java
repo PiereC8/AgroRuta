@@ -34,10 +34,22 @@ public class ConfiguracionSeguridad {
     SecurityFilterChain cadenaDeSeguridad(HttpSecurity http, ServicioJwt servicioJwt) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
+                .headers(cabeceras -> cabeceras.contentSecurityPolicy(politica -> politica.policyDirectives(
+                        "default-src 'self'; "
+                                + "script-src 'self' https://cdnjs.cloudflare.com; "
+                                + "style-src 'self' https://cdnjs.cloudflare.com; "
+                                + "img-src 'self' data: https://tile.openstreetmap.org https://*.tile.openstreetmap.org; "
+                                + "connect-src 'self' ws: wss:; "
+                                + "frame-ancestors 'none'; base-uri 'self'; form-action 'self'")))
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(a -> a
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers("/api/auth/login", "/actuator/health").permitAll()
+                        // Páginas del conductor y del comprador, sus recursos y el WebSocket (se autentica por token).
+                        .requestMatchers("/", "/conductor.html", "/seguimiento.html", "/js/**", "/css/**",
+                                "/favicon.ico", "/ws/**").permitAll()
+                        // El enlace con token del comprador: el propio caso de uso valida el token.
+                        .requestMatchers("/api/publico/**").permitAll()
                         .requestMatchers("/api/plataforma/**").hasRole(Rol.ADMINISTRADOR_PLATAFORMA.name())
                         .requestMatchers("/api/lotes/**").hasAnyRole(Rol.DUENO.name(), Rol.OPERADOR.name())
                         .requestMatchers(HttpMethod.GET, "/api/destinos/**")

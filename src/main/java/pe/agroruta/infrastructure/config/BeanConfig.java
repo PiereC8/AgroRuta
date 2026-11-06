@@ -7,6 +7,18 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import pe.agroruta.application.service.AltaNegocioService;
+import pe.agroruta.application.service.AutenticarEnlaceService;
+import pe.agroruta.application.service.ConsultarSeguimientoService;
+import pe.agroruta.application.service.GenerarEnlacesEnvioService;
+import pe.agroruta.application.service.SeguimientoConductorService;
+import pe.agroruta.domain.port.in.AutenticarEnlaceUseCase;
+import pe.agroruta.domain.port.in.ConsultarSeguimientoUseCase;
+import pe.agroruta.domain.port.in.GenerarEnlacesEnvioUseCase;
+import pe.agroruta.domain.port.in.SeguimientoConductorUseCase;
+import pe.agroruta.domain.port.out.EnlaceEnvioRepositoryPort;
+import pe.agroruta.domain.port.out.GeneradorTokenPort;
+import pe.agroruta.domain.port.out.PublicadorSeguimientoPort;
+import pe.agroruta.domain.port.out.SeguimientoRepositoryPort;
 import pe.agroruta.application.service.ConsultarLiquidacionesService;
 import pe.agroruta.application.service.RegistrarEntregaService;
 import pe.agroruta.domain.port.in.ConsultarLiquidacionesUseCase;
@@ -116,6 +128,34 @@ public class BeanConfig {
     @Bean
     ConsultarLiquidacionesUseCase consultarLiquidacionesUseCase(LiquidacionRepositoryPort liquidaciones) {
         return new ConsultarLiquidacionesService(liquidaciones);
+    }
+
+    @Bean
+    GenerarEnlacesEnvioUseCase generarEnlacesEnvioUseCase(EnvioRepositoryPort envios,
+                                                          EnlaceEnvioRepositoryPort enlaces,
+                                                          GeneradorTokenPort generador, Clock reloj) {
+        return new GenerarEnlacesEnvioService(envios, enlaces, generador, reloj);
+    }
+
+    @Bean
+    AutenticarEnlaceUseCase autenticarEnlaceUseCase(EnlaceEnvioRepositoryPort enlaces, GeneradorTokenPort generador,
+                                                    Clock reloj) {
+        return new AutenticarEnlaceService(enlaces, generador, reloj);
+    }
+
+    @Bean
+    SeguimientoConductorUseCase seguimientoConductorUseCase(EnvioRepositoryPort envios, PedidoRepositoryPort pedidos,
+                                                            DestinoRepositoryPort destinos,
+                                                            SeguimientoRepositoryPort seguimiento,
+                                                            PublicadorSeguimientoPort publicador, Clock reloj) {
+        return new SeguimientoConductorService(envios, pedidos, destinos, seguimiento, publicador, reloj);
+    }
+
+    @Bean
+    ConsultarSeguimientoUseCase consultarSeguimientoUseCase(EnvioRepositoryPort envios, PedidoRepositoryPort pedidos,
+                                                            DestinoRepositoryPort destinos,
+                                                            SeguimientoRepositoryPort seguimiento, Clock reloj) {
+        return new ConsultarSeguimientoService(envios, pedidos, destinos, seguimiento, reloj);
     }
 
     @Bean

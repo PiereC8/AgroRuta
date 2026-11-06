@@ -1,0 +1,96 @@
+package pe.agroruta.infrastructure.adapter.in.web;
+
+import java.time.Instant;
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+import pe.agroruta.domain.model.AlertaEnvio;
+import pe.agroruta.domain.model.EstadoEnvio;
+import pe.agroruta.domain.model.Posicion;
+import pe.agroruta.domain.model.Seguimiento;
+import pe.agroruta.domain.model.TipoAlerta;
+import pe.agroruta.domain.port.in.ConsultarSeguimientoUseCase;
+import pe.agroruta.domain.port.in.GenerarEnlacesEnvioUseCase;
+import pe.agroruta.infrastructure.adapter.in.websocket.Canales;
+import pe.agroruta.infrastructure.adapter.out.seguridad.ServicioJwt.DatosToken;
+
+/** Seguimiento para el Dueño y el Operador del negocio. */
+@RestController
+@RequestMapping("/api/envios/{idEnvio}")
+public class SeguimientoController {
+
+    private final GenerarEnlacesEnvioUseCase generarEnlaces;
+    private final ConsultarSeguimientoUseCase consultar;
+
+    public SeguimientoController(GenerarEnlacesEnvioUseCase generarEnlaces, ConsultarSeguimientoUseCase consultar) {
+        this.generarEnlaces = generarEnlaces;
+        this.consultar = consultar;
+    }
+
+    /** Los tokens solo se muestran aquí, una vez. Si se pierden, se generan otros y los anteriores dejan de valer. */
+    @PostMapping("/enlaces")
+    @ResponseStatus(HttpStatus.CREATED)
+    public EnlacesRespuesta generarEnlaces(@PathVariable Long idEnvio, @AuthenticationPrincipal DatosToken usuario) {
+        var enlaces = generarEnlaces.generar(usuario.identificadorNegocio(), idEnvio);
+        return new EnlacesRespuesta(
+                enlaces.tokenConductor(), "/conductor.html#t=" + enlaces.tokenConductor(),
+                enlaces.tokenComprador(), "/seguimiento.html#t=" + enlaces.tokenComprador(),
+                enlaces.fechaExpiracion());
+    }
+
+    @GetMapping("/seguimiento")
+    public SeguimientoRespuesta seguimiento(@PathVariable Long idEnvio, @AuthenticationPrincipal DatosToken usuario) {
+        return SeguimientoRespuesta.de(consultar.obtener(idEnvio), usuario.identificadorNegocio());
+    }
+
+    @GetMapping("/recorrido")
+    public List<PosicionRespuesta> recorrido(@PathVariable Long idEnvio) {
+        return consultar.recorrido(idEnvio).stream().map(PosicionRespuesta::de).toList();
+    }
+
+    @GetMapping("/alertas")
+    public List<AlertaRespuesta> alertas(@PathVariable Long idEnvio) {
+        return consultar.alertas(idEnvio).stream().map(AlertaRespuesta::de).toList();
+    }
+
+    public record EnlacesRespuesta(String tokenConductor, String rutaConductor, String tokenComprador,
+                                   String rutaComprador, Instant fechaExpiracion) {
+    }
+
+    public record PosicionRespuesta(double latitud, double longitud, Double precisionMetros, Instant fechaPosicion) {
+        static PosicionRespuesta de(Posicion posicion) {
+            return new PosicionRespuesta(posicion.coordenada().latitud(), posicion.coordenada().longitud(),
+                    posicion.precisionMetros(), posicion.fechaPosicion());
+        }
+    }
+
+    public record AlertaRespuesta(TipoAlerta tipoAlerta, String descripcionAlerta, Instant fechaAlerta) {
+        static AlertaRespuesta de(AlertaEnvio alerta) {
+            return new AlertaRespuesta(alerta.tipoAlerta(), alerta.descripcionAlerta(), alerta.fechaAlerta());
+        }
+    }
+
+    public record SeguimientoRespuesta(Long idEnvio, EstadoEnvio estadoEnvio, Instant fechaSalida,
+                                       Instant fechaEntrega, String nombreDestino, String ciudadDestino,
+                                       Double latitudDestino, Double longitudDestino,
+                                       PosicionRespuesta ultimaPosicion, Long etaMinutos, Instant ahora,
+                                       String canal, List<PosicionRespuesta> trazoReciente) {
+        static SeguimientoRespuesta de(Seguimiento s, String identificadorNegocio) {
+            return new SeguimientoRespuesta(s.envio().idEnvio(), s.envio().estadoEnvio(), s.envio().fechaSalida(),
+                    s.envio().fechaEntrega(), s.nombreDestino(), s.ciudadDestino(),
+                    s.coordenadaDestino() == null ? null : s.coordenadaDestino().latitud(),
+                    s.coordenadaDestino() == null ? null : s.coordenadaDestino().longitud(),
+                    s.ultimaPosicion() == null ? null : PosicionRespuesta.de(s.ultimaPosicion()), s.etaMinutos(),
+                    s.ahora(), Canales.deEnvio(identificadorNegocio, s.envio().idEnvio()),
+                    s.trazoReciente().stream().map(PosicionRespuesta::de).toList());
+        }
+    }
+}

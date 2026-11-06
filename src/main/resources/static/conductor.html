@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="no-referrer">
+    <meta name="robots" content="noindex">
+    <title>AgroRuta - Conductor</title>
+    <link rel="stylesheet" href="/css/base.css">
+</head>
+<body>
+<main>
+    <h1>Compartir mi ubicación</h1>
+    <p class="suave">Seguimiento del envío para el conductor.</p>
+
+    <section id="sin-enlace" class="mensaje error oculto" role="alert">
+        Este enlace no es válido. Pide al operador uno nuevo.
+    </section>
+
+    <section id="consentimiento" class="tarjeta oculto">
+        <p><strong>Antes de empezar, lee esto:</strong></p>
+        <ul>
+            <li>Tu ubicación se comparte <strong>solo mientras el envío está en ruta</strong>.</li>
+            <li>La ven el operador del negocio y el comprador de este pedido, y nadie más.</li>
+            <li>Puedes dejar de compartir cuando quieras con el botón "Dejar de compartir".</li>
+            <li>Si pierdes la señal, tu celular guarda las posiciones y las envía al recuperarla.</li>
+        </ul>
+        <p class="suave">Para que funcione: GPS activado, permiso de ubicación, datos móviles y el cargador
+            conectado. Mantén la pantalla encendida y no cambies de aplicación.</p>
+        <button id="comenzar" class="boton" type="button">Acepto y comenzar</button>
+    </section>
+
+    <section id="compartiendo" class="tarjeta oculto">
+        <p id="estado-principal" class="mensaje ok" role="status" aria-live="polite">Compartiendo tu ubicación.</p>
+        <dl class="datos">
+            <dt>Conexión</dt>
+            <dd id="dato-conexion">-</dd>
+            <dt>Pendientes por enviar</dt>
+            <dd id="dato-pendientes">0</dd>
+            <dt>Última posición enviada</dt>
+            <dd id="dato-ultima">-</dd>
+            <dt>Precisión</dt>
+            <dd id="dato-precision">-</dd>
+        </dl>
+        <button id="detener" class="boton boton-secundario" type="button">Dejar de compartir</button>
+    </section>
+
+    <section id="mensajes" aria-live="polite"></section>
+</main>
+<script src="/js/stomp.js"></script>
+<script src="/js/conductor.js"></script>
+</body>
+</html>

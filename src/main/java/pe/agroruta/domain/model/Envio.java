@@ -26,6 +26,14 @@ public record Envio(Long idEnvio, Long idPedido, Long idLote, Long idVehiculo, L
                 fechaProgramada, fechaSalida, ahora, usuarioDespacho);
     }
 
+    /** Una posición solo vale si fue tomada mientras el envío estaba en ruta. */
+    public boolean admitePosicionEn(Instant fecha) {
+        if (fechaSalida == null || fecha.isBefore(fechaSalida)) {
+            return false;
+        }
+        return fechaEntrega == null || !fecha.isAfter(fechaEntrega);
+    }
+
     public Envio conId(Long nuevoIdEnvio) {
         return new Envio(nuevoIdEnvio, idPedido, idLote, idVehiculo, idTransportista, estadoEnvio,
                 fechaProgramada, fechaSalida, fechaEntrega, usuarioDespacho);

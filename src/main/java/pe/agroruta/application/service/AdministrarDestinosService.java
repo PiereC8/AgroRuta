@@ -2,6 +2,7 @@ package pe.agroruta.application.service;
 
 import java.util.List;
 
+import pe.agroruta.domain.model.Coordenada;
 import pe.agroruta.domain.model.DestinoNoEncontradoException;
 import pe.agroruta.domain.model.DestinoVenta;
 import pe.agroruta.domain.model.DestinoYaExisteException;
@@ -54,6 +55,12 @@ public class AdministrarDestinosService implements AdministrarDestinosUseCase {
             throw new DominioException("El flete por kg no puede ser negativo");
         }
         destinos.guardarTarifaFlete(idDestinoVenta, costoFletePorKg);
+    }
+
+    @Override
+    public void fijarCoordenadas(Long idDestinoVenta, double latitud, double longitud) {
+        obtener(idDestinoVenta);
+        destinos.guardarCoordenada(idDestinoVenta, new Coordenada(latitud, longitud));
     }
 
     private DestinoVenta obtener(Long idDestinoVenta) {

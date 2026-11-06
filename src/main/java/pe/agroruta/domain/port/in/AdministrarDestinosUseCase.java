@@ -14,4 +14,7 @@ public interface AdministrarDestinosUseCase {
     void fijarPrecioEsperado(Long idDestinoVenta, String productoLote, Dinero precioPorKg);
 
     void fijarTarifaFlete(Long idDestinoVenta, Dinero costoFletePorKg);
+
+    /** Ubicación del destino en el mapa: permite estimar la hora de llegada y avisar cuando el vehículo llega. */
+    void fijarCoordenadas(Long idDestinoVenta, double latitud, double longitud);
 }

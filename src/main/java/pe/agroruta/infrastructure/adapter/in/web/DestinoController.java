@@ -48,6 +48,12 @@ public class DestinoController {
         destinos.fijarPrecioEsperado(idDestinoVenta, solicitud.productoLote(), new Dinero(solicitud.precioPorKg()));
     }
 
+    @PutMapping("/{idDestinoVenta}/coordenadas")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void fijarCoordenadas(@PathVariable Long idDestinoVenta, @Valid @RequestBody CoordenadasSolicitud solicitud) {
+        destinos.fijarCoordenadas(idDestinoVenta, solicitud.latitud(), solicitud.longitud());
+    }
+
     @PutMapping("/{idDestinoVenta}/tarifa")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void fijarTarifa(@PathVariable Long idDestinoVenta, @Valid @RequestBody TarifaSolicitud solicitud) {
@@ -62,6 +68,9 @@ public class DestinoController {
     }
 
     public record TarifaSolicitud(@NotNull BigDecimal costoFletePorKg) {
+    }
+
+    public record CoordenadasSolicitud(@NotNull Double latitud, @NotNull Double longitud) {
     }
 
     public record DestinoRespuesta(Long idDestinoVenta, String nombreDestino, String ciudadDestino,

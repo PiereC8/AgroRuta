@@ -4,8 +4,18 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Supplier;
+
+import pe.agroruta.domain.model.AlertaEnvio;
+import pe.agroruta.domain.model.EnlaceEnvio;
+import pe.agroruta.domain.model.Posicion;
+import pe.agroruta.domain.model.TipoAlerta;
+import pe.agroruta.domain.port.out.EnlaceEnvioRepositoryPort;
+import pe.agroruta.domain.port.out.GeneradorTokenPort;
+import pe.agroruta.domain.port.out.PublicadorSeguimientoPort;
+import pe.agroruta.domain.port.out.SeguimientoRepositoryPort;
 
 import pe.agroruta.domain.model.Liquidacion;
 import pe.agroruta.domain.port.out.LiquidacionRepositoryPort;
@@ -262,6 +272,126 @@ final class Falsos {
         @Override
         public List<Liquidacion> listar(int pagina, int tamano) {
             return liquidaciones.stream().skip((long) pagina * tamano).limit(tamano).toList();
+        }
+    }
+
+    static class GeneradorTokenFalso implements GeneradorTokenPort {
+        private int contador = 0;
+
+        @Override
+        public String nuevoToken() {
+            contador++;
+            return "token-" + contador;
+        }
+
+        @Override
+        public String hash(String token) {
+            return "hash:" + token;
+        }
+    }
+
+    static class EnlacesEnMemoria implements EnlaceEnvioRepositoryPort {
+        final List<EnlaceEnvio> enlaces = new ArrayList<>();
+        final List<String> desactivados = new ArrayList<>();
+
+        @Override
+        public void guardar(EnlaceEnvio enlace) {
+            enlaces.add(enlace);
+        }
+
+        @Override
+        public void desactivarDeEnvio(String identificadorNegocio, Long idEnvio) {
+            enlaces.stream().filter(e -> e.identificadorNegocio().equals(identificadorNegocio)
+                    && e.idEnvio().equals(idEnvio)).forEach(e -> desactivados.add(e.hashToken()));
+        }
+
+        @Override
+        public Optional<EnlaceEnvio> buscarVigentePorHash(String hashToken, Instant ahora) {
+            return enlaces.stream()
+                    .filter(e -> e.hashToken().equals(hashToken) && !desactivados.contains(hashToken)
+                            && e.fechaExpiracion().isAfter(ahora))
+                    .findFirst();
+        }
+    }
+
+    static class SeguimientoEnMemoria implements SeguimientoRepositoryPort {
+        final List<Posicion> posiciones = new ArrayList<>();
+        final List<AlertaEnvio> alertas = new ArrayList<>();
+        final List<Long> consentimientos = new ArrayList<>();
+
+        @Override
+        public Optional<Posicion> guardarPosicion(Posicion posicion) {
+            boolean existe = posiciones.stream().anyMatch(p -> p.idEnvio().equals(posicion.idEnvio())
+                    && p.fechaPosicion().equals(posicion.fechaPosicion()));
+            if (existe) {
+                return Optional.empty();
+            }
+            Posicion guardada = posicion.conId((long) posiciones.size() + 1);
+            posiciones.add(guardada);
+            return Optional.of(guardada);
+        }
+
+        @Override
+        public List<Posicion> posicionesDesde(Long idEnvio, Instant desde) {
+            return posiciones.stream().filter(p -> p.idEnvio().equals(idEnvio) && !p.fechaPosicion().isBefore(desde))
+                    .sorted(java.util.Comparator.comparing(Posicion::fechaPosicion)).toList();
+        }
+
+        @Override
+        public List<Posicion> ultimasPosiciones(Long idEnvio, int cantidad) {
+            List<Posicion> todas = posiciones.stream().filter(p -> p.idEnvio().equals(idEnvio))
+                    .sorted(java.util.Comparator.comparing(Posicion::fechaPosicion)).toList();
+            return todas.subList(Math.max(0, todas.size() - cantidad), todas.size());
+        }
+
+        @Override
+        public AlertaEnvio guardarAlerta(AlertaEnvio alerta) {
+            AlertaEnvio guardada = alerta.conId((long) alertas.size() + 1);
+            alertas.add(guardada);
+            return guardada;
+        }
+
+        @Override
+        public boolean existeAlertaDesde(Long idEnvio, TipoAlerta tipoAlerta, Instant desde) {
+            return alertas.stream().anyMatch(a -> a.idEnvio().equals(idEnvio) && a.tipoAlerta() == tipoAlerta
+                    && !a.fechaAlerta().isBefore(desde));
+        }
+
+        @Override
+        public List<AlertaEnvio> alertas(Long idEnvio) {
+            return alertas.stream().filter(a -> a.idEnvio().equals(idEnvio)).toList();
+        }
+
+        @Override
+        public void registrarConsentimiento(Long idEnvio, Instant fecha) {
+            if (!consentimientos.contains(idEnvio)) {
+                consentimientos.add(idEnvio);
+            }
+        }
+
+        @Override
+        public boolean tieneConsentimiento(Long idEnvio) {
+            return consentimientos.contains(idEnvio);
+        }
+    }
+
+    static class PublicadorGrabador implements PublicadorSeguimientoPort {
+        final List<Posicion> posiciones = new ArrayList<>();
+        final List<Long> etas = new ArrayList<>();
+        final List<AlertaEnvio> alertas = new ArrayList<>();
+        final List<String> negocios = new ArrayList<>();
+
+        @Override
+        public void publicarPosicion(String identificadorNegocio, Long idEnvio, Posicion posicion, Long etaMinutos) {
+            negocios.add(identificadorNegocio);
+            posiciones.add(posicion);
+            etas.add(etaMinutos);
+        }
+
+        @Override
+        public void publicarAlerta(String identificadorNegocio, Long idEnvio, AlertaEnvio alerta) {
+            negocios.add(identificadorNegocio);
+            alertas.add(alerta);
         }
     }
 

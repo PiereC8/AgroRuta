@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import pe.agroruta.domain.model.Coordenada;
 import pe.agroruta.domain.model.Dinero;
 import pe.agroruta.domain.model.DestinoVenta;
 
@@ -22,6 +23,10 @@ public interface DestinoRepositoryPort {
 
     /** Precio esperado por kg de un producto, por destino. Los destinos sin precio no aparecen. */
     Map<Long, Dinero> preciosEsperadosPorKg(String productoLote);
+
+    void guardarCoordenada(Long idDestinoVenta, Coordenada coordenada);
+
+    Optional<Coordenada> buscarCoordenada(Long idDestinoVenta);
 
     /** Guarda la tarifa en la tabla manual que lee el adaptador de tarifas actual. */
     void guardarTarifaFlete(Long idDestinoVenta, Dinero costoFletePorKg);
