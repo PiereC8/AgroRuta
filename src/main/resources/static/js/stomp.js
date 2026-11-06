@@ -5,6 +5,8 @@
  * CONNECT, SUBSCRIBE, SEND y recibir MESSAGE y ERROR.
  */
 class ClienteStomp {
+    static TIEMPO_CONEXION_MS = 10000;
+
     constructor(url, cabecerasConexion, manejadores) {
         this.url = url;
         this.cabecerasConexion = cabecerasConexion;
@@ -20,6 +22,15 @@ class ClienteStomp {
             const socket = new WebSocket(this.url);
             this.socket = socket;
 
+            // Con señal muy mala el servidor puede no responder nunca: no se queda esperando para siempre.
+            const reloj = setTimeout(() => {
+                if (!resuelta) {
+                    resuelta = true;
+                    rechazar(new Error('La conexión tardó demasiado'));
+                    socket.close();
+                }
+            }, ClienteStomp.TIEMPO_CONEXION_MS);
+
             socket.onopen = () => {
                 this.#enviarTrama('CONNECT', Object.assign({'accept-version': '1.2', 'heart-beat': '0,0'},
                     this.cabecerasConexion), '');
@@ -30,6 +41,7 @@ class ClienteStomp {
                     return;
                 }
                 if (trama.comando === 'CONNECTED') {
+                    clearTimeout(reloj);
                     this.conectado = true;
                     resuelta = true;
                     resolver();

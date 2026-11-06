@@ -3,7 +3,7 @@
 (function () {
     const SEGUNDOS_SIN_SENAL = 60;
     const REFRESCO_SIN_WEBSOCKET_MS = 30000;
-    const ESPERA_MAXIMA_RECONEXION_MS = 30000;
+    const ESPERA_MAXIMA_RECONEXION_MS = 10000;
 
     const $ = (id) => document.getElementById(id);
     const token = new URLSearchParams(location.hash.slice(1)).get('t');
@@ -47,6 +47,10 @@
             attribution: '&copy; Colaboradores de OpenStreetMap'
         }).addTo(vista.mapa);
         vista.trazo = L.polyline([], {color: '#2f7d32', weight: 4, opacity: 0.8}).addTo(vista.mapa);
+        // Si el contenedor cambia de tamaño (pestaña en segundo plano, girar el celular), el mapa se reajusta.
+        if ('ResizeObserver' in window) {
+            new ResizeObserver(() => vista.mapa.invalidateSize()).observe($('mapa'));
+        }
     }
 
     function iconoVehiculo() {
@@ -232,8 +236,9 @@
             enlaceInvalido();
             return;
         }
-        crearMapa();
+        // El contenedor debe estar visible antes de crear el mapa, o Leaflet mide su tamaño como cero.
         mostrar('contenido', true);
+        crearMapa();
         let valido;
         try {
             valido = await cargar();
@@ -254,6 +259,13 @@
         }, REFRESCO_SIN_WEBSOCKET_MS);
         conectarTiempoReal().catch(reconectar);
     }
+
+    window.addEventListener('online', () => {
+        if (vista.datos && !vista.cliente) {
+            vista.intentos = 0;
+            conectarTiempoReal().catch(reconectar);
+        }
+    });
 
     iniciar();
 })();

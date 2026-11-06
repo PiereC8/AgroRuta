@@ -3,7 +3,7 @@
 (function () {
     const INTERVALO_MS = 15000;
     const TIEMPO_ACUSE_MS = 10000;
-    const ESPERA_MAXIMA_RECONEXION_MS = 30000;
+    const ESPERA_MAXIMA_RECONEXION_MS = 10000;
 
     const $ = (id) => document.getElementById(id);
     const token = new URLSearchParams(location.hash.slice(1)).get('t');
@@ -176,11 +176,12 @@
         return cliente;
     }
 
-    function programarReconexion() {
+    function programarReconexion(esperaForzadaMs) {
         if (estado.reconexion !== null || !estado.compartiendo) {
             return;
         }
-        const espera = Math.min(2000 * Math.pow(2, estado.intentos), ESPERA_MAXIMA_RECONEXION_MS);
+        const espera = esperaForzadaMs !== undefined ? esperaForzadaMs
+            : Math.min(2000 * Math.pow(2, estado.intentos), ESPERA_MAXIMA_RECONEXION_MS);
         estado.intentos += 1;
         estado.reconexion = setTimeout(async () => {
             estado.reconexion = null;
@@ -386,11 +387,24 @@
         });
     }
 
+    /** Si volvió la red o la pantalla, se reconecta de inmediato en vez de esperar el siguiente reintento. */
+    function reconectarYa() {
+        if (!estado.compartiendo || estado.cliente) {
+            return;
+        }
+        clearTimeout(estado.reconexion);
+        estado.reconexion = null;
+        estado.intentos = 0;
+        programarReconexion(0);
+    }
+
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible' && estado.compartiendo) {
             mantenerPantallaEncendida();
+            reconectarYa();
         }
     });
+    window.addEventListener('online', reconectarYa);
 
     if (!token) {
         mostrar('sin-enlace', true);
