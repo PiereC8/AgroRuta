@@ -938,3 +938,39 @@ a {
         width: 100vw;
     }
 }
+
+/* ---------- Mapa de envíos ---------- */
+
+.marcador-vehiculo {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--verde);
+    border: 3px solid #FFFFFF;
+    box-shadow: 0 0 0 2px var(--verde-oscuro);
+}
+
+.marcador-destino {
+    width: 16px;
+    height: 16px;
+    background: var(--terracota);
+    border: 3px solid #FFFFFF;
+    box-shadow: 0 0 0 2px var(--terracota-texto);
+    transform: rotate(45deg);
+}
+
+.cifras-liquidacion {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin: 12px 0;
+}
+
+.cifras-liquidacion .tarjeta {
+    padding: 14px 16px;
+}
+
+.cifras-liquidacion .cifra {
+    font-size: 1.25rem;
+    margin-top: 4px;
+}

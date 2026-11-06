@@ -82,7 +82,7 @@ class PaginasWebTest {
     }
 
     /** Pantallas internas ya construidas (la lista crece con cada tarea de la entrega B). */
-    private static final String[] PANTALLAS = {"compradores", "transporte", "destinos", "lotes", "pedidos"};
+    private static final String[] PANTALLAS = {"compradores", "transporte", "destinos", "lotes", "pedidos", "envios"};
 
     @Test
     void ui_js_se_sirve_define_el_kit_y_no_usa_innerhtml() throws Exception {
