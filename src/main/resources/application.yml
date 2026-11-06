@@ -9,6 +9,8 @@ spring:
     enabled: false
 
 agroruta:
+  cache:
+    tarifas-segundos: ${CACHE_TARIFAS_SEGUNDOS:300}
   resiliencia:
     fallos-para-abrir: ${RESILIENCIA_FALLOS_PARA_ABRIR:5}
     pausa-segundos: ${RESILIENCIA_PAUSA_SEGUNDOS:30}
