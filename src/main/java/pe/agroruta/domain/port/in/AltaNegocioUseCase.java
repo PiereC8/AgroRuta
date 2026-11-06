@@ -7,6 +7,6 @@ public interface AltaNegocioUseCase {
 
     Negocio darDeAlta(Comando comando);
 
-    record Comando(String slug, String nombre, Plan plan) {
+    record Comando(String identificadorNegocio, String nombreNegocio, Plan planSuscripcion) {
     }
 }

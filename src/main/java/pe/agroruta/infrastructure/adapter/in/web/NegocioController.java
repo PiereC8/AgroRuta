@@ -27,14 +27,17 @@ public class NegocioController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public NegocioRespuesta crear(@Valid @RequestBody NegocioSolicitud solicitud) {
-        Negocio negocio = altaNegocio.darDeAlta(
-                new AltaNegocioUseCase.Comando(solicitud.slug(), solicitud.nombre(), solicitud.plan()));
-        return new NegocioRespuesta(negocio.id(), negocio.slug(), negocio.nombre(), negocio.plan());
+        Negocio negocio = altaNegocio.darDeAlta(new AltaNegocioUseCase.Comando(
+                solicitud.identificadorNegocio(), solicitud.nombreNegocio(), solicitud.planSuscripcion()));
+        return new NegocioRespuesta(negocio.idNegocio(), negocio.identificadorNegocio(),
+                negocio.nombreNegocio(), negocio.planSuscripcion());
     }
 
-    public record NegocioSolicitud(@NotBlank String slug, @NotBlank String nombre, @NotNull Plan plan) {
+    public record NegocioSolicitud(@NotBlank String identificadorNegocio, @NotBlank String nombreNegocio,
+                                   @NotNull Plan planSuscripcion) {
     }
 
-    public record NegocioRespuesta(Long id, String slug, String nombre, Plan plan) {
+    public record NegocioRespuesta(Long idNegocio, String identificadorNegocio, String nombreNegocio,
+                                   Plan planSuscripcion) {
     }
 }

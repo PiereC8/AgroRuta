@@ -1,4 +1,4 @@
-package pe.agroruta.domain.model;
+﻿package pe.agroruta.domain.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -13,16 +13,16 @@ class NegocioTest {
     void crea_un_negocio_valido_y_recorta_el_nombre() {
         Negocio negocio = Negocio.nuevo("chacra_demo", "  Chacra Demo  ", Plan.CHACRA);
 
-        assertThat(negocio.nombre()).isEqualTo("Chacra Demo");
-        assertThat(negocio.activo()).isTrue();
-        assertThat(negocio.id()).isNull();
+        assertThat(negocio.nombreNegocio()).isEqualTo("Chacra Demo");
+        assertThat(negocio.negocioActivo()).isTrue();
+        assertThat(negocio.idNegocio()).isNull();
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"", "ab", "Chacra", "1chacra", "chacra-demo", "chacra demo", "x`; DROP DATABASE y; --",
             "a1234567890123456789012345678901"})
-    void rechaza_identificadores_invalidos(String slug) {
-        assertThatThrownBy(() -> Negocio.nuevo(slug, "Demo", Plan.EMPRESA))
+    void rechaza_identificadores_invalidos(String identificadorNegocio) {
+        assertThatThrownBy(() -> Negocio.nuevo(identificadorNegocio, "Demo", Plan.EMPRESA))
                 .isInstanceOf(DominioException.class);
     }
 
@@ -32,3 +32,4 @@ class NegocioTest {
         assertThatThrownBy(() -> Negocio.nuevo("demo", "Demo", null)).isInstanceOf(DominioException.class);
     }
 }
+

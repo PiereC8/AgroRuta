@@ -4,20 +4,20 @@ import java.util.Optional;
 
 public final class TenantContext {
 
-    private static final ThreadLocal<String> ACTUAL = new ThreadLocal<>();
+    private static final ThreadLocal<String> NEGOCIO_ACTUAL = new ThreadLocal<>();
 
     private TenantContext() {
     }
 
-    public static void fijar(String slug) {
-        ACTUAL.set(slug);
+    public static void fijar(String identificadorNegocio) {
+        NEGOCIO_ACTUAL.set(identificadorNegocio);
     }
 
     public static Optional<String> actual() {
-        return Optional.ofNullable(ACTUAL.get());
+        return Optional.ofNullable(NEGOCIO_ACTUAL.get());
     }
 
     public static void limpiar() {
-        ACTUAL.remove();
+        NEGOCIO_ACTUAL.remove();
     }
 }

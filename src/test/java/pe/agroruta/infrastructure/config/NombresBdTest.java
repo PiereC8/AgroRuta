@@ -1,4 +1,4 @@
-package pe.agroruta.infrastructure.config;
+﻿package pe.agroruta.infrastructure.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -11,12 +11,12 @@ class NombresBdTest {
 
     @Test
     void arma_el_nombre_de_la_base_del_negocio() {
-        assertThat(nombres.deSlug("chacra_demo")).isEqualTo("agroruta_chacra_demo_dev");
+        assertThat(nombres.deIdentificador("chacra_demo")).isEqualTo("agroruta_chacra_demo_dev");
     }
 
     @Test
     void cambia_solo_la_base_en_la_url() {
-        assertThat(nombres.urlDeSlug("chacra_demo"))
+        assertThat(nombres.urlDeIdentificador("chacra_demo"))
                 .isEqualTo("jdbc:mysql://localhost:3307/agroruta_chacra_demo_dev?useSSL=false");
     }
 
@@ -30,3 +30,4 @@ class NombresBdTest {
                 .isEqualTo("jdbc:mysql://localhost:3307/x?createDatabaseIfNotExist=true");
     }
 }
+

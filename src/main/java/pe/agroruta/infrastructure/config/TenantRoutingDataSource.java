@@ -30,9 +30,9 @@ public class TenantRoutingDataSource extends AbstractRoutingDataSource implement
 
     @Override
     protected DataSource determineTargetDataSource() {
-        String slug = TenantContext.actual()
+        String identificadorNegocio = TenantContext.actual()
                 .orElseThrow(() -> new IllegalStateException("No hay un negocio activo en esta petición"));
-        return pools.computeIfAbsent(slug, fabrica);
+        return pools.computeIfAbsent(identificadorNegocio, fabrica);
     }
 
     @Override

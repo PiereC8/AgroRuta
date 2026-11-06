@@ -1,4 +1,4 @@
-package pe.agroruta.application.service;
+﻿package pe.agroruta.application.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -27,18 +27,18 @@ class AltaNegocioServiceTest {
     void preparar() {
         NegocioRepositoryPort repositorio = new NegocioRepositoryPort() {
             @Override
-            public boolean existePorSlug(String slug) {
-                return registrados.contains(slug);
+            public boolean existePorIdentificador(String identificadorNegocio) {
+                return registrados.contains(identificadorNegocio);
             }
 
             @Override
             public Negocio guardar(Negocio negocio) {
-                pasos.add("guardar:" + negocio.slug());
-                registrados.add(negocio.slug());
+                pasos.add("guardar:" + negocio.identificadorNegocio());
+                registrados.add(negocio.identificadorNegocio());
                 return negocio.conId(1L);
             }
         };
-        BaseNegocioPort bases = slug -> pasos.add("base:" + slug);
+        BaseNegocioPort bases = identificadorNegocio -> pasos.add("base:" + identificadorNegocio);
         servicio = new AltaNegocioService(repositorio, bases);
     }
 
@@ -47,7 +47,7 @@ class AltaNegocioServiceTest {
         Negocio negocio = servicio.darDeAlta(new Comando("chacra_demo", "Chacra Demo", Plan.CHACRA));
 
         assertThat(pasos).containsExactly("base:chacra_demo", "guardar:chacra_demo");
-        assertThat(negocio.id()).isEqualTo(1L);
+        assertThat(negocio.idNegocio()).isEqualTo(1L);
     }
 
     @Test
@@ -69,12 +69,12 @@ class AltaNegocioServiceTest {
 
     @Test
     void si_falla_la_base_no_registra_el_negocio() {
-        BaseNegocioPort falla = slug -> {
+        BaseNegocioPort falla = identificadorNegocio -> {
             throw new IllegalStateException("MySQL no responde");
         };
         NegocioRepositoryPort repositorio = new NegocioRepositoryPort() {
             @Override
-            public boolean existePorSlug(String slug) {
+            public boolean existePorIdentificador(String identificadorNegocio) {
                 return false;
             }
 
@@ -91,3 +91,4 @@ class AltaNegocioServiceTest {
         assertThat(pasos).isEmpty();
     }
 }
+

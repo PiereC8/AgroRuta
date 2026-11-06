@@ -18,11 +18,12 @@ public class AltaNegocioService implements AltaNegocioUseCase {
 
     @Override
     public Negocio darDeAlta(Comando comando) {
-        Negocio negocio = Negocio.nuevo(comando.slug(), comando.nombre(), comando.plan());
-        if (negocios.existePorSlug(negocio.slug())) {
-            throw new NegocioYaExisteException(negocio.slug());
+        Negocio negocio = Negocio.nuevo(comando.identificadorNegocio(), comando.nombreNegocio(),
+                comando.planSuscripcion());
+        if (negocios.existePorIdentificador(negocio.identificadorNegocio())) {
+            throw new NegocioYaExisteException(negocio.identificadorNegocio());
         }
-        bases.crearYMigrar(negocio.slug());
+        bases.crearYMigrar(negocio.identificadorNegocio());
         return negocios.guardar(negocio);
     }
 }

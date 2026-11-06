@@ -1,4 +1,4 @@
-package pe.agroruta.infrastructure.config;
+﻿package pe.agroruta.infrastructure.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -16,8 +16,8 @@ import org.junit.jupiter.api.Test;
 class TenantRoutingDataSourceTest {
 
     private final List<String> creados = new ArrayList<>();
-    private final TenantRoutingDataSource ruteo = new TenantRoutingDataSource(slug -> {
-        creados.add(slug);
+    private final TenantRoutingDataSource ruteo = new TenantRoutingDataSource(identificadorNegocio -> {
+        creados.add(identificadorNegocio);
         return mock(DataSource.class);
     });
 
@@ -51,3 +51,4 @@ class TenantRoutingDataSourceTest {
         assertThat(TenantContext.actual()).isEmpty();
     }
 }
+

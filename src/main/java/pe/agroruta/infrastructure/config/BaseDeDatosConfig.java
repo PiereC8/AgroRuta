@@ -54,14 +54,14 @@ public class BaseDeDatosConfig {
     DataSource negociosDataSource(NombresBd nombres,
                                   @Value("${agroruta.bd.usuario}") String usuario,
                                   @Value("${agroruta.bd.clave}") String clave) {
-        return new TenantRoutingDataSource(slug -> {
+        return new TenantRoutingDataSource(identificadorNegocio -> {
             HikariDataSource pool = new HikariDataSource();
-            pool.setJdbcUrl(nombres.urlDeSlug(slug));
+            pool.setJdbcUrl(nombres.urlDeIdentificador(identificadorNegocio));
             pool.setUsername(usuario);
             pool.setPassword(clave);
             pool.setMaximumPoolSize(3);
             pool.setMinimumIdle(0);
-            pool.setPoolName("negocio-" + slug);
+            pool.setPoolName("negocio-" + identificadorNegocio);
             return pool;
         });
     }

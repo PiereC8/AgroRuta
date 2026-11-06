@@ -28,12 +28,12 @@ public class BaseNegocioAdapter implements BaseNegocioPort {
     }
 
     @Override
-    public void crearYMigrar(String slug) {
-        // El slug ya fue validado por el dominio (solo minúsculas, números y guion bajo).
-        jdbc.execute("CREATE DATABASE IF NOT EXISTS `" + nombres.deSlug(slug)
+    public void crearYMigrar(String identificadorNegocio) {
+        // El identificador ya fue validado por el dominio (solo minúsculas, números y guion bajo).
+        jdbc.execute("CREATE DATABASE IF NOT EXISTS `" + nombres.deIdentificador(identificadorNegocio)
                 + "` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci");
         Flyway.configure()
-                .dataSource(nombres.urlDeSlug(slug), usuario, clave)
+                .dataSource(nombres.urlDeIdentificador(identificadorNegocio), usuario, clave)
                 .locations("classpath:db/migration/negocio")
                 .load()
                 .migrate();

@@ -21,8 +21,9 @@ public class NegocioJdbcAdapter implements NegocioRepositoryPort {
     }
 
     @Override
-    public boolean existePorSlug(String slug) {
-        Integer total = jdbc.queryForObject("SELECT COUNT(*) FROM negocio WHERE slug = ?", Integer.class, slug);
+    public boolean existePorIdentificador(String identificadorNegocio) {
+        Integer total = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM negocio WHERE identificador_negocio = ?", Integer.class, identificadorNegocio);
         return total != null && total > 0;
     }
 
@@ -31,12 +32,13 @@ public class NegocioJdbcAdapter implements NegocioRepositoryPort {
         var llave = new GeneratedKeyHolder();
         jdbc.update(conexion -> {
             PreparedStatement ps = conexion.prepareStatement(
-                    "INSERT INTO negocio (slug, nombre, plan, activo) VALUES (?, ?, ?, ?)",
+                    "INSERT INTO negocio (identificador_negocio, nombre_negocio, plan_suscripcion, negocio_activo) "
+                            + "VALUES (?, ?, ?, ?)",
                     Statement.RETURN_GENERATED_KEYS);
-            ps.setString(1, negocio.slug());
-            ps.setString(2, negocio.nombre());
-            ps.setString(3, negocio.plan().name());
-            ps.setBoolean(4, negocio.activo());
+            ps.setString(1, negocio.identificadorNegocio());
+            ps.setString(2, negocio.nombreNegocio());
+            ps.setString(3, negocio.planSuscripcion().name());
+            ps.setBoolean(4, negocio.negocioActivo());
             return ps;
         }, llave);
         return negocio.conId(llave.getKey().longValue());
