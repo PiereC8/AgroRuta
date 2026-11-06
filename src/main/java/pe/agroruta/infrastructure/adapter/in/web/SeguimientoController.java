@@ -40,8 +40,10 @@ public class SeguimientoController {
     @ResponseStatus(HttpStatus.CREATED)
     public EnlacesRespuesta generarEnlaces(@PathVariable Long idEnvio, @AuthenticationPrincipal DatosToken usuario) {
         var enlaces = generarEnlaces.generar(usuario.identificadorNegocio(), idEnvio);
+        String rutaConductor = enlaces.tokenConductor() == null ? null
+                : "/conductor.html#t=" + enlaces.tokenConductor();
         return new EnlacesRespuesta(
-                enlaces.tokenConductor(), "/conductor.html#t=" + enlaces.tokenConductor(),
+                enlaces.tokenConductor(), rutaConductor,
                 enlaces.tokenComprador(), "/seguimiento.html#t=" + enlaces.tokenComprador(),
                 enlaces.fechaExpiracion());
     }

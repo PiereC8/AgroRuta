@@ -325,14 +325,28 @@ class SeguimientoServiceTest {
         var generar = new GenerarEnlacesEnvioService(envios, enlaces, generador, RELOJ);
 
         assertThatThrownBy(() -> generar.generar("empresa_demo", 99L)).isInstanceOf(RecursoNoEncontradoException.class);
-        envios.envios.set(0, new Envio(1L, 1L, 1L, 1L, 1L, EstadoEnvio.ENTREGADO, AHORA, AHORA, AHORA, "x1x"));
-        assertThatThrownBy(() -> generar.generar("empresa_demo", 1L)).isInstanceOf(ConflictoDominioException.class);
 
         var autenticar = new AutenticarEnlaceService(enlaces, generador, RELOJ);
         assertThat(autenticar.resolver(null)).isEmpty();
         assertThat(autenticar.resolver("  ")).isEmpty();
         assertThat(autenticar.resolver("x".repeat(500))).isEmpty();
         assertThat(autenticar.resolver("token-inexistente")).isEmpty();
+    }
+
+    @Test
+    void de_un_envio_ya_entregado_solo_se_genera_el_enlace_del_comprador_para_que_pueda_pagar() {
+        var enlaces = new EnlacesEnMemoria();
+        var generador = new GeneradorTokenFalso();
+        envios.envios.set(0, new Envio(1L, 1L, 1L, 1L, 1L, EstadoEnvio.ENTREGADO, AHORA, AHORA, AHORA, "x1x"));
+
+        var generados = new GenerarEnlacesEnvioService(envios, enlaces, generador, RELOJ).generar("empresa_demo", 1L);
+
+        assertThat(generados.tokenConductor()).isNull();
+        assertThat(generados.tokenComprador()).isNotBlank();
+        assertThat(enlaces.enlaces).hasSize(1);
+        assertThat(enlaces.enlaces.get(0).tipoEnlace()).isEqualTo(TipoEnlace.COMPRADOR);
+        assertThat(new AutenticarEnlaceService(enlaces, generador, RELOJ).resolver(generados.tokenComprador()))
+                .isPresent();
     }
 
     @Test
