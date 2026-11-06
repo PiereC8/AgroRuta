@@ -1,4 +1,4 @@
-﻿package pe.agroruta.domain.model;
+package pe.agroruta.domain.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

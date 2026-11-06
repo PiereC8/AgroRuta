@@ -1,4 +1,4 @@
-﻿package pe.agroruta.infrastructure.config;
+package pe.agroruta.infrastructure.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

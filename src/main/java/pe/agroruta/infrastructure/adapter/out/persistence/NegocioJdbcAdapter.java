@@ -2,17 +2,27 @@ package pe.agroruta.infrastructure.adapter.out.persistence;
 
 import java.sql.PreparedStatement;
 import java.sql.Statement;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Component;
 
 import pe.agroruta.domain.model.Negocio;
+import pe.agroruta.domain.model.Plan;
 import pe.agroruta.domain.port.out.NegocioRepositoryPort;
 
 @Component
 public class NegocioJdbcAdapter implements NegocioRepositoryPort {
+
+    private static final RowMapper<Negocio> FILA = (rs, fila) -> new Negocio(
+            rs.getLong("id_negocio"),
+            rs.getString("identificador_negocio"),
+            rs.getString("nombre_negocio"),
+            Plan.valueOf(rs.getString("plan_suscripcion")),
+            rs.getBoolean("negocio_activo"));
 
     private final JdbcTemplate jdbc;
 
@@ -25,6 +35,13 @@ public class NegocioJdbcAdapter implements NegocioRepositoryPort {
         Integer total = jdbc.queryForObject(
                 "SELECT COUNT(*) FROM negocio WHERE identificador_negocio = ?", Integer.class, identificadorNegocio);
         return total != null && total > 0;
+    }
+
+    @Override
+    public Optional<Negocio> buscarActivoPorIdentificador(String identificadorNegocio) {
+        return jdbc.query("SELECT id_negocio, identificador_negocio, nombre_negocio, plan_suscripcion, negocio_activo "
+                        + "FROM negocio WHERE identificador_negocio = ? AND negocio_activo = TRUE",
+                FILA, identificadorNegocio).stream().findFirst();
     }
 
     @Override

@@ -8,6 +8,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import pe.agroruta.domain.model.CredencialesInvalidasException;
 import pe.agroruta.domain.model.DominioException;
 import pe.agroruta.domain.model.NegocioYaExisteException;
 
@@ -17,6 +18,11 @@ public class ManejadorErrores {
     @ExceptionHandler(NegocioYaExisteException.class)
     ResponseEntity<Map<String, String>> yaExiste(NegocioYaExisteException e) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", e.getMessage()));
+    }
+
+    @ExceptionHandler(CredencialesInvalidasException.class)
+    ResponseEntity<Map<String, String>> credencialesInvalidas(CredencialesInvalidasException e) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", e.getMessage()));
     }
 
     @ExceptionHandler(DominioException.class)

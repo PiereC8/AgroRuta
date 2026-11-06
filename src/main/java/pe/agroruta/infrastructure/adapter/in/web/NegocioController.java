@@ -28,13 +28,15 @@ public class NegocioController {
     @ResponseStatus(HttpStatus.CREATED)
     public NegocioRespuesta crear(@Valid @RequestBody NegocioSolicitud solicitud) {
         Negocio negocio = altaNegocio.darDeAlta(new AltaNegocioUseCase.Comando(
-                solicitud.identificadorNegocio(), solicitud.nombreNegocio(), solicitud.planSuscripcion()));
+                solicitud.identificadorNegocio(), solicitud.nombreNegocio(), solicitud.planSuscripcion(),
+                solicitud.nombreUsuarioDueno(), solicitud.claveInicialDueno()));
         return new NegocioRespuesta(negocio.idNegocio(), negocio.identificadorNegocio(),
                 negocio.nombreNegocio(), negocio.planSuscripcion());
     }
 
     public record NegocioSolicitud(@NotBlank String identificadorNegocio, @NotBlank String nombreNegocio,
-                                   @NotNull Plan planSuscripcion) {
+                                   @NotNull Plan planSuscripcion, @NotBlank String nombreUsuarioDueno,
+                                   @NotBlank String claveInicialDueno) {
     }
 
     public record NegocioRespuesta(Long idNegocio, String identificadorNegocio, String nombreNegocio,

@@ -1,4 +1,4 @@
-﻿package pe.agroruta.application.service;
+package pe.agroruta.application.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -9,61 +9,69 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import pe.agroruta.application.service.Falsos.HashFalso;
+import pe.agroruta.application.service.Falsos.NegociosEnMemoria;
+import pe.agroruta.application.service.Falsos.UsuariosEnMemoria;
 import pe.agroruta.domain.model.DominioException;
 import pe.agroruta.domain.model.Negocio;
 import pe.agroruta.domain.model.NegocioYaExisteException;
 import pe.agroruta.domain.model.Plan;
+import pe.agroruta.domain.model.Rol;
 import pe.agroruta.domain.port.in.AltaNegocioUseCase.Comando;
 import pe.agroruta.domain.port.out.BaseNegocioPort;
-import pe.agroruta.domain.port.out.NegocioRepositoryPort;
 
 class AltaNegocioServiceTest {
 
     private final List<String> pasos = new ArrayList<>();
-    private final List<String> registrados = new ArrayList<>();
+    private NegociosEnMemoria negocios;
+    private UsuariosEnMemoria usuarios;
     private AltaNegocioService servicio;
 
     @BeforeEach
     void preparar() {
-        NegocioRepositoryPort repositorio = new NegocioRepositoryPort() {
-            @Override
-            public boolean existePorIdentificador(String identificadorNegocio) {
-                return registrados.contains(identificadorNegocio);
-            }
-
-            @Override
-            public Negocio guardar(Negocio negocio) {
-                pasos.add("guardar:" + negocio.identificadorNegocio());
-                registrados.add(negocio.identificadorNegocio());
-                return negocio.conId(1L);
-            }
-        };
+        negocios = new NegociosEnMemoria(pasos);
+        usuarios = new UsuariosEnMemoria(pasos);
         BaseNegocioPort bases = identificadorNegocio -> pasos.add("base:" + identificadorNegocio);
-        servicio = new AltaNegocioService(repositorio, bases);
+        servicio = new AltaNegocioService(negocios, bases, usuarios, new HashFalso());
+    }
+
+    private static Comando comando(String identificador) {
+        return new Comando(identificador, "Chacra Demo", Plan.CHACRA, "dueno.demo", "clave-segura-1");
     }
 
     @Test
-    void crea_la_base_y_despues_registra_el_negocio() {
-        Negocio negocio = servicio.darDeAlta(new Comando("chacra_demo", "Chacra Demo", Plan.CHACRA));
+    void crea_la_base_el_dueno_y_despues_registra_el_negocio() {
+        Negocio negocio = servicio.darDeAlta(comando("chacra_demo"));
 
-        assertThat(pasos).containsExactly("base:chacra_demo", "guardar:chacra_demo");
+        assertThat(pasos).containsExactly("base:chacra_demo", "usuario:dueno.demo", "guardar:chacra_demo");
         assertThat(negocio.idNegocio()).isEqualTo(1L);
+        var dueno = usuarios.buscarPorNombre("chacra_demo", "dueno.demo").orElseThrow();
+        assertThat(dueno.rolUsuario()).isEqualTo(Rol.DUENO);
+        assertThat(dueno.hashClave()).isEqualTo("hash:clave-segura-1");
     }
 
     @Test
     void no_permite_dos_negocios_con_el_mismo_identificador() {
-        servicio.darDeAlta(new Comando("chacra_demo", "Chacra Demo", Plan.CHACRA));
+        servicio.darDeAlta(comando("chacra_demo"));
         pasos.clear();
 
-        assertThatThrownBy(() -> servicio.darDeAlta(new Comando("chacra_demo", "Otra", Plan.EMPRESA)))
+        assertThatThrownBy(() -> servicio.darDeAlta(comando("chacra_demo")))
                 .isInstanceOf(NegocioYaExisteException.class);
         assertThat(pasos).isEmpty();
     }
 
     @Test
     void con_datos_invalidos_no_toca_ninguna_base() {
-        assertThatThrownBy(() -> servicio.darDeAlta(new Comando("x`; DROP", "Demo", Plan.CHACRA)))
+        assertThatThrownBy(() -> servicio.darDeAlta(comando("x`; DROP")))
                 .isInstanceOf(DominioException.class);
+        assertThat(pasos).isEmpty();
+    }
+
+    @Test
+    void rechaza_una_clave_corta_antes_de_crear_la_base() {
+        var corta = new Comando("chacra_demo", "Chacra Demo", Plan.CHACRA, "dueno.demo", "corta");
+
+        assertThatThrownBy(() -> servicio.darDeAlta(corta)).isInstanceOf(DominioException.class);
         assertThat(pasos).isEmpty();
     }
 
@@ -72,23 +80,20 @@ class AltaNegocioServiceTest {
         BaseNegocioPort falla = identificadorNegocio -> {
             throw new IllegalStateException("MySQL no responde");
         };
-        NegocioRepositoryPort repositorio = new NegocioRepositoryPort() {
-            @Override
-            public boolean existePorIdentificador(String identificadorNegocio) {
-                return false;
-            }
 
-            @Override
-            public Negocio guardar(Negocio negocio) {
-                pasos.add("guardar");
-                return negocio;
-            }
-        };
-
-        assertThatThrownBy(() -> new AltaNegocioService(repositorio, falla)
-                .darDeAlta(new Comando("demo", "Demo", Plan.CHACRA)))
+        assertThatThrownBy(() -> new AltaNegocioService(negocios, falla, usuarios, new HashFalso())
+                .darDeAlta(comando("chacra_demo")))
                 .isInstanceOf(IllegalStateException.class);
         assertThat(pasos).isEmpty();
     }
-}
 
+    @Test
+    void al_repetir_un_alta_interrumpida_no_duplica_al_dueno() {
+        usuarios.guardar("chacra_demo", pe.agroruta.domain.model.Usuario.nuevo("dueno.demo", "hash:x", Rol.DUENO));
+        pasos.clear();
+
+        servicio.darDeAlta(comando("chacra_demo"));
+
+        assertThat(pasos).containsExactly("base:chacra_demo", "guardar:chacra_demo");
+    }
+}

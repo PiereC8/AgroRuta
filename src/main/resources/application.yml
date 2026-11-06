@@ -15,6 +15,12 @@ agroruta:
     clave: ${DB_CLAVE}
     prefijo: agroruta_
     sufijo: ${BD_SUFIJO:_dev}
+  jwt:
+    secreto: ${JWT_SECRETO}
+    horas-validez: 8
+  administrador:
+    usuario: ${ADMIN_PLATAFORMA_USUARIO:}
+    clave: ${ADMIN_PLATAFORMA_CLAVE:}
 
 management:
   endpoints:
