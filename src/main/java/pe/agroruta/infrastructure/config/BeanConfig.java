@@ -7,6 +7,19 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import pe.agroruta.application.service.AltaNegocioService;
+import pe.agroruta.application.service.AdministrarCompradoresService;
+import pe.agroruta.application.service.AdministrarTransporteService;
+import pe.agroruta.application.service.DespacharEnvioService;
+import pe.agroruta.application.service.GestionarPedidosService;
+import pe.agroruta.domain.port.in.AdministrarCompradoresUseCase;
+import pe.agroruta.domain.port.in.AdministrarTransporteUseCase;
+import pe.agroruta.domain.port.in.DespacharEnvioUseCase;
+import pe.agroruta.domain.port.in.GestionarPedidosUseCase;
+import pe.agroruta.domain.port.out.CompradorRepositoryPort;
+import pe.agroruta.domain.port.out.EnvioRepositoryPort;
+import pe.agroruta.domain.port.out.PedidoRepositoryPort;
+import pe.agroruta.domain.port.out.TransaccionPort;
+import pe.agroruta.domain.port.out.TransporteRepositoryPort;
 import pe.agroruta.application.service.AdministrarDestinosService;
 import pe.agroruta.application.service.ConsultarLotesService;
 import pe.agroruta.application.service.CotizarFleteService;
@@ -60,6 +73,30 @@ public class BeanConfig {
     @Bean
     AdministrarDestinosUseCase administrarDestinosUseCase(DestinoRepositoryPort destinos) {
         return new AdministrarDestinosService(destinos);
+    }
+
+    @Bean
+    AdministrarCompradoresUseCase administrarCompradoresUseCase(CompradorRepositoryPort compradores) {
+        return new AdministrarCompradoresService(compradores);
+    }
+
+    @Bean
+    AdministrarTransporteUseCase administrarTransporteUseCase(TransporteRepositoryPort transporte) {
+        return new AdministrarTransporteService(transporte);
+    }
+
+    @Bean
+    GestionarPedidosUseCase gestionarPedidosUseCase(PedidoRepositoryPort pedidos, CompradorRepositoryPort compradores,
+                                                    LoteRepositoryPort lotes, DestinoRepositoryPort destinos,
+                                                    Clock reloj) {
+        return new GestionarPedidosService(pedidos, compradores, lotes, destinos, reloj);
+    }
+
+    @Bean
+    DespacharEnvioUseCase despacharEnvioUseCase(PedidoRepositoryPort pedidos, LoteRepositoryPort lotes,
+                                                TransporteRepositoryPort transporte, EnvioRepositoryPort envios,
+                                                TransaccionPort transaccion, Clock reloj) {
+        return new DespacharEnvioService(pedidos, lotes, transporte, envios, transaccion, reloj);
     }
 
     @Bean

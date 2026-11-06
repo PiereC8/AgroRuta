@@ -30,7 +30,13 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import pe.agroruta.domain.model.ConflictoDominioException;
 import pe.agroruta.domain.model.Cotizacion;
+import pe.agroruta.domain.model.Envio;
+import pe.agroruta.domain.model.EstadoEnvio;
+import pe.agroruta.domain.model.EstadoPedido;
+import pe.agroruta.domain.model.Pedido;
+import pe.agroruta.domain.model.RecursoNoEncontradoException;
 import pe.agroruta.domain.model.CredencialesInvalidasException;
 import pe.agroruta.domain.model.DestinoVenta;
 import pe.agroruta.domain.model.Dinero;
@@ -41,7 +47,11 @@ import pe.agroruta.domain.model.LoteNoEncontradoException;
 import pe.agroruta.domain.model.Negocio;
 import pe.agroruta.domain.model.Plan;
 import pe.agroruta.domain.model.Rol;
+import pe.agroruta.domain.port.in.AdministrarCompradoresUseCase;
 import pe.agroruta.domain.port.in.AdministrarDestinosUseCase;
+import pe.agroruta.domain.port.in.AdministrarTransporteUseCase;
+import pe.agroruta.domain.port.in.DespacharEnvioUseCase;
+import pe.agroruta.domain.port.in.GestionarPedidosUseCase;
 import pe.agroruta.domain.port.in.AltaNegocioUseCase;
 import pe.agroruta.domain.port.in.ConsultarLotesUseCase;
 import pe.agroruta.domain.port.in.CotizarFleteUseCase;
@@ -52,7 +62,8 @@ import pe.agroruta.infrastructure.config.ConfiguracionSeguridad;
 import pe.agroruta.infrastructure.config.TenantContext;
 
 @WebMvcTest(controllers = {NegocioController.class, AuthController.class, LoteController.class,
-        DestinoController.class, CotizacionController.class})
+        DestinoController.class, CotizacionController.class, CompradorController.class, PedidoController.class,
+        TransporteController.class, EnvioController.class})
 @Import({ConfiguracionSeguridad.class, ManejadorErrores.class, SeguridadWebTest.Reloj.class})
 @TestPropertySource(properties = {
         "agroruta.jwt.secreto=secreto-de-prueba-con-mas-de-32-caracteres!!",
@@ -87,6 +98,14 @@ class SeguridadWebTest {
     AdministrarDestinosUseCase administrarDestinos;
     @MockitoBean
     CotizarFleteUseCase cotizarFlete;
+    @MockitoBean
+    AdministrarCompradoresUseCase administrarCompradores;
+    @MockitoBean
+    GestionarPedidosUseCase gestionarPedidos;
+    @MockitoBean
+    AdministrarTransporteUseCase administrarTransporte;
+    @MockitoBean
+    DespacharEnvioUseCase despacharEnvio;
 
     private static final String LOTE = """
             {"productoLote":"Palta Hass","cantidadKg":1250.5,"fechaCosecha":"2026-11-05","chacraOrigen":"Chacra Sur"}""";
@@ -239,6 +258,55 @@ class SeguridadWebTest {
                 .andExpect(jsonPath("$.opciones[0].gananciaNeta").value(4300.00))
                 .andExpect(jsonPath("$.opciones[1].conviene").value(false))
                 .andExpect(jsonPath("$.destinosSinDatos[0].motivo").value("SIN_TARIFA"));
+    }
+
+    @Test
+    void el_operador_registra_pedidos_y_despacha_pero_no_configura_el_transporte() throws Exception {
+        when(gestionarPedidos.registrar(any())).thenReturn(new Pedido(3L, 1L, 1L, 1L, new BigDecimal("1000.000"),
+                Dinero.de("5.20"), EstadoPedido.PENDIENTE, "operador.demo", Instant.now()));
+        when(despacharEnvio.despachar(any(), any(), any())).thenReturn(new Envio(8L, 3L, 1L, 2L, 4L,
+                EstadoEnvio.PROGRAMADO, Instant.now(), null, null, "operador.demo"));
+        String operador = bearer("chacra_demo", "operador.demo", Rol.OPERADOR);
+
+        mvc.perform(post("/api/pedidos").header("Authorization", operador).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"idComprador\":1,\"idLote\":1,\"idDestinoVenta\":1,\"precioAcordadoPorKg\":5.20}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.ingresoAcordado").value(5200.00));
+        mvc.perform(post("/api/envios").header("Authorization", operador).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"idPedido\":3,\"idVehiculo\":2}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.estadoEnvio").value("PROGRAMADO"));
+        mvc.perform(post("/api/vehiculos").header("Authorization", operador).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"idTransportista\":1,\"placaVehiculo\":\"ABC-123\",\"capacidadKg\":2000}"))
+                .andExpect(status().isForbidden());
+        mvc.perform(post("/api/transportistas").header("Authorization", operador)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"nombreTransportista\":\"X\"}"))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/vehiculos").header("Authorization", operador)).andExpect(status().isOk());
+    }
+
+    @Test
+    void los_conflictos_responden_409_y_lo_inexistente_404() throws Exception {
+        when(despacharEnvio.despachar(any(), any(), any()))
+                .thenThrow(new ConflictoDominioException("El vehículo ABC-123 ya tiene un envío en curso"));
+        when(despacharEnvio.iniciarRuta(any(), any()))
+                .thenThrow(new RecursoNoEncontradoException("No existe el envío 9"));
+        String dueno = bearer("chacra_demo", "dueno.demo", Rol.DUENO);
+
+        mvc.perform(post("/api/envios").header("Authorization", dueno).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"idPedido\":3,\"idVehiculo\":2}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error").value("El vehículo ABC-123 ya tiene un envío en curso"));
+        mvc.perform(post("/api/envios/9/salida").header("Authorization", dueno)).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void sin_token_no_se_accede_a_compradores_pedidos_ni_envios() throws Exception {
+        mvc.perform(get("/api/compradores")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/pedidos")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/envios")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/compradores").header("Authorization", bearer(null, "admin", Rol.ADMINISTRADOR_PLATAFORMA)))
+                .andExpect(status().isForbidden());
     }
 
     @Test

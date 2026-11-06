@@ -43,6 +43,11 @@ public class ConfiguracionSeguridad {
                         .requestMatchers(HttpMethod.GET, "/api/destinos/**")
                         .hasAnyRole(Rol.DUENO.name(), Rol.OPERADOR.name())
                         .requestMatchers("/api/destinos/**").hasRole(Rol.DUENO.name())
+                        .requestMatchers("/api/compradores/**", "/api/pedidos/**", "/api/envios/**")
+                        .hasAnyRole(Rol.DUENO.name(), Rol.OPERADOR.name())
+                        .requestMatchers(HttpMethod.GET, "/api/transportistas/**", "/api/vehiculos/**")
+                        .hasAnyRole(Rol.DUENO.name(), Rol.OPERADOR.name())
+                        .requestMatchers("/api/transportistas/**", "/api/vehiculos/**").hasRole(Rol.DUENO.name())
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .addFilterBefore(new FiltroJwt(servicioJwt), UsernamePasswordAuthenticationFilter.class);

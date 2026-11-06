@@ -46,6 +46,23 @@ public record Lote(Long idLote, String productoLote, BigDecimal cantidadKg, Loca
                 usuarioRegistro, ahora);
     }
 
+    public Lote reservar() {
+        return conEstado(EstadoLote.REGISTRADO, EstadoLote.RESERVADO);
+    }
+
+    public Lote despachar() {
+        return conEstado(EstadoLote.RESERVADO, EstadoLote.DESPACHADO);
+    }
+
+    private Lote conEstado(EstadoLote requerido, EstadoLote nuevo) {
+        if (estadoLote != requerido) {
+            throw new ConflictoDominioException(
+                    "El lote " + idLote + " está " + estadoLote + " y debe estar " + requerido);
+        }
+        return new Lote(idLote, productoLote, cantidadKg, fechaCosecha, chacraOrigen, nuevo, usuarioRegistro,
+                fechaRegistro);
+    }
+
     public Lote conId(Long nuevoIdLote) {
         return new Lote(nuevoIdLote, productoLote, cantidadKg, fechaCosecha, chacraOrigen, estadoLote,
                 usuarioRegistro, fechaRegistro);

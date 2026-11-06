@@ -86,6 +86,14 @@ public class LoteJdbcAdapter implements LoteRepositoryPort {
     }
 
     @Override
+    public void actualizarEstado(Long idLote, EstadoLote nuevoEstado, EventoLote evento) {
+        transaccion.executeWithoutResult(estado -> {
+            jdbc.update("UPDATE lote SET estado_lote = ? WHERE id_lote = ?", nuevoEstado.name(), idLote);
+            insertarEvento(idLote, evento);
+        });
+    }
+
+    @Override
     public Optional<Lote> buscarPorId(Long idLote) {
         return jdbc.query("SELECT " + COLUMNAS_LOTE + " FROM lote WHERE id_lote = ?", FILA_LOTE, idLote)
                 .stream().findFirst();

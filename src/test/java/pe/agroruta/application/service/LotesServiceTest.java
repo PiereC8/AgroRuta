@@ -27,7 +27,7 @@ class LotesServiceTest {
     private static final Clock RELOJ =
             Clock.fixed(Instant.parse("2026-11-07T03:00:00Z"), ZoneId.of("America/Lima"));
 
-    private static class LotesEnMemoria implements LoteRepositoryPort {
+    static class LotesEnMemoria implements LoteRepositoryPort {
         final List<Lote> lotes = new ArrayList<>();
         final List<EventoLote> eventos = new ArrayList<>();
 
@@ -37,6 +37,19 @@ class LotesServiceTest {
             lotes.add(guardado);
             eventos.add(primerEvento);
             return guardado;
+        }
+
+        @Override
+        public void actualizarEstado(Long idLote, pe.agroruta.domain.model.EstadoLote nuevoEstado, EventoLote evento) {
+            for (int i = 0; i < lotes.size(); i++) {
+                Lote actual = lotes.get(i);
+                if (actual.idLote().equals(idLote)) {
+                    lotes.set(i, new Lote(actual.idLote(), actual.productoLote(), actual.cantidadKg(),
+                            actual.fechaCosecha(), actual.chacraOrigen(), nuevoEstado, actual.usuarioRegistro(),
+                            actual.fechaRegistro()));
+                }
+            }
+            eventos.add(evento);
         }
 
         @Override

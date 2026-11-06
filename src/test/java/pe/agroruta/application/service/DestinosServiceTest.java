@@ -30,7 +30,7 @@ import pe.agroruta.domain.port.out.TarifaPort;
 
 class DestinosServiceTest {
 
-    private static class DestinosEnMemoria implements DestinoRepositoryPort {
+    static class DestinosEnMemoria implements DestinoRepositoryPort {
         final List<DestinoVenta> destinos = new ArrayList<>();
         final Map<String, Dinero> precios = new HashMap<>();
         final Map<Long, Dinero> tarifas = new HashMap<>();
@@ -89,6 +89,11 @@ class DestinosServiceTest {
 
         @Override
         public Lote guardarNuevo(Lote lote, EventoLote primerEvento) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void actualizarEstado(Long idLote, EstadoLote nuevoEstado, EventoLote evento) {
             throw new UnsupportedOperationException();
         }
 

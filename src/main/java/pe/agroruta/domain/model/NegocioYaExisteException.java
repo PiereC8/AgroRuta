@@ -1,6 +1,6 @@
 package pe.agroruta.domain.model;
 
-public class NegocioYaExisteException extends DominioException {
+public class NegocioYaExisteException extends ConflictoDominioException {
 
     public NegocioYaExisteException(String identificadorNegocio) {
         super("Ya existe un negocio con el identificador " + identificadorNegocio);
