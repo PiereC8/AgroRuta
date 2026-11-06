@@ -1,11 +1,26 @@
 spring:
   application:
     name: agroruta
+  config:
+    import: optional:file:.env[.properties]
   jackson:
     time-zone: America/Lima
+  flyway:
+    enabled: false
+
+agroruta:
+  bd:
+    url: ${DB_PLATAFORMA_URL}
+    usuario: ${DB_USUARIO}
+    clave: ${DB_CLAVE}
+    prefijo: agroruta_
+    sufijo: ${BD_SUFIJO:_dev}
 
 management:
   endpoints:
     web:
       exposure:
         include: health
+  health:
+    db:
+      enabled: false
