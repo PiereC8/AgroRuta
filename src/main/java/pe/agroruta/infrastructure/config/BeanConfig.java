@@ -35,7 +35,9 @@ import pe.agroruta.domain.port.out.GeneradorTokenPort;
 import pe.agroruta.domain.port.out.PublicadorSeguimientoPort;
 import pe.agroruta.domain.port.out.SeguimientoRepositoryPort;
 import pe.agroruta.application.service.ConsultarLiquidacionesService;
+import pe.agroruta.application.service.ConsultarEstadoPagoService;
 import pe.agroruta.application.service.ConsultarPanelService;
+import pe.agroruta.domain.port.in.ConsultarEstadoPagoUseCase;
 import pe.agroruta.domain.port.in.ConsultarPanelUseCase;
 import pe.agroruta.domain.port.out.PanelRepositoryPort;
 import pe.agroruta.application.service.RegistrarEntregaService;
@@ -198,6 +200,14 @@ public class BeanConfig {
                                           PagoPort pasarela, EmitirComprobanteUseCase emitirComprobante, Clock reloj) {
         return new PagarPedidoService(envios, pedidos, liquidaciones, compradores, pagos, comprobantes, pasarela,
                 emitirComprobante, reloj);
+    }
+
+    @Bean
+    ConsultarEstadoPagoUseCase consultarEstadoPagoUseCase(EnvioRepositoryPort envios,
+                                                         LiquidacionRepositoryPort liquidaciones,
+                                                         PagoRepositoryPort pagos,
+                                                         ComprobanteRepositoryPort comprobantes) {
+        return new ConsultarEstadoPagoService(envios, liquidaciones, pagos, comprobantes);
     }
 
     @Bean

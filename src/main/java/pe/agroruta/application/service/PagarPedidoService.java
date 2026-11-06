@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import pe.agroruta.domain.model.Comprador;
 import pe.agroruta.domain.model.Comprobante;
 import pe.agroruta.domain.model.ConflictoDominioException;
-import pe.agroruta.domain.model.Dinero;
 import pe.agroruta.domain.model.DominioException;
 import pe.agroruta.domain.model.Envio;
 import pe.agroruta.domain.model.EstadoEnvio;
@@ -125,26 +124,6 @@ public class PagarPedidoService implements PagarPedidoUseCase {
         return resultado(actualizado);
     }
 
-    @Override
-    public EstadoPagoPublico estado(SesionEnlace sesion) {
-        exigirComprador(sesion);
-        Envio envio = envios.buscarPorId(sesion.idEnvio())
-                .orElseThrow(() -> new RecursoNoEncontradoException("No existe el envío " + sesion.idEnvio()));
-        Optional<Liquidacion> liquidacion = liquidaciones.buscarPorLote(envio.idLote());
-        if (liquidacion.isEmpty()) {
-            return new EstadoPagoPublico(envio.estadoEnvio(), false, Dinero.CERO, descripcion(envio.idPedido()), null,
-                    null);
-        }
-        Long idLiquidacion = liquidacion.get().idLiquidacion();
-        Optional<Pago> ultimo = pagos.ultimoDeLiquidacion(idLiquidacion);
-        boolean pagable = envio.estadoEnvio() == EstadoEnvio.ENTREGADO && liquidacion.get().ingresoReal().esPositivo()
-                && !pagos.existeAprobadoDe(idLiquidacion) && !pagos.existePendienteDe(idLiquidacion);
-        Comprobante comprobante = ultimo.filter(p -> p.estadoPago() == EstadoPago.APROBADO)
-                .flatMap(p -> comprobantes.buscarPorPago(p.idPago())).orElse(null);
-        return new EstadoPagoPublico(envio.estadoEnvio(), pagable, liquidacion.get().ingresoReal(),
-                descripcion(envio.idPedido()), ultimo.orElse(null), comprobante);
-    }
-
     private ResultadoPago resultado(Pago pago) {
         Comprobante comprobante = pago.estadoPago() == EstadoPago.APROBADO
                 ? comprobantes.buscarPorPago(pago.idPago()).orElse(null) : null;
@@ -163,10 +142,6 @@ public class PagarPedidoService implements PagarPedidoUseCase {
             // El cobro ya ocurrió: un problema con el comprobante no debe deshacerlo ni mostrarse como error de pago.
             REGISTRO.error("No se pudo emitir el comprobante del pago {}: {}", idPago, e.getMessage());
         }
-    }
-
-    private String descripcion(Long idPedido) {
-        return "Pedido " + idPedido;
     }
 
     private Contexto contexto(SesionEnlace sesion) {

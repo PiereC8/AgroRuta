@@ -48,6 +48,7 @@ import pe.agroruta.domain.model.TipoComprobante;
 import pe.agroruta.domain.model.TipoEnlace;
 import pe.agroruta.domain.port.in.AutenticarEnlaceUseCase;
 import pe.agroruta.domain.port.in.ConfirmarPagoUseCase;
+import pe.agroruta.domain.port.in.ConsultarEstadoPagoUseCase;
 import pe.agroruta.domain.port.in.ConsultarPagosUseCase;
 import pe.agroruta.domain.port.in.EmitirComprobanteUseCase;
 import pe.agroruta.domain.port.in.PagarPedidoUseCase;
@@ -89,6 +90,8 @@ class PagoWebTest {
     @MockitoBean
     PagarPedidoUseCase pagar;
     @MockitoBean
+    ConsultarEstadoPagoUseCase consultarEstado;
+    @MockitoBean
     ConfirmarPagoUseCase confirmar;
     @MockitoBean
     ConsultarPagosUseCase consultarPagos;
@@ -120,9 +123,9 @@ class PagoWebTest {
     @Test
     void el_comprador_ve_cuanto_debe_y_solo_la_llave_publica_de_la_pasarela() throws Exception {
         tokenValido();
-        when(pagar.estado(COMPRADOR)).thenAnswer(invocacion -> {
+        when(consultarEstado.estado(COMPRADOR)).thenAnswer(invocacion -> {
             assertThat(TenantContext.actual()).contains("empresa_demo");
-            return new PagarPedidoUseCase.EstadoPagoPublico(EstadoEnvio.ENTREGADO, true, Dinero.de("6372.00"),
+            return new ConsultarEstadoPagoUseCase.EstadoPagoPublico(EstadoEnvio.ENTREGADO, true, Dinero.de("6372.00"),
                     "Pedido 7", null, null);
         });
 
@@ -142,7 +145,7 @@ class PagoWebTest {
     @Test
     void despues_de_pagar_el_estado_muestra_el_comprobante_con_sus_enlaces() throws Exception {
         tokenValido();
-        when(pagar.estado(COMPRADOR)).thenReturn(new PagarPedidoUseCase.EstadoPagoPublico(EstadoEnvio.ENTREGADO,
+        when(consultarEstado.estado(COMPRADOR)).thenReturn(new ConsultarEstadoPagoUseCase.EstadoPagoPublico(EstadoEnvio.ENTREGADO,
                 false, Dinero.de("6372.00"), "Pedido 7", pago(EstadoPago.APROBADO), comprobante()));
 
         mvc.perform(get("/api/publico/pago").header(TOKEN, "tok-comp"))

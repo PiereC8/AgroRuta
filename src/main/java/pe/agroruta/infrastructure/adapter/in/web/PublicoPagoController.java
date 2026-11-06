@@ -22,6 +22,7 @@ import pe.agroruta.domain.model.SesionEnlace;
 import pe.agroruta.domain.model.TipoComprobante;
 import pe.agroruta.domain.model.TipoEnlace;
 import pe.agroruta.domain.port.in.AutenticarEnlaceUseCase;
+import pe.agroruta.domain.port.in.ConsultarEstadoPagoUseCase;
 import pe.agroruta.domain.port.in.PagarPedidoUseCase;
 import pe.agroruta.infrastructure.config.ConfiguracionPasarela;
 import pe.agroruta.infrastructure.config.TenantContext;
@@ -32,19 +33,22 @@ public class PublicoPagoController {
 
     private final AutenticarEnlaceUseCase enlaces;
     private final PagarPedidoUseCase pagar;
+    private final ConsultarEstadoPagoUseCase consultarEstado;
     private final ConfiguracionPasarela pasarela;
 
     public PublicoPagoController(AutenticarEnlaceUseCase enlaces, PagarPedidoUseCase pagar,
+                                 ConsultarEstadoPagoUseCase consultarEstado,
                                  ConfiguracionPasarela pasarela) {
         this.enlaces = enlaces;
         this.pagar = pagar;
+        this.consultarEstado = consultarEstado;
         this.pasarela = pasarela;
     }
 
     @GetMapping
     public EstadoRespuesta estado(@RequestHeader(PublicoController.ENCABEZADO_TOKEN) String token) {
         SesionEnlace sesion = sesion(token);
-        var estado = TenantContext.ejecutarEn(sesion.identificadorNegocio(), () -> pagar.estado(sesion));
+        var estado = TenantContext.ejecutarEn(sesion.identificadorNegocio(), () -> consultarEstado.estado(sesion));
         return new EstadoRespuesta(estado.estadoEnvio(), estado.pagable(), estado.monto().monto(), "PEN",
                 estado.descripcion(), pasarela.modo(), pasarela.llavePublica(),
                 PagoRespuesta.de(estado.ultimoPago()), ComprobanteRespuesta.de(estado.comprobante()));

@@ -66,6 +66,7 @@ class PagoServiceTest {
 
     private EmitirComprobanteService emitir;
     private PagarPedidoService pagar;
+    private ConsultarEstadoPagoService consulta;
     private ConfirmarPagoService confirmar;
 
     @BeforeEach
@@ -74,6 +75,7 @@ class PagoServiceTest {
                 correlativos, emisor, new SeriesComprobante("B001", "F001"), reloj);
         pagar = new PagarPedidoService(envios, pedidos, liquidaciones, compradores, pagos, comprobantes, pasarela,
                 emitir, reloj);
+        consulta = new ConsultarEstadoPagoService(envios, liquidaciones, pagos, comprobantes);
         confirmar = new ConfirmarPagoService(pasarela, pagos, emitir, ejecutor, reloj);
         pedidoEntregadoYLiquidado("20123456789");
     }
@@ -371,13 +373,13 @@ class PagoServiceTest {
 
     @Test
     void el_estado_publico_dice_si_se_puede_pagar_y_muestra_el_comprobante_ya_pagado() {
-        var antes = pagar.estado(COMPRADOR);
+        var antes = consulta.estado(COMPRADOR);
         assertThat(antes.pagable()).isTrue();
         assertThat(antes.monto().monto().toPlainString()).isEqualTo("6372.00");
         assertThat(antes.ultimoPago()).isNull();
 
         pagar.pagar(pago("clave-de-operacion-1"));
-        var despues = pagar.estado(COMPRADOR);
+        var despues = consulta.estado(COMPRADOR);
 
         assertThat(despues.pagable()).isFalse();
         assertThat(despues.ultimoPago().estadoPago()).isEqualTo(EstadoPago.APROBADO);
@@ -388,12 +390,12 @@ class PagoServiceTest {
     void tras_un_rechazo_sigue_siendo_pagable_y_con_el_pago_pendiente_no() {
         pasarela.comportamiento = s -> ResultadoCobro.rechazado("chr_test_no", "x", "x", s.metadatos());
         pagar.pagar(pago("clave-de-operacion-1"));
-        assertThat(pagar.estado(COMPRADOR).pagable()).isTrue();
+        assertThat(consulta.estado(COMPRADOR).pagable()).isTrue();
 
         pasarela.noResponde = true;
         pasarela.comportamiento = s -> ResultadoCobro.aprobado("chr_test_ok", "Visa", "4242", s.metadatos());
         pagar.pagar(pago("clave-de-operacion-2"));
-        assertThat(pagar.estado(COMPRADOR).pagable()).isFalse();
+        assertThat(consulta.estado(COMPRADOR).pagable()).isFalse();
     }
 
     @Test
@@ -401,7 +403,7 @@ class PagoServiceTest {
         envios.envios.set(0, new Envio(1L, 1L, 1L, 1L, 1L, EstadoEnvio.EN_RUTA, T0, T0, null, "x1x"));
         liquidaciones.liquidaciones.clear();
 
-        var estado = pagar.estado(COMPRADOR);
+        var estado = consulta.estado(COMPRADOR);
 
         assertThat(estado.pagable()).isFalse();
         assertThat(estado.estadoEnvio()).isEqualTo(EstadoEnvio.EN_RUTA);
