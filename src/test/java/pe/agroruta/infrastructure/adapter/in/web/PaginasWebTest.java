@@ -95,6 +95,9 @@ class PaginasWebTest {
                 "puedeEscribir"}) {
             assertThat(js).contains(funcion);
         }
+        // Cada panel ofrece una sola forma visible de salir: solo lectura = "Cerrar" arriba y sin pie;
+        // formulario = "Cancelar" abajo y sin "Cerrar" arriba.
+        assertThat(js).contains("soloLectura").contains("if (soloLectura)").contains("if (!soloLectura)");
         mvc.perform(get("/css/sistema.css")).andExpect(content().string(
                 org.hamcrest.Matchers.containsString(".panel")));
     }

@@ -245,9 +245,15 @@ window.Ui = (function () {
             const cabecera = el('div', 'panel__cabecera');
             const titulo = el('h2', null, config.titulo);
             titulo.id = idTitulo;
+            // Una sola forma visible de salir: los paneles de solo lectura tienen "Cerrar" arriba y no tienen pie;
+            // los de formulario tienen "Cancelar" abajo y nada arriba (Escape también cierra a ambos).
+            const soloLectura = Boolean(config.soloLectura);
             const cerrar = boton('Cerrar', 'boton-secundario');
             cerrar.setAttribute('aria-label', 'Cerrar ' + config.titulo);
-            cabecera.append(titulo, cerrar);
+            cabecera.appendChild(titulo);
+            if (soloLectura) {
+                cabecera.appendChild(cerrar);
+            }
 
             const formulario = el('form', 'panel__cuerpo');
             formulario.noValidate = true;
@@ -322,12 +328,10 @@ window.Ui = (function () {
             const cancelar = boton('Cancelar', 'boton-secundario');
             const enviar = el('button', 'boton', config.textoEnviar || 'Guardar');
             enviar.type = 'submit';
-            if (config.sinCancelar) {
-                pie.append(enviar);
-            } else {
-                pie.append(cancelar, enviar);
+            pie.append(cancelar, enviar);
+            if (!soloLectura) {
+                formulario.appendChild(pie);
             }
-            formulario.appendChild(pie);
             caja.append(cabecera, formulario);
             fondo.appendChild(caja);
 
@@ -447,7 +451,7 @@ window.Ui = (function () {
             document.body.appendChild(fondo);
             document.addEventListener('keydown', alTeclado, true);
             actualizarNota();
-            const primerCampo = entradas.size > 0 ? [...entradas.values()][0].entrada : enviar;
+            const primerCampo = entradas.size > 0 ? [...entradas.values()][0].entrada : (soloLectura ? cerrar : enviar);
             primerCampo.focus();
         });
     }
@@ -455,7 +459,7 @@ window.Ui = (function () {
     /** Panel de solo lectura con un botón para cerrar. */
     function detalle(config) {
         return panel({titulo: config.titulo, texto: config.texto, contenido: config.contenido, ancho: config.ancho,
-            campos: [], textoEnviar: 'Cerrar', sinCancelar: true, enviar: async () => true});
+            campos: [], soloLectura: true});
     }
 
     async function confirmar(config) {
