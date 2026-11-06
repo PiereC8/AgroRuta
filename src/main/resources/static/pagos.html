@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex">
+    <title>Pagos - AgroRuta</title>
+    <link rel="icon" href="/img/logo.png" type="image/png">
+    <link rel="preload" href="/fonts/fuente.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/css/sistema.css">
+</head>
+<body>
+<div class="estructura">
+    <nav id="menu"></nav>
+
+    <main class="contenido">
+        <header id="encabezado"></header>
+
+        <div class="barra">
+            <p class="suave barra__texto">Lo que falta cobrar, los pagos que llegaron y el comprobante electrónico de cada uno.</p>
+        </div>
+
+        <div id="error" class="aviso aviso--error oculto" role="alert">
+            <span id="error-texto"></span>
+            <button class="boton boton-secundario" id="reintentar" type="button">Volver a cargar</button>
+        </div>
+        <section class="tarjeta bloque"><h2>Por cobrar</h2><div id="por-cobrar"></div></section>
+        <section class="tarjeta"><h2>Pagos</h2><div id="lista"></div><div id="mas"></div></section>
+    </main>
+</div>
+<script src="/js/api.js"></script>
+<script src="/js/estructura.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/js/pagos.js"></script>
+</body>
+</html>
