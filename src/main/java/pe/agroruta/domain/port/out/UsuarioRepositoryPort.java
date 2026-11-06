@@ -4,7 +4,6 @@ import java.util.Optional;
 
 import pe.agroruta.domain.model.Usuario;
 
-/** Con identificador de negocio nulo, trabaja sobre los administradores de la plataforma. */
 public interface UsuarioRepositoryPort {
 
     Optional<Usuario> buscarPorNombre(String identificadorNegocio, String nombreUsuario);

@@ -22,7 +22,7 @@ import pe.agroruta.infrastructure.config.TenantContext;
 
 /**
  * Lo que ve el comprador con su enlace, sin iniciar sesión. Muestra solo su envío y nada más:
- * ni precios, ni placas, ni datos de otros pedidos (RNF-22).
+ * ni precios, ni placas, ni datos de otros pedidos.
  */
 @RestController
 @RequestMapping("/api/publico")

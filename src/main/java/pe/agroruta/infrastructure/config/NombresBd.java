@@ -2,7 +2,6 @@ package pe.agroruta.infrastructure.config;
 
 import java.net.URI;
 
-/** Arma el nombre de la base de cada negocio y su URL de conexión, a partir de la URL de la base central. */
 public record NombresBd(String urlPlataforma, String prefijo, String sufijo) {
 
     public String deIdentificador(String identificadorNegocio) {

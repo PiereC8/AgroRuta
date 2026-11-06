@@ -78,7 +78,6 @@ class PagoServiceTest {
         pedidoEntregadoYLiquidado("20123456789");
     }
 
-    /** Un lote de 1250.5 kg entregado: llegaron 1180, se perdieron 40.5 y se rechazaron 30 (ingreso real S/ 6,372.00). */
     private void pedidoEntregadoYLiquidado(String documento) {
         compradores.guardar(Comprador.nuevo("Mercado Central SAC", TipoComprador.MERCADO, documento, null, "Lima"));
         long idLote = lotes.lotes.size() + 1L;

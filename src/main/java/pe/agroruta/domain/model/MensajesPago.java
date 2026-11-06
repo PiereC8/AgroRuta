@@ -3,7 +3,6 @@ package pe.agroruta.domain.model;
 import java.text.Normalizer;
 import java.util.Locale;
 
-/** Traduce lo que responde la pasarela a una explicación simple y a un siguiente paso (RNF-29). */
 public final class MensajesPago {
 
     private MensajesPago() {

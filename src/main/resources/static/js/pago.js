@@ -36,8 +36,6 @@
         return crypto.randomUUID().replace(/-/g, '');
     }
 
-    // ---------- Servidor ----------
-
     async function cargar() {
         const respuesta = await fetch('/api/publico/pago', {headers: {'X-Token-Seguimiento': token}, cache: 'no-store'});
         if (respuesta.status === 404 || respuesta.status === 401) {
@@ -51,10 +49,6 @@
         return estado.datos;
     }
 
-    /**
-     * Envía el pago. Devuelve verdadero si el servidor dio una respuesta de negocio (aprobado, rechazado o pendiente)
-     * y falso si hubo un problema técnico, para que el formulario de la pasarela sepa si debe seguir activo.
-     */
     async function enviarPago(datosPago) {
         estado.enCurso = true;
         $('pagar').disabled = true;
@@ -83,8 +77,6 @@
             $('pagar').disabled = false;
         }
     }
-
-    // ---------- Resultado ----------
 
     function mostrarResultado(texto, permiteReintento) {
         mostrar('zona-resultado', true);
@@ -151,8 +143,6 @@
         }
     }
 
-    // ---------- Pantalla ----------
-
     function pintar(datos) {
         $('dato-descripcion').textContent = datos.descripcion;
         $('dato-monto').textContent = dinero.format(datos.monto);
@@ -198,8 +188,6 @@
         }
     }
 
-    // ---------- Pago simulado ----------
-
     function pagarSimulado() {
         const email = $('simulado-email').value.trim();
         if (!email) {
@@ -213,8 +201,6 @@
         }
         enviarPago({tokenTarjeta: tokenizado.token, email});
     }
-
-    // ---------- Mercado Pago: formulario seguro de tarjeta ----------
 
     function cargarSdk() {
         return new Promise((ok, mal) => {

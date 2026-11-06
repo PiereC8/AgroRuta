@@ -24,7 +24,6 @@
         texto.classList.toggle('oculto', !mensaje);
     }
 
-    /** Revisa un campo y muestra al instante qué falta. Devuelve verdadero si está bien. */
     function revisar(campo) {
         const valor = $(campo.id).value.trim();
         marcarError(campo, valor ? null : campo.vacio);

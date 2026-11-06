@@ -41,8 +41,6 @@
         return 'Programado ' + window.Ui.fecha(e.fechaProgramada);
     }
 
-    // ---------- Despachar ----------
-
     async function despachar() {
         const libres = pedidos.filter((p) => p.estadoPedido === 'PENDIENTE');
         const ocupados = new Set(envios.filter((e) => e.estadoEnvio !== 'ENTREGADO').map((e) => e.idVehiculo));
@@ -86,8 +84,6 @@
         await window.Ui.detalle({titulo, texto, contenido: el('span')});
     }
 
-    // ---------- Iniciar ruta ----------
-
     async function iniciarRuta(envio) {
         const acepto = await window.Ui.confirmar({
             titulo: 'Iniciar la ruta del envío ' + envio.idEnvio,
@@ -101,8 +97,6 @@
             cargar();
         }
     }
-
-    // ---------- Registrar entrega y mostrar la liquidación ----------
 
     function cifra(titulo, valor, clase) {
         const t = el('div', 'tarjeta');
@@ -172,8 +166,6 @@
         }
     }
 
-    // ---------- Enlaces ----------
-
     async function verEnlaces(envio) {
         try {
             const enlaces = await window.Api.pedir('/api/envios/' + envio.idEnvio + '/enlaces', {metodo: 'POST'});
@@ -191,8 +183,6 @@
             window.Ui.aviso(error.message, 'error');
         }
     }
-
-    // ---------- Mapa ----------
 
     async function verMapa(envio) {
         const contenido = el('div');
@@ -272,8 +262,6 @@
         clearInterval(temporizador);
         vista.remove();
     }
-
-    // ---------- Lista ----------
 
     function acciones(e) {
         const botones = [];

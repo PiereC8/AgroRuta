@@ -22,7 +22,6 @@ import pe.agroruta.domain.port.in.GenerarEnlacesEnvioUseCase;
 import pe.agroruta.infrastructure.adapter.in.websocket.Canales;
 import pe.agroruta.infrastructure.adapter.out.seguridad.ServicioJwt.DatosToken;
 
-/** Seguimiento para el Dueño y el Operador del negocio. */
 @RestController
 @RequestMapping("/api/envios/{idEnvio}")
 public class SeguimientoController {

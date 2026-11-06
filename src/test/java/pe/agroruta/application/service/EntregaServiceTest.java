@@ -56,7 +56,6 @@ class EntregaServiceTest {
                 RELOJ);
     }
 
-    /** Deja un lote de 1250.5 kg con su envío ya en ruta, hacia el destino con id 1 (Lima) o 2 (Tacna, local). */
     private void enRutaHacia(long idDestino) {
         var compradores = new CompradoresEnMemoria();
         new AdministrarCompradoresService(compradores).registrar("Mercado Central", TipoComprador.MERCADO, null, null,

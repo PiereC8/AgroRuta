@@ -4,7 +4,6 @@ import pe.agroruta.domain.model.Rol;
 
 public interface IniciarSesionUseCase {
 
-    /** Si {@code identificadorNegocio} es nulo, se autentica un administrador de la plataforma. */
     Resultado iniciar(Comando comando);
 
     record Comando(String identificadorNegocio, String nombreUsuario, String clave) {

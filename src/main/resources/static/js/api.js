@@ -51,7 +51,6 @@ window.Api = (function () {
         return Boolean(leer(CLAVE_TOKEN));
     }
 
-    /** Pide una ruta del servidor y devuelve el JSON. Los errores traen un mensaje listo para mostrar. */
     async function pedir(ruta, opciones) {
         const cabeceras = Object.assign({'Accept': 'application/json'}, opciones && opciones.cabeceras);
         const token = leer(CLAVE_TOKEN);

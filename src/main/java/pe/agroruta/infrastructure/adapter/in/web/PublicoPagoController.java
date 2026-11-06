@@ -26,10 +26,6 @@ import pe.agroruta.domain.port.in.PagarPedidoUseCase;
 import pe.agroruta.infrastructure.config.ConfiguracionPasarela;
 import pe.agroruta.infrastructure.config.TenantContext;
 
-/**
- * El pago del comprador con su enlace, sin iniciar sesión. Nunca recibe ni devuelve datos de tarjeta:
- * solo el token que la pasarela creó en el navegador.
- */
 @RestController
 @RequestMapping("/api/publico/pago")
 public class PublicoPagoController {
@@ -72,7 +68,6 @@ public class PublicoPagoController {
                 .orElseThrow(() -> new RecursoNoEncontradoException("El enlace no es válido o ya venció"));
     }
 
-    /** metodoPago (por ejemplo "visa") y emisor los entrega el formulario seguro de la pasarela. */
     public record PagoSolicitud(@NotBlank String tokenTarjeta, @NotBlank String email, String metodoPago,
                                 String emisor) {
     }

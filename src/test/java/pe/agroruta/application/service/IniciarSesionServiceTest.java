@@ -32,7 +32,6 @@ class IniciarSesionServiceTest {
     private MutableClock reloj;
     private IniciarSesionService servicio;
 
-    /** Reloj que se puede adelantar, para probar el fin del bloqueo. */
     private static final class MutableClock extends Clock {
         private Instant ahora;
 

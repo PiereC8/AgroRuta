@@ -12,7 +12,6 @@ public interface LoteRepositoryPort {
     /** Guarda el lote y su primer evento en una sola operación: o se guardan los dos o ninguno. */
     Lote guardarNuevo(Lote lote, EventoLote primerEvento);
 
-    /** Cambia el estado del lote y deja constancia en su historial. */
     void actualizarEstado(Long idLote, EstadoLote nuevoEstado, EventoLote evento);
 
     Optional<Lote> buscarPorId(Long idLote);

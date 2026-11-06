@@ -3,7 +3,6 @@ package pe.agroruta.domain.model;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
-/** Monto en soles con 2 decimales. Todo cálculo de dinero del sistema pasa por esta clase. */
 public record Dinero(BigDecimal monto) implements Comparable<Dinero> {
 
     public static final Dinero CERO = new Dinero(BigDecimal.ZERO);

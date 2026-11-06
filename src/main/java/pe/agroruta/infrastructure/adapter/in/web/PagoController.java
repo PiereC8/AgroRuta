@@ -18,7 +18,6 @@ import pe.agroruta.domain.model.TipoComprobante;
 import pe.agroruta.domain.port.in.ConsultarPagosUseCase;
 import pe.agroruta.domain.port.in.EmitirComprobanteUseCase;
 
-/** Pagos y comprobantes para el Dueño y el Operador. */
 @RestController
 public class PagoController {
 
@@ -46,13 +45,11 @@ public class PagoController {
         return ComprobanteRespuesta.de(consultarPagos.comprobanteDePago(idPago));
     }
 
-    /** Vuelve a intentar enviar el comprobante (por ejemplo, tras corregir la configuración del proveedor). */
     @PostMapping("/api/comprobantes/{idComprobante}/reintentar")
     public ComprobanteRespuesta reintentar(@PathVariable Long idComprobante) {
         return ComprobanteRespuesta.de(comprobantes.reintentar(idComprobante));
     }
 
-    /** Pregunta al proveedor cómo quedó el comprobante ante SUNAT. */
     @PostMapping("/api/comprobantes/{idComprobante}/consultar")
     public ComprobanteRespuesta consultar(@PathVariable Long idComprobante) {
         return ComprobanteRespuesta.de(comprobantes.consultar(idComprobante));

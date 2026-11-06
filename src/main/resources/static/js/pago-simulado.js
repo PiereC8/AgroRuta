@@ -106,7 +106,6 @@ window.PagoSimulado = (function () {
         $('sim-numero').addEventListener('input', mostrarMarca);
     }
 
-    /** Devuelve {token} si los datos están bien o {error} con un mensaje en palabras simples. */
     function tokenizar() {
         if ($('sim-medio').value === 'paypal') {
             return {token: 'sim_aprobada_paypal'};

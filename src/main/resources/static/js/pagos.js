@@ -41,8 +41,6 @@
         return a;
     }
 
-    // ---------- Comprobante ----------
-
     async function verComprobante(pago) {
         const contenido = el('div');
         contenido.appendChild(el('p', 'suave', 'Cargando…'));
@@ -99,8 +97,6 @@
         await cerrado;
     }
 
-    // ---------- Enlace de pago ----------
-
     async function enlaceDePago(liquidacion) {
         try {
             const enlaces = await window.Api.pedir('/api/envios/' + liquidacion.idEnvio + '/enlaces', {metodo: 'POST'});
@@ -114,8 +110,6 @@
             window.Ui.aviso(error.message, 'error');
         }
     }
-
-    // ---------- Listas ----------
 
     function pintarPorCobrar(liquidaciones, pagos) {
         const aprobadas = new Set(pagos.filter((p) => p.estadoPago === 'APROBADO').map((p) => p.idLiquidacion));

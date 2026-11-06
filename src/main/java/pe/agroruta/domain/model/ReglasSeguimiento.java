@@ -5,7 +5,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.OptionalLong;
 
-/** Reglas puras del seguimiento: llegada, detención y hora estimada. */
 public final class ReglasSeguimiento {
 
     public static final double RADIO_LLEGADA_METROS = 300;

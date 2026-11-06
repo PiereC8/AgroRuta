@@ -9,7 +9,6 @@ public interface EnvioRepositoryPort {
 
     Envio guardarNuevo(Envio envio);
 
-    /** Actualiza el estado y las fechas de un envío existente. */
     void actualizar(Envio envio);
 
     Optional<Envio> buscarPorId(Long idEnvio);

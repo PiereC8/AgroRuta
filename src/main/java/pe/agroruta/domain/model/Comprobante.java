@@ -4,7 +4,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 
-/** Boleta o factura de un pago. Mientras esté PENDIENTE se reintenta sola cada 5 minutos, sin frenar el cobro. */
 public record Comprobante(Long idComprobante, Long idPago, TipoComprobante tipoComprobante, String serie,
                           int numero, EstadoComprobante estadoComprobante, String enlacePdf, String enlaceXml,
                           String mensajeSunat, int intentos, Instant proximoIntento, LocalDate fechaEmision,
@@ -32,7 +31,6 @@ public record Comprobante(Long idComprobante, Long idPago, TipoComprobante tipoC
                 fechaEmision, fechaCreacion);
     }
 
-    /** El proveedor no respondió: queda pendiente y se vuelve a intentar más tarde. */
     public Comprobante fallido(String motivo, Instant ahora) {
         return reintentar(motivo, ahora);
     }

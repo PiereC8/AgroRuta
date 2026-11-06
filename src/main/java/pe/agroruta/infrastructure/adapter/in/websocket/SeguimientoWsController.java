@@ -15,7 +15,6 @@ import pe.agroruta.domain.model.SesionEnlace;
 import pe.agroruta.domain.port.in.SeguimientoConductorUseCase;
 import pe.agroruta.infrastructure.config.TenantContext;
 
-/** Recibe lo que manda el celular del conductor y le responde con un acuse por cada mensaje. */
 @Controller
 public class SeguimientoWsController {
 

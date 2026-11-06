@@ -16,7 +16,6 @@ import pe.agroruta.domain.model.EnvioEnCurso;
 import pe.agroruta.domain.model.EstadoEnvio;
 import pe.agroruta.domain.port.out.PanelRepositoryPort;
 
-/** Sumas y listas de solo lectura para el panel de inicio. */
 @Component
 public class PanelJdbcAdapter implements PanelRepositoryPort {
 

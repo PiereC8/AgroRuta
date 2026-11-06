@@ -11,7 +11,6 @@ import pe.agroruta.domain.port.out.PublicadorSeguimientoPort;
 @Component
 public class PublicadorSeguimientoStomp implements PublicadorSeguimientoPort {
 
-    /** Las fechas viajan como texto ISO-8601 para que cualquier cliente las lea igual. */
     public record MensajePosicion(String tipo, double latitud, double longitud, Double precisionMetros,
                                   String fecha, Long etaMinutos) {
     }

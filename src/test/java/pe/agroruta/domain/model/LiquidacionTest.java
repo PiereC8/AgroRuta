@@ -99,7 +99,6 @@ class LiquidacionTest {
                 BigDecimal.ZERO, Dinero.CERO, " ", AHORA)).isInstanceOf(DominioException.class);
     }
 
-    /** RNF-04: 0 % de liquidaciones con diferencias frente al cálculo manual. */
     @Test
     void coincide_con_el_calculo_manual_en_mil_casos_aleatorios() {
         Random azar = new Random(20261106L);

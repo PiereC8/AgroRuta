@@ -20,7 +20,7 @@ import pe.agroruta.infrastructure.adapter.out.seguridad.ServicioJwt;
 
 /**
  * Decide quién puede conectarse, a qué canales puede suscribirse y quién puede enviar posiciones.
- * Un negocio nunca ve los canales de otro, y un enlace solo ve su propio envío (CASO 1 y RNF-22).
+ * Un negocio nunca ve los canales de otro, y un enlace solo ve su propio envío.
  */
 public class InterceptorAutenticacionStomp implements ChannelInterceptor {
 

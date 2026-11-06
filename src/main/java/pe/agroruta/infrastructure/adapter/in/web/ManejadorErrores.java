@@ -34,7 +34,6 @@ public class ManejadorErrores {
         return respuesta(HttpStatus.CONFLICT, e.getMessage());
     }
 
-    /** La pasarela o el proveedor no respondieron: quien llama debe reintentar. */
     @ExceptionHandler(ServicioExternoNoDisponibleException.class)
     ResponseEntity<Map<String, String>> servicioExterno(ServicioExternoNoDisponibleException e) {
         return respuesta(HttpStatus.SERVICE_UNAVAILABLE, "El servicio externo no está disponible, intenta de nuevo");

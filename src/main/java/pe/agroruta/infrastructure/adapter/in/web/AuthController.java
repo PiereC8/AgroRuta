@@ -29,7 +29,6 @@ public class AuthController {
         return new LoginRespuesta(resultado.token(), resultado.rolUsuario(), resultado.identificadorNegocio());
     }
 
-    /** Sin identificador de negocio, el inicio de sesión es de un administrador de la plataforma. */
     public record LoginSolicitud(String identificadorNegocio, @NotBlank String nombreUsuario,
                                  @NotBlank String clave) {
     }

@@ -20,7 +20,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import pe.agroruta.domain.port.in.ConsultarPanelUseCase;
 import pe.agroruta.infrastructure.config.ConfiguracionSeguridad;
 
-/** Las pantallas del Dueño y el Operador se sirven sin sesión (los datos sí la piden) y sin código en línea. */
 @WebMvcTest(controllers = PanelController.class)
 @Import({ConfiguracionSeguridad.class, ManejadorErrores.class, PaginasWebTest.Reloj.class})
 @TestPropertySource(properties = {
@@ -81,7 +80,6 @@ class PaginasWebTest {
                 .doesNotContain("document.write");
     }
 
-    /** Pantallas internas ya construidas (la lista crece con cada tarea de la entrega B). */
     private static final String[] PANTALLAS = {"compradores", "transporte", "destinos", "lotes", "pedidos", "envios", "pagos"};
 
     @Test

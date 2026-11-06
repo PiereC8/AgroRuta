@@ -5,7 +5,6 @@ import java.util.Optional;
 import pe.agroruta.domain.model.ResultadoCobro;
 import pe.agroruta.domain.model.SolicitudCobro;
 
-/** La pasarela de pago. Hoy puede ser el simulador o Mercado Pago; cambiarla no toca el dominio (RNF-17). */
 public interface PagoPort {
 
     /**
@@ -15,6 +14,5 @@ public interface PagoPort {
      */
     ResultadoCobro cobrar(SolicitudCobro solicitud);
 
-    /** Consulta un cargo directamente a la pasarela. Es la forma de comprobar que una notificación es verdadera. */
     Optional<ResultadoCobro> consultarCargo(String idCargo);
 }

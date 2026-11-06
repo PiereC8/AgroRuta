@@ -13,7 +13,6 @@ import pe.agroruta.domain.model.Usuario;
 import pe.agroruta.domain.port.out.HashClavePort;
 import pe.agroruta.domain.port.out.UsuarioRepositoryPort;
 
-/** Crea el primer administrador de la plataforma con las variables de entorno, si todavía no existe. */
 @Component
 public class InicializadorAdministrador implements ApplicationRunner {
 

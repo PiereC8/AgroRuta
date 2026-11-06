@@ -10,7 +10,6 @@ import pe.agroruta.domain.model.Negocio;
 import pe.agroruta.domain.port.out.BaseNegocioPort;
 import pe.agroruta.domain.port.out.NegocioRepositoryPort;
 
-/** Al arrancar, lleva la base de cada negocio activo a la última versión del esquema. */
 @Component
 public class MigradorNegociosAlArrancar implements ApplicationRunner {
 

@@ -17,14 +17,6 @@ import pe.agroruta.domain.model.SolicitudCobro;
 import pe.agroruta.domain.port.out.PagoPort;
 import pe.agroruta.infrastructure.adapter.out.http.ClienteHttp;
 
-/**
- * Pasarela Mercado Pago (API de pagos). El navegador crea el token de la tarjeta con la llave pública dentro de los
- * campos seguros de Mercado Pago; aquí solo se usa el token de acceso (secreto) para cobrar ese token. El token de
- * acceso nunca sale del servidor ni se escribe en los registros.
- *
- * <p>Se usa el mismo identificador de operación como {@code X-Idempotency-Key}: si una petición se repite, Mercado
- * Pago devuelve el mismo pago en vez de cobrar otra vez.
- */
 public class MercadoPagoPagoAdapter implements PagoPort {
 
     private static final Pattern FORMATO_PAGO = Pattern.compile("^\\d{3,20}$");

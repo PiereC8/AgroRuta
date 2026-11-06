@@ -16,6 +16,5 @@ public interface ComprobanteRepositoryPort {
 
     Optional<Comprobante> buscarPorPago(Long idPago);
 
-    /** Comprobantes pendientes cuya hora de reintento ya llegó. */
     List<Comprobante> pendientesParaReintento(Instant ahora, int limite);
 }

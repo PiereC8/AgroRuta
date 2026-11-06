@@ -1,17 +1,11 @@
 'use strict';
 
-/**
- * Piezas de interfaz comunes a las pantallas internas: tabla, panel lateral con formulario, avisos, confirmación,
- * pestañas y etiquetas. Todo lo que viene del servidor se pinta con textContent, nunca como HTML.
- */
 window.Ui = (function () {
     const formatoSoles = new Intl.NumberFormat('es-PE', {style: 'currency', currency: 'PEN'});
     const formatoNumero = new Intl.NumberFormat('es-PE', {maximumFractionDigits: 3});
     const formatoFecha = new Intl.DateTimeFormat('es-PE', {dateStyle: 'medium', timeStyle: 'short'});
     const formatoDia = new Intl.DateTimeFormat('es-PE', {dateStyle: 'medium', timeZone: 'UTC'});
     const TAMANO_PAGINA = 50;
-
-    // ---------- Pequeñas ayudas ----------
 
     function el(etiqueta, clase, texto) {
         const e = document.createElement(etiqueta);
@@ -65,12 +59,6 @@ window.Ui = (function () {
         return b;
     }
 
-    // ---------- Tabla ----------
-
-    /**
-     * columnas: [{titulo, valor: fila => texto | Node, clase?}]. opciones: vacio {titulo, texto, accion?},
-     * acciones: fila => [Node], filaDestacada: fila => boolean.
-     */
     function tabla(destino, columnas, filas, opciones) {
         const o = opciones || {};
         destino.replaceChildren();
@@ -128,8 +116,6 @@ window.Ui = (function () {
         destino.appendChild(envoltorio);
     }
 
-    // ---------- Avisos flotantes ----------
-
     function aviso(texto, tipo) {
         let caja = document.getElementById('avisos');
         if (!caja) {
@@ -144,9 +130,6 @@ window.Ui = (function () {
         setTimeout(() => nuevo.remove(), 5000);
     }
 
-    // ---------- Pestañas ----------
-
-    /** items: [{texto, vista: Node, alActivar?}]. Flechas izquierda y derecha cambian de pestaña. */
     function pestanas(destino, items) {
         destino.replaceChildren();
         const lista = el('div', 'pestanas');
@@ -188,8 +171,6 @@ window.Ui = (function () {
         return {activar};
     }
 
-    // ---------- Panel lateral con formulario ----------
-
     function mensajeObligatorio(campo) {
         return 'Completa ' + campo.etiqueta.toLowerCase() + '.';
     }
@@ -228,10 +209,6 @@ window.Ui = (function () {
         return texto;
     }
 
-    /**
-     * Abre un panel lateral. config: {titulo, texto?, campos, enviar(valores) -> Promise, textoEnviar, ancho?,
-     * nota?(valores) -> texto, contenido?: Node}. Resuelve con lo que devuelva enviar, o null si se cancela.
-     */
     function panel(config) {
         const quienAbrio = document.activeElement;
         return new Promise((resolver) => {
@@ -456,7 +433,6 @@ window.Ui = (function () {
         });
     }
 
-    /** Panel de solo lectura con un botón para cerrar. */
     function detalle(config) {
         return panel({titulo: config.titulo, texto: config.texto, contenido: config.contenido, ancho: config.ancho,
             campos: [], soloLectura: true});
@@ -468,10 +444,6 @@ window.Ui = (function () {
         return respuesta !== null;
     }
 
-    /**
-     * Lista con "Ver más": pide páginas de 50 y las junta. config: {ruta, mas (contenedor del botón),
-     * alCargar(todas)}. Devuelve {cargar} para empezar de cero.
-     */
     function listaPaginada(config) {
         let pagina = 0;
         let todas = [];
@@ -494,7 +466,6 @@ window.Ui = (function () {
         return {cargar: () => siguiente(true)};
     }
 
-    /** Bloque con un título, un campo de solo lectura con el texto y un botón "Copiar". */
     function campoCopiable(titulo, texto) {
         const caja = el('div', 'bloque');
         caja.appendChild(el('h3', null, titulo));
@@ -518,7 +489,6 @@ window.Ui = (function () {
         return caja;
     }
 
-    /** Muestra u oculta el aviso de error de la pantalla (si el mensaje es vacío, lo oculta). */
     function errorDePagina(mensaje) {
         const caja = document.getElementById('error');
         if (!caja) {
@@ -528,7 +498,6 @@ window.Ui = (function () {
         caja.classList.toggle('oculto', !mensaje);
     }
 
-    /** Conecta el botón "Volver a cargar" con la función que carga la pantalla. */
     function alReintentar(cargar) {
         const boton = document.getElementById('reintentar');
         if (boton) {

@@ -5,7 +5,7 @@ import java.util.regex.Pattern;
 
 /**
  * Un intento de pago de una liquidación. Guarda solo la marca y los últimos 4 dígitos de la tarjeta:
- * el número completo nunca pasa por el sistema (RNF-15).
+ * el número completo nunca pasa por el sistema.
  */
 public record Pago(Long idPago, Long idLiquidacion, Long idPedido, Dinero monto, EstadoPago estadoPago,
                    String claveIdempotencia, String idCargoPasarela, String codigoRespuesta, String mensajeUsuario,
@@ -40,7 +40,6 @@ public record Pago(Long idPago, Long idLiquidacion, Long idPedido, Dinero monto,
                 claveIdempotencia, null, null, null, null, null, emailPagador, ahora, ahora);
     }
 
-    /** Aplica lo que dijo la pasarela. Un pago aprobado no cambia; uno pendiente o rechazado puede aprobarse. */
     public Pago aplicar(ResultadoCobro resultado, Instant ahora) {
         if (estadoPago == EstadoPago.APROBADO || resultado.estado() == ResultadoCobro.Estado.PENDIENTE) {
             return this;

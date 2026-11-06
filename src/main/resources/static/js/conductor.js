@@ -22,8 +22,6 @@
         ultimaEnviada: null
     };
 
-    // ---------- Cola local: guarda las posiciones hasta que el servidor confirma que las recibió ----------
-
     const cola = (function () {
         const memoria = new Map();
         let base = null;
@@ -83,8 +81,6 @@
         };
     })();
 
-    // ---------- Pantalla ----------
-
     function mostrar(idSeccion, visible) {
         $(idSeccion).classList.toggle('oculto', !visible);
     }
@@ -122,8 +118,6 @@
             }
         }
     }
-
-    // ---------- Conexión ----------
 
     function esperarAcuse(clave) {
         return new Promise((ok, mal) => {
@@ -198,8 +192,6 @@
             }
         }, espera);
     }
-
-    // ---------- Posiciones ----------
 
     function obtenerUbicacion() {
         return new Promise((ok, mal) => {
@@ -299,8 +291,6 @@
         }
     }
 
-    // ---------- Inicio y fin ----------
-
     async function mantenerPantallaEncendida() {
         try {
             if ('wakeLock' in navigator) {
@@ -387,7 +377,6 @@
         });
     }
 
-    /** Si volvió la red o la pantalla, se reconecta de inmediato en vez de esperar el siguiente reintento. */
     function reconectarYa() {
         if (!estado.compartiendo || estado.cliente) {
             return;

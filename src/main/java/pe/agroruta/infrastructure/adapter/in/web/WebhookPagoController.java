@@ -16,7 +16,7 @@ import pe.agroruta.domain.port.in.ConfirmarPagoUseCase;
 
 /**
  * Notificaciones de la pasarela. No se confía en lo que dicen: solo se toma el identificador del pago y se
- * pregunta a la pasarela por su estado real (RNF-16). Se responde 200 enseguida para que no la reintente sin necesidad.
+ * pregunta a la pasarela por su estado real. Se responde 200 enseguida para que no la reintente sin necesidad.
  */
 @RestController
 @RequestMapping("/api/webhooks")
@@ -40,7 +40,6 @@ public class WebhookPagoController {
         return Map.of("recibido", true, "procesado", confirmarPago.confirmar(idPago));
     }
 
-    /** Solo se atienden las notificaciones de pagos. El identificador viene en data.id (como texto o como objeto). */
     private String idDelPago(JsonNode evento) {
         String tipo = evento.path("type").asText(null);
         if (tipo != null && !"payment".equals(tipo)) {

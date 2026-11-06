@@ -25,7 +25,6 @@ import pe.agroruta.domain.port.out.PanelRepositoryPort;
 
 class PanelServiceTest {
 
-    /** 30 de noviembre, 22:00 en Lima (UTC-5), que en UTC ya es 1 de diciembre. */
     private static final Instant AHORA = Instant.parse("2026-12-01T03:00:00Z");
     private static final Instant INICIO_NOVIEMBRE = Instant.parse("2026-11-01T05:00:00Z");
     private static final Instant INICIO_DICIEMBRE = Instant.parse("2026-12-01T05:00:00Z");

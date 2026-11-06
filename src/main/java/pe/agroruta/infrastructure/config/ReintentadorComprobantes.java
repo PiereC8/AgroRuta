@@ -10,7 +10,6 @@ import pe.agroruta.domain.model.Negocio;
 import pe.agroruta.domain.port.in.EmitirComprobanteUseCase;
 import pe.agroruta.domain.port.out.NegocioRepositoryPort;
 
-/** Cada 5 minutos reintenta los comprobantes que el proveedor no pudo recibir (RNF-19). */
 @Component
 @EnableScheduling
 public class ReintentadorComprobantes {

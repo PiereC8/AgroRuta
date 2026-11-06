@@ -22,7 +22,6 @@ public final class TenantContext {
         NEGOCIO_ACTUAL.remove();
     }
 
-    /** Ejecuta una acción dentro de la base de un negocio y deja el contexto como estaba. */
     public static <T> T ejecutarEn(String identificadorNegocio, Supplier<T> accion) {
         String previo = NEGOCIO_ACTUAL.get();
         NEGOCIO_ACTUAL.set(identificadorNegocio);

@@ -8,13 +8,11 @@ import java.time.Instant;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 
-/** Ayudas pequeñas para los adaptadores JDBC. */
 final class Sql {
 
     private Sql() {
     }
 
-    /** Inserta una fila y devuelve la llave generada. Los parámetros van en el orden de los signos de pregunta. */
     static long insertar(JdbcTemplate jdbc, String sql, Object... parametros) {
         var llave = new GeneratedKeyHolder();
         jdbc.update(conexion -> {

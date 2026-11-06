@@ -53,7 +53,6 @@ import pe.agroruta.domain.port.out.TransaccionPort;
 import pe.agroruta.domain.port.out.TransporteRepositoryPort;
 import pe.agroruta.domain.port.out.UsuarioRepositoryPort;
 
-/** Implementaciones en memoria de los puertos, para probar las reglas sin base de datos. */
 final class Falsos {
 
     private Falsos() {
@@ -394,7 +393,6 @@ final class Falsos {
         }
     }
 
-    /** Pasarela que graba lo que se le pide y responde lo que se le configure. */
     static class PasarelaGrabadora implements PagoPort {
         final List<SolicitudCobro> solicitudes = new ArrayList<>();
         final java.util.Map<String, ResultadoCobro> cargos = new java.util.HashMap<>();

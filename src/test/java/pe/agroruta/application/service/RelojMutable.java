@@ -6,7 +6,6 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 
-/** Reloj de pruebas que se puede adelantar. */
 final class RelojMutable extends Clock {
 
     private Instant ahora;

@@ -12,7 +12,6 @@ import javax.sql.DataSource;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.jdbc.datasource.lookup.AbstractRoutingDataSource;
 
-/** Elige la base del negocio activo y crea su pool de conexiones la primera vez que se usa. */
 public class TenantRoutingDataSource extends AbstractRoutingDataSource implements DisposableBean {
 
     private final Function<String, DataSource> fabrica;

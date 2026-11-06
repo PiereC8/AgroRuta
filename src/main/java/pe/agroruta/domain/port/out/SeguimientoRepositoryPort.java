@@ -13,10 +13,8 @@ public interface SeguimientoRepositoryPort {
     /** Guarda la posición. Devuelve vacío si ya existía (mismo envío y misma fecha): así reenviar no duplica. */
     Optional<Posicion> guardarPosicion(Posicion posicion);
 
-    /** Posiciones desde una fecha, de la más antigua a la más reciente. */
     List<Posicion> posicionesDesde(Long idEnvio, Instant desde);
 
-    /** Las últimas N posiciones, de la más antigua a la más reciente. */
     List<Posicion> ultimasPosiciones(Long idEnvio, int cantidad);
 
     AlertaEnvio guardarAlerta(AlertaEnvio alerta);

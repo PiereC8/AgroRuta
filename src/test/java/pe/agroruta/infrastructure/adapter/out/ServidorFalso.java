@@ -10,7 +10,6 @@ import java.util.List;
 
 import com.sun.net.httpserver.HttpServer;
 
-/** Servidor HTTP local que graba lo que recibe y responde lo que se le indique. Sustituye a la pasarela y al proveedor. */
 public final class ServidorFalso implements AutoCloseable {
 
     public record Peticion(String metodo, String ruta, java.util.Map<String, List<String>> cabeceras, String cuerpo) {
@@ -56,7 +55,6 @@ public final class ServidorFalso implements AutoCloseable {
         servidor.start();
     }
 
-    /** Agrega una respuesta. Se entregan en orden; la última se repite. */
     public ServidorFalso responde(int estado, String cuerpoJson) {
         synchronized (respuestas) {
             respuestas.add(new Respuesta(estado, cuerpoJson));

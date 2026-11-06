@@ -4,7 +4,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-/** Lo que se envía al proveedor para emitir el comprobante. Los productos agrícolas frescos van exonerados de IGV. */
 public record DatosComprobante(TipoComprobante tipo, String serie, int numero, LocalDate fechaEmision,
                                Cliente cliente, List<Item> items, Dinero total) {
 

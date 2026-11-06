@@ -18,16 +18,13 @@ public interface DestinoRepositoryPort {
 
     List<DestinoVenta> listarActivos();
 
-    /** Crea o reemplaza el precio esperado por kg de un producto en un destino. */
     void guardarPrecioEsperado(Long idDestinoVenta, String productoLote, Dinero precioPorKg);
 
-    /** Precio esperado por kg de un producto, por destino. Los destinos sin precio no aparecen. */
     Map<Long, Dinero> preciosEsperadosPorKg(String productoLote);
 
     void guardarCoordenada(Long idDestinoVenta, Coordenada coordenada);
 
     Optional<Coordenada> buscarCoordenada(Long idDestinoVenta);
 
-    /** Guarda la tarifa en la tabla manual que lee el adaptador de tarifas actual. */
     void guardarTarifaFlete(Long idDestinoVenta, Dinero costoFletePorKg);
 }

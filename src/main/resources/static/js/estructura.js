@@ -1,9 +1,5 @@
 'use strict';
 
-/**
- * Dibuja el menú lateral y el encabezado que comparten todas las pantallas internas.
- * Espera en la página un <nav id="menu"> y un <header id="encabezado">.
- */
 window.Estructura = (function () {
     const NS = 'http://www.w3.org/2000/svg';
 
@@ -123,10 +119,6 @@ window.Estructura = (function () {
         destino.append(izquierda, sesion);
     }
 
-    /**
-     * Si no hay sesión vuelve a la entrada. Opciones: activo (id del menú) y titulo (función que recibe el usuario
-     * y devuelve el texto del encabezado).
-     */
     function montar(opciones) {
         if (!window.Api.haySesion()) {
             window.location.replace('/login.html');

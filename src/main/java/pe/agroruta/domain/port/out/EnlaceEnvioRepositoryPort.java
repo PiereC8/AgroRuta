@@ -5,7 +5,6 @@ import java.util.Optional;
 
 import pe.agroruta.domain.model.EnlaceEnvio;
 
-/** Guarda los enlaces en la base central, para poder encontrar el negocio a partir de un token. */
 public interface EnlaceEnvioRepositoryPort {
 
     void guardar(EnlaceEnvio enlace);

@@ -37,8 +37,6 @@
         return td;
     }
 
-    // ---------- Indicadores ----------
-
     function pintarGanancia(datos) {
         const mes = nombreDelMes(datos.mes, 'long');
         poner('titulo-ganancia', 'Ganancia de ' + mes);
@@ -91,8 +89,6 @@
         $('tarjeta-cobros').classList.toggle('tarjeta--atencion', cobros.cantidad > 0);
     }
 
-    // ---------- Envíos en camino ----------
-
     function pintarTablaEnvios(datos) {
         const destino = $('tabla-envios');
         destino.replaceChildren();
@@ -131,8 +127,6 @@
         tabla.append(encabezado, cuerpo);
         destino.appendChild(tabla);
     }
-
-    // ---------- Gráfico de barras (SVG escrito a mano) ----------
 
     function svg(nombre, atributos, texto) {
         const nodo = document.createElementNS(NS, nombre);
@@ -186,8 +180,6 @@
         lienzo.appendChild(svg('line', {x1: 0, x2: ancho, y1: base, y2: base, 'class': 'grafico__eje'}));
         destino.appendChild(lienzo);
     }
-
-    // ---------- Carga ----------
 
     function pintar(datos) {
         const dueno = datos.gananciaMes !== undefined;

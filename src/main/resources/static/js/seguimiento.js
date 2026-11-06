@@ -38,8 +38,6 @@
         mostrar('enlace-invalido', true);
     }
 
-    // ---------- Mapa ----------
-
     function crearMapa() {
         vista.mapa = L.map('mapa', {zoomControl: true}).setView([-12.05, -77.04], 6);
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -93,8 +91,6 @@
             vista.mapa.fitBounds(L.latLngBounds(puntos), {padding: [40, 40], maxZoom: 16});
         }
     }
-
-    // ---------- Texto ----------
 
     function ahoraServidor() {
         return Date.now() + vista.desfaseMs;
@@ -156,8 +152,6 @@
         }
     }
 
-    // ---------- Datos ----------
-
     function aplicarDatos(datos) {
         vista.datos = datos;
         vista.desfaseMs = Date.parse(datos.ahora) - Date.now();
@@ -203,8 +197,6 @@
         }
         pintarTextos();
     }
-
-    // ---------- Tiempo real ----------
 
     async function conectarTiempoReal() {
         const protocolo = location.protocol === 'https:' ? 'wss://' : 'ws://';
