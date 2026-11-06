@@ -198,6 +198,23 @@ class PagoServiceTest {
     }
 
     @Test
+    void si_la_pasarela_esta_en_pausa_no_se_cobro_nada_y_el_comprador_puede_reintentar() {
+        pasarela.error = new pe.agroruta.domain.model.ServicioEnPausaException("en pausa");
+
+        var resultado = pagar.pagar(pago("clave-de-operacion-1"));
+
+        assertThat(resultado.estadoPago()).isEqualTo(EstadoPago.RECHAZADO);
+        assertThat(resultado.mensaje()).contains("No se cobró nada");
+        assertThat(consulta.estado(COMPRADOR).pagable()).isTrue();
+
+        pasarela.error = null;
+        var segundo = pagar.pagar(pago("clave-de-operacion-2"));
+
+        assertThat(segundo.estadoPago()).isEqualTo(EstadoPago.APROBADO);
+        assertThat(emisor.emitidos).hasSize(1);
+    }
+
+    @Test
     void la_notificacion_de_la_pasarela_confirma_el_pago_pendiente_y_emite_el_comprobante_una_sola_vez() {
         pasarela.noResponde = true;
         pagar.pagar(pago("clave-de-operacion-1"));

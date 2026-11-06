@@ -399,10 +399,14 @@ final class Falsos {
         java.util.function.Function<SolicitudCobro, ResultadoCobro> comportamiento = solicitud ->
                 ResultadoCobro.aprobado("chr_test_abc123", "Visa", "4242", solicitud.metadatos());
         boolean noResponde = false;
+        RuntimeException error = null;
 
         @Override
         public ResultadoCobro cobrar(SolicitudCobro solicitud) {
             solicitudes.add(solicitud);
+            if (error != null) {
+                throw error;
+            }
             ResultadoCobro resultado = comportamiento.apply(solicitud);
             cargos.put(resultado.idCargo(), resultado);
             if (noResponde) {

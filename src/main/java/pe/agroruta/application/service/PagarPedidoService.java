@@ -21,6 +21,7 @@ import pe.agroruta.domain.model.RecursoNoEncontradoException;
 import pe.agroruta.domain.model.ReglasComprobante;
 import pe.agroruta.domain.model.ResultadoCobro;
 import pe.agroruta.domain.model.SesionEnlace;
+import pe.agroruta.domain.model.ServicioEnPausaException;
 import pe.agroruta.domain.model.ServicioExternoNoDisponibleException;
 import pe.agroruta.domain.model.SolicitudCobro;
 import pe.agroruta.domain.model.TipoEnlace;
@@ -108,6 +109,10 @@ public class PagarPedidoService implements PagarPedidoUseCase {
         ResultadoCobro resultadoCobro;
         try {
             resultadoCobro = pasarela.cobrar(solicitud);
+        } catch (ServicioEnPausaException e) {
+            // La llamada nunca salió, así que no se cobró nada: se rechaza para que el comprador pueda reintentar.
+            REGISTRO.warn("Pasarela en pausa, no se cobró el pago {}", pago.idPago());
+            resultadoCobro = ResultadoCobro.rechazado(null, "servicio_en_pausa", e.getMessage(), Map.of());
         } catch (ServicioExternoNoDisponibleException e) {
             // No se sabe si cobró. Queda PENDIENTE y la notificación de la pasarela lo confirmará.
             REGISTRO.warn("La pasarela no respondió al cobrar el pago {}: {}", pago.idPago(), e.getMessage());

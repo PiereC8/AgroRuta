@@ -10,6 +10,9 @@ public final class MensajesPago {
 
     public static String paraUsuario(String codigo, String mensajePasarela) {
         String texto = normalizar((codigo == null ? "" : codigo) + " " + (mensajePasarela == null ? "" : mensajePasarela));
+        if (texto.contains("servicio_en_pausa")) {
+            return "El servicio de pagos no está disponible por un momento. No se cobró nada: intenta de nuevo en unos minutos.";
+        }
         if (texto.contains("fondo") || texto.contains("insufficient")) {
             return "La tarjeta no tiene fondos suficientes. Prueba con otra tarjeta.";
         }
