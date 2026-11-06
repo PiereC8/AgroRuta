@@ -26,6 +26,11 @@ public class ManejadorErrores {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ResponseEntity<Map<String, String>> datosInvalidos(MethodArgumentNotValidException e) {
-        return ResponseEntity.badRequest().body(Map.of("error", "Hay datos obligatorios vacíos o inválidos"));
+        String campos = e.getBindingResult().getFieldErrors().stream()
+                .map(error -> error.getField())
+                .distinct()
+                .collect(java.util.stream.Collectors.joining(", "));
+        return ResponseEntity.badRequest()
+                .body(Map.of("error", "Hay datos obligatorios vacíos o inválidos: " + campos));
     }
 }
