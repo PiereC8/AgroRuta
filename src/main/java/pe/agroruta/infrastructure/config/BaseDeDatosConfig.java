@@ -9,6 +9,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.PlatformTransactionManager;
 
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -47,6 +49,11 @@ public class BaseDeDatosConfig {
     @Bean
     JdbcTemplate plataformaJdbc(@Qualifier("plataformaDataSource") DataSource plataforma) {
         return new JdbcTemplate(plataforma);
+    }
+
+    @Bean
+    PlatformTransactionManager transaccionesNegocios(@Qualifier("negociosDataSource") DataSource negocios) {
+        return new DataSourceTransactionManager(negocios);
     }
 
     @Bean

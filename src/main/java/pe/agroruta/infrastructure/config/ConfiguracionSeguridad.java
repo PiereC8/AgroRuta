@@ -36,6 +36,7 @@ public class ConfiguracionSeguridad {
                 .authorizeHttpRequests(a -> a
                         .requestMatchers("/api/auth/login", "/actuator/health").permitAll()
                         .requestMatchers("/api/plataforma/**").hasRole(Rol.ADMINISTRADOR_PLATAFORMA.name())
+                        .requestMatchers("/api/lotes/**").hasAnyRole(Rol.DUENO.name(), Rol.OPERADOR.name())
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .addFilterBefore(new FiltroJwt(servicioJwt), UsernamePasswordAuthenticationFilter.class);

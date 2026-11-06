@@ -37,6 +37,11 @@ final class Falsos {
         }
 
         @Override
+        public List<Negocio> listarActivos() {
+            return registrados.values().stream().filter(Negocio::negocioActivo).toList();
+        }
+
+        @Override
         public Negocio guardar(Negocio negocio) {
             pasos.add("guardar:" + negocio.identificadorNegocio());
             Negocio guardado = negocio.conId(1L);

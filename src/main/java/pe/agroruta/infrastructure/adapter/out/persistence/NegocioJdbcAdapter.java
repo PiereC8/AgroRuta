@@ -2,6 +2,7 @@ package pe.agroruta.infrastructure.adapter.out.persistence;
 
 import java.sql.PreparedStatement;
 import java.sql.Statement;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -42,6 +43,12 @@ public class NegocioJdbcAdapter implements NegocioRepositoryPort {
         return jdbc.query("SELECT id_negocio, identificador_negocio, nombre_negocio, plan_suscripcion, negocio_activo "
                         + "FROM negocio WHERE identificador_negocio = ? AND negocio_activo = TRUE",
                 FILA, identificadorNegocio).stream().findFirst();
+    }
+
+    @Override
+    public List<Negocio> listarActivos() {
+        return jdbc.query("SELECT id_negocio, identificador_negocio, nombre_negocio, plan_suscripcion, negocio_activo "
+                + "FROM negocio WHERE negocio_activo = TRUE ORDER BY id_negocio", FILA);
     }
 
     @Override
