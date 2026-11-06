@@ -322,7 +322,11 @@ window.Ui = (function () {
             const cancelar = boton('Cancelar', 'boton-secundario');
             const enviar = el('button', 'boton', config.textoEnviar || 'Guardar');
             enviar.type = 'submit';
-            pie.append(cancelar, enviar);
+            if (config.sinCancelar) {
+                pie.append(enviar);
+            } else {
+                pie.append(cancelar, enviar);
+            }
             formulario.appendChild(pie);
             caja.append(cabecera, formulario);
             fondo.appendChild(caja);
@@ -451,13 +455,39 @@ window.Ui = (function () {
     /** Panel de solo lectura con un botón para cerrar. */
     function detalle(config) {
         return panel({titulo: config.titulo, texto: config.texto, contenido: config.contenido, ancho: config.ancho,
-            campos: [], textoEnviar: 'Cerrar', enviar: async () => true});
+            campos: [], textoEnviar: 'Cerrar', sinCancelar: true, enviar: async () => true});
     }
 
     async function confirmar(config) {
         const respuesta = await panel({titulo: config.titulo, texto: config.texto, campos: [],
             textoEnviar: config.textoAceptar || 'Aceptar', enviar: config.enviar || (async () => true)});
         return respuesta !== null;
+    }
+
+    /**
+     * Lista con "Ver más": pide páginas de 50 y las junta. config: {ruta, mas (contenedor del botón),
+     * alCargar(todas)}. Devuelve {cargar} para empezar de cero.
+     */
+    function listaPaginada(config) {
+        let pagina = 0;
+        let todas = [];
+        async function siguiente(reiniciar) {
+            if (reiniciar) {
+                pagina = 0;
+                todas = [];
+            }
+            const lote = await cargarPagina(config.ruta, {pagina});
+            todas = todas.concat(lote);
+            pagina += 1;
+            config.alCargar(todas);
+            config.mas.replaceChildren();
+            if (lote.length >= TAMANO_PAGINA) {
+                config.mas.appendChild(boton('Ver más', 'boton-secundario', () => {
+                    siguiente(false).catch((error) => errorDePagina(error.message));
+                }));
+            }
+        }
+        return {cargar: () => siguiente(true)};
     }
 
     /** Muestra u oculta el aviso de error de la pantalla (si el mensaje es vacío, lo oculta). */
@@ -479,5 +509,5 @@ window.Ui = (function () {
     }
 
     return {el, boton, dinero, kilos, fecha, dia, puedeEscribir, cargarPagina, etiqueta, tabla, aviso, pestanas,
-        panel, detalle, confirmar, errorDePagina, alReintentar, TAMANO_PAGINA};
+        panel, detalle, confirmar, errorDePagina, alReintentar, listaPaginada, TAMANO_PAGINA};
 })();
