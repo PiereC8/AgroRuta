@@ -326,14 +326,17 @@ class PagoWebTest {
     }
 
     @Test
-    void la_pagina_nunca_pide_el_numero_de_la_tarjeta() throws Exception {
+    void la_pagina_nunca_envia_el_numero_de_la_tarjeta_al_servidor() throws Exception {
         String html = mvc.perform(get("/pago.html")).andReturn().getResponse().getContentAsString();
         String js = mvc.perform(get("/js/pago.js")).andReturn().getResponse().getContentAsString();
+        String simulado = mvc.perform(get("/js/pago-simulado.js")).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
 
-        assertThat(html.toLowerCase()).doesNotContain("cardnumber", "cc-number", "numero de tarjeta", "cvv");
-        assertThat(js).doesNotContain("cardNumber").doesNotContain("cvv");
-        // El único dato que viaja al servidor es el token creado por la pasarela.
-        assertThat(js).contains("tokenTarjeta");
-        assertThat(BigDecimal.ZERO).isEqualTo(BigDecimal.ZERO);
+        // Con Mercado Pago los campos de tarjeta los pone su formulario seguro: la página no tiene ninguno propio.
+        assertThat(html).contains("brick-tarjeta").contains("Modo demostraci");
+        // El único dato que viaja al servidor es el token; el número solo se lee dentro del formulario simulado.
+        assertThat(js).contains("tokenTarjeta").doesNotContain("sim-numero").doesNotContain("sim-codigo");
+        assertThat(simulado).contains("sim_").contains("slice(-4)");
+        assertThat(simulado).doesNotContain("fetch(").doesNotContain("XMLHttpRequest");
     }
 }

@@ -174,6 +174,9 @@
             const simulado = datos.modo === 'SIMULADO';
             mostrar('zona-pago', true);
             mostrar('zona-simulada', simulado);
+            if (simulado) {
+                window.PagoSimulado.preparar();
+            }
             mostrar('zona-tarjeta', !simulado);
             // Con Mercado Pago, el botón de pagar lo pone su propio formulario seguro.
             mostrar('pagar', simulado);
@@ -203,7 +206,12 @@
             mostrarResultado('Escribe tu correo para enviarte el comprobante.', false);
             return;
         }
-        enviarPago({tokenTarjeta: $('simulado-resultado').value, email});
+        const tokenizado = window.PagoSimulado.tokenizar();
+        if (tokenizado.error) {
+            mostrarResultado(tokenizado.error, false);
+            return;
+        }
+        enviarPago({tokenTarjeta: tokenizado.token, email});
     }
 
     // ---------- Mercado Pago: formulario seguro de tarjeta ----------

@@ -4,6 +4,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import pe.agroruta.domain.model.ResultadoCobro;
 import pe.agroruta.domain.model.ServicioExternoNoDisponibleException;
@@ -11,8 +13,10 @@ import pe.agroruta.domain.model.SolicitudCobro;
 import pe.agroruta.domain.port.out.PagoPort;
 
 /**
- * Pasarela de mentira para desarrollar y demostrar sin cuenta. Se elige con el token que manda la página:
- * sim_aprobada, sim_sin_fondos, sim_vencida o sim_sin_respuesta (cobra pero no contesta).
+ * Pasarela de mentira para desarrollar y demostrar sin cuenta ni dinero real. La página simulada valida la tarjeta
+ * en el navegador (el número nunca viaja) y manda un token con la forma
+ * {@code sim_<resultado>[_<marca>[_<últimos 4>]]}, por ejemplo {@code sim_aprobada_visa_4242} o
+ * {@code sim_aprobada_paypal}. Resultados: aprobada, sin_fondos, vencida y sin_respuesta (cobra pero no contesta).
  */
 public class PasarelaSimulada implements PagoPort {
 
@@ -21,6 +25,9 @@ public class PasarelaSimulada implements PagoPort {
     public static final String VENCIDA = "sim_vencida";
     public static final String SIN_RESPUESTA = "sim_sin_respuesta";
 
+    private static final Pattern FORMATO = Pattern
+            .compile("^sim_(aprobada|sin_fondos|vencida|sin_respuesta)(?:_(visa|mastercard|amex|diners|paypal)(?:_(\\d{4}))?)?$");
+
     private final Map<String, ResultadoCobro> cargos = new ConcurrentHashMap<>();
 
     @Override
@@ -28,24 +35,37 @@ public class PasarelaSimulada implements PagoPort {
         // Con la forma de un cargo real (chr_xxx_...) para que la notificación de la pasarela también se pueda probar.
         String idCargo = "chr_sim_" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
         Map<String, String> metadatos = solicitud.metadatos();
-        String token = solicitud.tokenTarjeta();
-        if (SIN_FONDOS.equals(token)) {
+        Matcher token = FORMATO.matcher(solicitud.tokenTarjeta() == null ? "" : solicitud.tokenTarjeta());
+        if (!token.matches()) {
+            return guardar(ResultadoCobro.rechazado(idCargo, "datos_invalidos",
+                    "Los datos de la tarjeta no son válidos", metadatos));
+        }
+        String resultado = token.group(1);
+        String marca = token.group(2) == null ? "Visa" : nombreDeMarca(token.group(2));
+        String ultimosCuatro = token.group(2) == null ? "4242" : token.group(3);
+        if ("sin_fondos".equals(resultado)) {
             return guardar(ResultadoCobro.rechazado(idCargo, "fondos_insuficientes",
                     "La tarjeta no tiene fondos suficientes", metadatos));
         }
-        if (VENCIDA.equals(token)) {
+        if ("vencida".equals(resultado)) {
             return guardar(ResultadoCobro.rechazado(idCargo, "tarjeta_vencida", "La tarjeta está vencida", metadatos));
         }
-        if (APROBADA.equals(token) || SIN_RESPUESTA.equals(token)) {
-            ResultadoCobro aprobado = guardar(ResultadoCobro.aprobado(idCargo, "Visa", "4242", metadatos));
-            if (SIN_RESPUESTA.equals(token)) {
-                throw new ServicioExternoNoDisponibleException("La pasarela simulada no respondió (el cargo " + idCargo
-                        + " sí se hizo)");
-            }
-            return aprobado;
+        ResultadoCobro aprobado = guardar(ResultadoCobro.aprobado(idCargo, marca, ultimosCuatro, metadatos));
+        if ("sin_respuesta".equals(resultado)) {
+            throw new ServicioExternoNoDisponibleException("La pasarela simulada no respondió (el cargo " + idCargo
+                    + " sí se hizo)");
         }
-        return guardar(ResultadoCobro.rechazado(idCargo, "datos_invalidos", "Los datos de la tarjeta no son válidos",
-                metadatos));
+        return aprobado;
+    }
+
+    private static String nombreDeMarca(String marca) {
+        return switch (marca) {
+            case "visa" -> "Visa";
+            case "mastercard" -> "Mastercard";
+            case "amex" -> "American Express";
+            case "diners" -> "Diners";
+            default -> "PayPal";
+        };
     }
 
     @Override

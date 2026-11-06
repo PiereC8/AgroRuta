@@ -28,14 +28,33 @@
             </dl>
 
             <div id="zona-simulada" class="oculto">
-                <p class="mensaje aviso">Modo de prueba: el pago es simulado y no se cobra nada.</p>
-                <label for="simulado-resultado">Resultado que quieres simular</label>
-                <select id="simulado-resultado">
-                    <option value="sim_aprobada">Pago aprobado</option>
-                    <option value="sim_sin_fondos">Tarjeta sin fondos</option>
-                    <option value="sim_vencida">Tarjeta vencida</option>
-                    <option value="sim_sin_respuesta">La pasarela no responde</option>
+                <p class="mensaje aviso">Modo demostración: es una pasarela simulada, no se cobra dinero real. Los datos
+                    de la tarjeta se revisan en tu navegador y no se envían al servidor.</p>
+
+                <label for="sim-medio">Medio de pago</label>
+                <select id="sim-medio">
+                    <option value="tarjeta">Tarjeta (Visa, Mastercard, American Express, Diners)</option>
+                    <option value="paypal">PayPal</option>
                 </select>
+
+                <div id="sim-zona-tarjeta">
+                    <label for="sim-numero">Número de la tarjeta</label>
+                    <input id="sim-numero" type="text" inputmode="numeric" autocomplete="off" maxlength="23"
+                           placeholder="0000 0000 0000 0000">
+                    <p id="sim-marca" class="suave" aria-live="polite"></p>
+                    <label for="sim-vence">Vencimiento (MM/AA)</label>
+                    <input id="sim-vence" type="text" inputmode="numeric" autocomplete="off" maxlength="5"
+                           placeholder="12/39">
+                    <label for="sim-codigo">Código de seguridad</label>
+                    <input id="sim-codigo" type="password" inputmode="numeric" autocomplete="off" maxlength="4"
+                           placeholder="123">
+                    <p class="suave">Tarjetas de prueba (toca una para rellenar):</p>
+                    <p id="sim-pruebas"></p>
+                </div>
+
+                <p id="sim-zona-paypal" class="suave oculto">Pagarás con una cuenta de PayPal de prueba. No se pide
+                    contraseña: es solo una demostración.</p>
+
                 <label for="simulado-email">Correo para el comprobante</label>
                 <input id="simulado-email" type="email" autocomplete="email" placeholder="tucorreo@ejemplo.com">
             </div>
@@ -69,6 +88,7 @@
         <p><a id="volver" href="#">Volver al seguimiento</a></p>
     </section>
 </main>
+<script src="/js/pago-simulado.js"></script>
 <script src="/js/pago.js"></script>
 </body>
 </html>
