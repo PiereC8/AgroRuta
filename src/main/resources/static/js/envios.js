@@ -174,40 +174,16 @@
 
     // ---------- Enlaces ----------
 
-    async function copiar(entrada, boton) {
-        try {
-            await navigator.clipboard.writeText(entrada.value);
-        } catch (e) {
-            entrada.select();
-            document.execCommand('copy');
-        }
-        boton.textContent = 'Copiado';
-        setTimeout(() => { boton.textContent = 'Copiar'; }, 2000);
-    }
-
-    function filaEnlace(titulo, ruta) {
-        const caja = el('div', 'bloque');
-        caja.appendChild(el('h3', null, titulo));
-        const fila = el('div', 'enlace-copiable');
-        const entrada = el('input', 'campo__entrada');
-        entrada.readOnly = true;
-        entrada.value = window.location.origin + ruta;
-        entrada.setAttribute('aria-label', titulo);
-        const boton = window.Ui.boton('Copiar', 'boton-secundario');
-        boton.addEventListener('click', () => copiar(entrada, boton));
-        fila.append(entrada, boton);
-        caja.appendChild(fila);
-        return caja;
-    }
-
     async function verEnlaces(envio) {
         try {
             const enlaces = await window.Api.pedir('/api/envios/' + envio.idEnvio + '/enlaces', {metodo: 'POST'});
             const contenido = el('div');
             if (enlaces.rutaConductor) {
-                contenido.appendChild(filaEnlace('Enlace del conductor', enlaces.rutaConductor));
+                contenido.appendChild(window.Ui.campoCopiable('Enlace del conductor',
+                    window.location.origin + enlaces.rutaConductor));
             }
-            contenido.appendChild(filaEnlace('Enlace del comprador', enlaces.rutaComprador));
+            contenido.appendChild(window.Ui.campoCopiable('Enlace del comprador',
+                window.location.origin + enlaces.rutaComprador));
             contenido.appendChild(el('p', 'suave', 'Quien tenga el enlace puede verlo, sin contraseña. Vence el '
                 + window.Ui.fecha(enlaces.fechaExpiracion) + '. Envíalo solo a quien corresponde.'));
             await window.Ui.detalle({titulo: 'Enlaces del envío ' + envio.idEnvio, contenido, ancho: true});
@@ -319,8 +295,8 @@
         const visibles = envios.filter((e) => !filtro || e.estadoEnvio === filtro);
         window.Ui.tabla($('lista'), [
             {titulo: 'N.º', valor: (e) => e.idEnvio},
-            {titulo: 'Pedido', valor: resumenPedido},
-            {titulo: 'Destino', valor: (e) => destinoDe((pedidoDe(e.idPedido) || {}).idDestinoVenta)},
+            {titulo: 'Pedido', clase: 'largo', valor: resumenPedido},
+            {titulo: 'Destino', clase: 'largo', valor: (e) => destinoDe((pedidoDe(e.idPedido) || {}).idDestinoVenta)},
             {titulo: 'Vehículo', valor: (e) => placaDe(e.idVehiculo)},
             {titulo: 'Estado', valor: (e) => window.Ui.etiqueta(ESTADOS[e.estadoEnvio][0], ESTADOS[e.estadoEnvio][1])},
             {titulo: 'Novedad', valor: novedad}

@@ -85,7 +85,7 @@
                 window.Api.pedir('/api/transportistas'), window.Api.pedir('/api/vehiculos')]);
             transportistas = listaTransportistas;
             window.Ui.tabla(vistaTransportistas, [
-                {titulo: 'Nombre', valor: (t) => t.nombreTransportista},
+                {titulo: 'Nombre', clase: 'largo', valor: (t) => t.nombreTransportista},
                 {titulo: 'Teléfono', valor: (t) => t.telefonoTransportista},
                 {titulo: 'Vehículos', valor: (t) => vehiculos.filter((v) => v.idTransportista === t.idTransportista).length}
             ], transportistas, {
@@ -95,7 +95,7 @@
             });
             window.Ui.tabla(vistaVehiculos, [
                 {titulo: 'Placa', valor: (v) => v.placaVehiculo},
-                {titulo: 'Transportista', valor: (v) => nombreDe(v.idTransportista)},
+                {titulo: 'Transportista', clase: 'largo', valor: (v) => nombreDe(v.idTransportista)},
                 {titulo: 'Capacidad', valor: (v) => window.Ui.kilos(v.capacidadKg)}
             ], vehiculos, {
                 vacio: {titulo: 'Aún no hay vehículos',

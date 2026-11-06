@@ -70,7 +70,7 @@
         } else {
             const caja = el('div');
             window.Ui.tabla(caja, [
-                {titulo: 'Destino', valor: (o) => o.nombreDestino},
+                {titulo: 'Destino', clase: 'largo', valor: (o) => o.nombreDestino},
                 {titulo: 'Precio/kg', valor: (o) => window.Ui.dinero(o.precioEsperadoPorKg)},
                 {titulo: 'Flete/kg', valor: (o) => window.Ui.dinero(o.costoFletePorKg)},
                 {titulo: 'Ganancia neta', valor: (o) => window.Ui.dinero(o.gananciaNeta)}
@@ -107,10 +107,10 @@
         ruta: '/api/lotes',
         mas: $('mas'),
         alCargar: (lotes) => window.Ui.tabla($('lista'), [
-            {titulo: 'Producto', valor: (l) => l.productoLote},
+            {titulo: 'Producto', clase: 'largo', valor: (l) => l.productoLote},
             {titulo: 'Cantidad', valor: (l) => window.Ui.kilos(l.cantidadKg)},
             {titulo: 'Cosecha', valor: (l) => window.Ui.dia(l.fechaCosecha)},
-            {titulo: 'Chacra', valor: (l) => l.chacraOrigen},
+            {titulo: 'Chacra', clase: 'largo', valor: (l) => l.chacraOrigen},
             {titulo: 'Estado', valor: (l) => window.Ui.etiqueta((ESTADOS[l.estadoLote] || [l.estadoLote])[0],
                 (ESTADOS[l.estadoLote] || [])[1])}
         ], lotes, {

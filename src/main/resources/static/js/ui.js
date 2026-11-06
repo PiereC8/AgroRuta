@@ -490,6 +490,30 @@ window.Ui = (function () {
         return {cargar: () => siguiente(true)};
     }
 
+    /** Bloque con un título, un campo de solo lectura con el texto y un botón "Copiar". */
+    function campoCopiable(titulo, texto) {
+        const caja = el('div', 'bloque');
+        caja.appendChild(el('h3', null, titulo));
+        const fila = el('div', 'enlace-copiable');
+        const entrada = el('input', 'campo__entrada');
+        entrada.readOnly = true;
+        entrada.value = texto;
+        entrada.setAttribute('aria-label', titulo);
+        const copiar = boton('Copiar', 'boton-secundario', async () => {
+            try {
+                await navigator.clipboard.writeText(entrada.value);
+            } catch (e) {
+                entrada.select();
+                document.execCommand('copy');
+            }
+            copiar.textContent = 'Copiado';
+            setTimeout(() => { copiar.textContent = 'Copiar'; }, 2000);
+        });
+        fila.append(entrada, copiar);
+        caja.appendChild(fila);
+        return caja;
+    }
+
     /** Muestra u oculta el aviso de error de la pantalla (si el mensaje es vacío, lo oculta). */
     function errorDePagina(mensaje) {
         const caja = document.getElementById('error');
@@ -509,5 +533,5 @@ window.Ui = (function () {
     }
 
     return {el, boton, dinero, kilos, fecha, dia, puedeEscribir, cargarPagina, etiqueta, tabla, aviso, pestanas,
-        panel, detalle, confirmar, errorDePagina, alReintentar, listaPaginada, TAMANO_PAGINA};
+        panel, detalle, confirmar, errorDePagina, alReintentar, listaPaginada, campoCopiable, TAMANO_PAGINA};
 })();

@@ -100,9 +100,9 @@
         mas: $('mas'),
         alCargar: (pedidos) => window.Ui.tabla($('lista'), [
             {titulo: 'N.º', valor: (p) => p.idPedido},
-            {titulo: 'Comprador', valor: (p) => nombreComprador(p.idComprador)},
-            {titulo: 'Lote', valor: (p) => nombreLote(p.idLote)},
-            {titulo: 'Destino', valor: (p) => nombreDestino(p.idDestinoVenta)},
+            {titulo: 'Comprador', clase: 'largo', valor: (p) => nombreComprador(p.idComprador)},
+            {titulo: 'Lote', clase: 'largo', valor: (p) => nombreLote(p.idLote)},
+            {titulo: 'Destino', clase: 'largo', valor: (p) => nombreDestino(p.idDestinoVenta)},
             {titulo: 'Cantidad', valor: (p) => window.Ui.kilos(p.cantidadKg)},
             {titulo: 'Precio/kg', valor: (p) => window.Ui.dinero(p.precioAcordadoPorKg)},
             {titulo: 'Ingreso acordado', valor: (p) => window.Ui.dinero(p.ingresoAcordado)},

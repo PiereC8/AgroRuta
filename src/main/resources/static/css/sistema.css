@@ -974,3 +974,15 @@ a {
     font-size: 1.25rem;
     margin-top: 4px;
 }
+
+/* Las tablas no parten placas, cifras ni estados; solo las columnas de texto largo pueden pasar a otra línea. */
+.tabla td,
+.tabla th {
+    white-space: nowrap;
+}
+
+.tabla td.largo,
+.tabla th.largo {
+    white-space: normal;
+    min-width: 160px;
+}

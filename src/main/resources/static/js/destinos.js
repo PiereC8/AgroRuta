@@ -99,8 +99,8 @@
         try {
             const destinos = await window.Api.pedir('/api/destinos');
             window.Ui.tabla($('lista'), [
-                {titulo: 'Destino', valor: (d) => d.nombreDestino},
-                {titulo: 'Ciudad', valor: (d) => d.ciudadDestino},
+                {titulo: 'Destino', clase: 'largo', valor: (d) => d.nombreDestino},
+                {titulo: 'Ciudad', clase: 'largo', valor: (d) => d.ciudadDestino},
                 {titulo: 'Zona', valor: (d) => window.Ui.etiqueta(d.esLocal ? 'Local' : 'Con transporte',
                     d.esLocal ? '' : 'neutro')}
             ], destinos, {

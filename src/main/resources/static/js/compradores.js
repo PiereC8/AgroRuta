@@ -59,10 +59,10 @@
         try {
             const compradores = await window.Api.pedir('/api/compradores');
             window.Ui.tabla($('lista'), [
-                {titulo: 'Nombre', valor: (c) => c.nombreComprador},
+                {titulo: 'Nombre', clase: 'largo', valor: (c) => c.nombreComprador},
                 {titulo: 'Tipo', valor: (c) => TIPOS[c.tipoComprador] || c.tipoComprador},
                 {titulo: 'Documento', valor: documentoConTipo},
-                {titulo: 'Ciudad', valor: (c) => c.ciudadComprador},
+                {titulo: 'Ciudad', clase: 'largo', valor: (c) => c.ciudadComprador},
                 {titulo: 'Teléfono', valor: (c) => c.telefonoComprador}
             ], compradores, {
                 vacio: {titulo: 'Aún no hay compradores',

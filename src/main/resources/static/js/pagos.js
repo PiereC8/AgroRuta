@@ -105,25 +105,8 @@
         try {
             const enlaces = await window.Api.pedir('/api/envios/' + liquidacion.idEnvio + '/enlaces', {metodo: 'POST'});
             const contenido = el('div');
-            const caja = el('div', 'bloque');
-            caja.appendChild(el('h3', null, 'Enlace de pago para el comprador'));
-            const fila = el('div', 'enlace-copiable');
-            const entrada = el('input', 'campo__entrada');
-            entrada.readOnly = true;
-            entrada.value = window.location.origin + '/pago.html#t=' + enlaces.tokenComprador;
-            entrada.setAttribute('aria-label', 'Enlace de pago');
-            const copiar = window.Ui.boton('Copiar', 'boton-secundario');
-            copiar.addEventListener('click', async () => {
-                try {
-                    await navigator.clipboard.writeText(entrada.value);
-                } catch (e) {
-                    entrada.select();
-                    document.execCommand('copy');
-                }
-                copiar.textContent = 'Copiado';
-            });
-            fila.append(entrada, copiar);
-            caja.appendChild(fila);
+            const caja = window.Ui.campoCopiable('Enlace de pago para el comprador',
+                window.location.origin + '/pago.html#t=' + enlaces.tokenComprador);
             contenido.append(caja, el('p', 'suave', 'Con este enlace el comprador paga con tarjeta, sin contraseña. Vence el '
                 + window.Ui.fecha(enlaces.fechaExpiracion) + '.'));
             await window.Ui.detalle({titulo: 'Cobrar el pedido ' + liquidacion.idPedido, contenido, ancho: true});
@@ -139,8 +122,8 @@
         const pendientes = liquidaciones.filter((l) => !aprobadas.has(l.idLiquidacion));
         const ultimoDe = (l) => pagos.find((p) => p.idLiquidacion === l.idLiquidacion);
         window.Ui.tabla($('por-cobrar'), [
-            {titulo: 'Pedido', valor: (l) => l.idPedido},
-            {titulo: 'Comprador', valor: (l) => compradorDe(l.idPedido)},
+            {titulo: 'Pedido', clase: 'largo', valor: (l) => l.idPedido},
+            {titulo: 'Comprador', clase: 'largo', valor: (l) => compradorDe(l.idPedido)},
             {titulo: 'Entregado', valor: (l) => window.Ui.fecha(l.fechaEntrega)},
             {titulo: 'Importe a cobrar', valor: (l) => window.Ui.dinero(l.ingresoReal)},
             {titulo: 'Situación', valor: (l) => {
@@ -159,13 +142,13 @@
         mas: $('mas'),
         alCargar: (pagos) => window.Ui.tabla($('lista'), [
             {titulo: 'N.º', valor: (p) => p.idPago},
-            {titulo: 'Pedido', valor: (p) => p.idPedido},
-            {titulo: 'Comprador', valor: (p) => compradorDe(p.idPedido)},
+            {titulo: 'Pedido', clase: 'largo', valor: (p) => p.idPedido},
+            {titulo: 'Comprador', clase: 'largo', valor: (p) => compradorDe(p.idPedido)},
             {titulo: 'Monto', valor: (p) => window.Ui.dinero(p.monto)},
             {titulo: 'Estado', valor: (p) => window.Ui.etiqueta((ESTADOS_PAGO[p.estadoPago] || [p.estadoPago])[0],
                 (ESTADOS_PAGO[p.estadoPago] || [])[1])},
             {titulo: 'Medio de pago', valor: medioDePago},
-            {titulo: 'Correo', valor: (p) => p.emailPagador},
+            {titulo: 'Correo', clase: 'largo', valor: (p) => p.emailPagador},
             {titulo: 'Fecha', valor: (p) => window.Ui.fecha(p.fechaActualizacion)}
         ], pagos, {
             vacio: {titulo: 'Aún no hay pagos', texto: 'Cuando un comprador pague con su enlace, aparecerá aquí.'},
