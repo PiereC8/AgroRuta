@@ -7,6 +7,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import pe.agroruta.application.service.AltaNegocioService;
+import pe.agroruta.application.service.ConsultarLiquidacionesService;
+import pe.agroruta.application.service.RegistrarEntregaService;
+import pe.agroruta.domain.port.in.ConsultarLiquidacionesUseCase;
+import pe.agroruta.domain.port.in.RegistrarEntregaUseCase;
+import pe.agroruta.domain.port.out.LiquidacionRepositoryPort;
 import pe.agroruta.application.service.AdministrarCompradoresService;
 import pe.agroruta.application.service.AdministrarTransporteService;
 import pe.agroruta.application.service.DespacharEnvioService;
@@ -97,6 +102,20 @@ public class BeanConfig {
                                                 TransporteRepositoryPort transporte, EnvioRepositoryPort envios,
                                                 TransaccionPort transaccion, Clock reloj) {
         return new DespacharEnvioService(pedidos, lotes, transporte, envios, transaccion, reloj);
+    }
+
+    @Bean
+    RegistrarEntregaUseCase registrarEntregaUseCase(EnvioRepositoryPort envios, PedidoRepositoryPort pedidos,
+                                                    LoteRepositoryPort lotes, DestinoRepositoryPort destinos,
+                                                    TarifaPort tarifas, LiquidacionRepositoryPort liquidaciones,
+                                                    TransaccionPort transaccion, Clock reloj) {
+        return new RegistrarEntregaService(envios, pedidos, lotes, destinos, tarifas, liquidaciones, transaccion,
+                reloj);
+    }
+
+    @Bean
+    ConsultarLiquidacionesUseCase consultarLiquidacionesUseCase(LiquidacionRepositoryPort liquidaciones) {
+        return new ConsultarLiquidacionesService(liquidaciones);
     }
 
     @Bean

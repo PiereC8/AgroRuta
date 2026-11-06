@@ -47,6 +47,9 @@ import pe.agroruta.domain.model.LoteNoEncontradoException;
 import pe.agroruta.domain.model.Negocio;
 import pe.agroruta.domain.model.Plan;
 import pe.agroruta.domain.model.Rol;
+import pe.agroruta.domain.model.Liquidacion;
+import pe.agroruta.domain.port.in.ConsultarLiquidacionesUseCase;
+import pe.agroruta.domain.port.in.RegistrarEntregaUseCase;
 import pe.agroruta.domain.port.in.AdministrarCompradoresUseCase;
 import pe.agroruta.domain.port.in.AdministrarDestinosUseCase;
 import pe.agroruta.domain.port.in.AdministrarTransporteUseCase;
@@ -63,7 +66,7 @@ import pe.agroruta.infrastructure.config.TenantContext;
 
 @WebMvcTest(controllers = {NegocioController.class, AuthController.class, LoteController.class,
         DestinoController.class, CotizacionController.class, CompradorController.class, PedidoController.class,
-        TransporteController.class, EnvioController.class})
+        TransporteController.class, EnvioController.class, LiquidacionController.class})
 @Import({ConfiguracionSeguridad.class, ManejadorErrores.class, SeguridadWebTest.Reloj.class})
 @TestPropertySource(properties = {
         "agroruta.jwt.secreto=secreto-de-prueba-con-mas-de-32-caracteres!!",
@@ -106,6 +109,10 @@ class SeguridadWebTest {
     AdministrarTransporteUseCase administrarTransporte;
     @MockitoBean
     DespacharEnvioUseCase despacharEnvio;
+    @MockitoBean
+    RegistrarEntregaUseCase registrarEntrega;
+    @MockitoBean
+    ConsultarLiquidacionesUseCase consultarLiquidaciones;
 
     private static final String LOTE = """
             {"productoLote":"Palta Hass","cantidadKg":1250.5,"fechaCosecha":"2026-11-05","chacraOrigen":"Chacra Sur"}""";
@@ -298,6 +305,47 @@ class SeguridadWebTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.error").value("El vehículo ABC-123 ya tiene un envío en curso"));
         mvc.perform(post("/api/envios/9/salida").header("Authorization", dueno)).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void el_operador_registra_la_entrega_y_recibe_la_liquidacion() throws Exception {
+        var liquidacion = new Liquidacion(1L, 1L, 1L, 1L, new BigDecimal("1250.500"), new BigDecimal("1180.000"),
+                new BigDecimal("40.500"), new BigDecimal("30.000"), Dinero.de("5.40"), Dinero.de("1.20"),
+                Dinero.de("6372.00"), Dinero.de("1500.60"), Dinero.de("4871.40"), Dinero.de("5252.10"),
+                Dinero.de("380.70"), "operador.demo", Instant.now());
+        when(registrarEntrega.registrar(any())).thenReturn(liquidacion);
+        when(consultarLiquidaciones.obtenerPorLote(1L)).thenReturn(liquidacion);
+        String operador = bearer("chacra_demo", "operador.demo", Rol.OPERADOR);
+
+        mvc.perform(post("/api/envios/1/entrega").header("Authorization", operador)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"cantidadRecibidaKg\":1180,\"mermaKg\":40.5,\"rechazoKg\":30}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.gananciaReal").value(4871.40))
+                .andExpect(jsonPath("$.perdidaPorMermaYRechazo").value(380.70));
+        mvc.perform(get("/api/lotes/1/liquidacion").header("Authorization", operador))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.ingresoReal").value(6372.00));
+        mvc.perform(get("/api/liquidaciones").header("Authorization", operador)).andExpect(status().isOk());
+        mvc.perform(get("/api/liquidaciones")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/liquidaciones").header("Authorization",
+                bearer(null, "admin", Rol.ADMINISTRADOR_PLATAFORMA))).andExpect(status().isForbidden());
+    }
+
+    @Test
+    void una_entrega_que_no_suma_responde_400_y_una_repetida_409() throws Exception {
+        when(registrarEntrega.registrar(any()))
+                .thenThrow(new DominioException("Lo recibido, la merma y lo rechazado suman 999.999 kg"))
+                .thenThrow(new ConflictoDominioException("El envío 1 está ENTREGADO"));
+        String dueno = bearer("chacra_demo", "dueno.demo", Rol.DUENO);
+        String cuerpo = "{\"cantidadRecibidaKg\":1,\"mermaKg\":0,\"rechazoKg\":0}";
+
+        mvc.perform(post("/api/envios/1/entrega").header("Authorization", dueno)
+                        .contentType(MediaType.APPLICATION_JSON).content(cuerpo)).andExpect(status().isBadRequest());
+        mvc.perform(post("/api/envios/1/entrega").header("Authorization", dueno)
+                        .contentType(MediaType.APPLICATION_JSON).content(cuerpo)).andExpect(status().isConflict());
+        mvc.perform(post("/api/envios/1/entrega").header("Authorization", dueno)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"mermaKg\":0}"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

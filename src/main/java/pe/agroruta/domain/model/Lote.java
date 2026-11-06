@@ -54,6 +54,14 @@ public record Lote(Long idLote, String productoLote, BigDecimal cantidadKg, Loca
         return conEstado(EstadoLote.RESERVADO, EstadoLote.DESPACHADO);
     }
 
+    public Lote entregar() {
+        return conEstado(EstadoLote.DESPACHADO, EstadoLote.ENTREGADO);
+    }
+
+    public Lote liquidar() {
+        return conEstado(EstadoLote.ENTREGADO, EstadoLote.LIQUIDADO);
+    }
+
     private Lote conEstado(EstadoLote requerido, EstadoLote nuevo) {
         if (estadoLote != requerido) {
             throw new ConflictoDominioException(

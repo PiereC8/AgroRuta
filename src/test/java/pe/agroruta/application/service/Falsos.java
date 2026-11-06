@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import pe.agroruta.domain.model.Liquidacion;
+import pe.agroruta.domain.port.out.LiquidacionRepositoryPort;
 import pe.agroruta.domain.model.Comprador;
 import pe.agroruta.domain.model.Envio;
 import pe.agroruta.domain.model.EstadoEnvio;
@@ -239,6 +241,27 @@ final class Falsos {
         public boolean existeActivoDeVehiculo(Long idVehiculo) {
             return envios.stream().anyMatch(e -> e.idVehiculo().equals(idVehiculo)
                     && e.estadoEnvio() != EstadoEnvio.ENTREGADO);
+        }
+    }
+
+    static class LiquidacionesEnMemoria implements LiquidacionRepositoryPort {
+        final List<Liquidacion> liquidaciones = new ArrayList<>();
+
+        @Override
+        public Liquidacion guardarNueva(Liquidacion liquidacion) {
+            Liquidacion guardada = liquidacion.conId((long) liquidaciones.size() + 1);
+            liquidaciones.add(guardada);
+            return guardada;
+        }
+
+        @Override
+        public Optional<Liquidacion> buscarPorLote(Long idLote) {
+            return liquidaciones.stream().filter(l -> l.idLote().equals(idLote)).findFirst();
+        }
+
+        @Override
+        public List<Liquidacion> listar(int pagina, int tamano) {
+            return liquidaciones.stream().skip((long) pagina * tamano).limit(tamano).toList();
         }
     }
 

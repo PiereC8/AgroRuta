@@ -42,6 +42,15 @@ public record Pedido(Long idPedido, Long idComprador, Long idLote, Long idDestin
                 EstadoPedido.DESPACHADO, usuarioRegistro, fechaPedido);
     }
 
+    public Pedido entregado() {
+        if (estadoPedido != EstadoPedido.DESPACHADO) {
+            throw new ConflictoDominioException("El pedido " + idPedido + " está " + estadoPedido
+                    + " y solo se entrega desde " + EstadoPedido.DESPACHADO);
+        }
+        return new Pedido(idPedido, idComprador, idLote, idDestinoVenta, cantidadKg, precioAcordadoPorKg,
+                EstadoPedido.ENTREGADO, usuarioRegistro, fechaPedido);
+    }
+
     public Pedido conId(Long nuevoIdPedido) {
         return new Pedido(nuevoIdPedido, idComprador, idLote, idDestinoVenta, cantidadKg, precioAcordadoPorKg,
                 estadoPedido, usuarioRegistro, fechaPedido);
