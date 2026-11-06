@@ -117,6 +117,20 @@ class PaginasWebTest {
     }
 
     @Test
+    void las_paginas_publicas_usan_el_sistema_de_diseno_con_la_marca_y_sin_la_hoja_vieja() throws Exception {
+        for (String pagina : new String[]{"conductor", "seguimiento", "pago"}) {
+            String html = mvc.perform(get("/" + pagina + ".html")).andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+
+            assertThat(html).contains("/css/sistema.css").contains("/css/publico.css").contains("/img/logo.png")
+                    .doesNotContain("base.css");
+            assertThat(html).doesNotContainPattern("<script(?![^>]*\\bsrc=)");
+            assertThat(html).doesNotContain(" style=").doesNotContain("onclick=").doesNotContain("<style");
+        }
+        mvc.perform(get("/css/base.css")).andExpect(status().isNotFound());
+    }
+
+    @Test
     void el_logo_los_estilos_y_las_utilidades_se_sirven() throws Exception {
         mvc.perform(get("/img/logo.png")).andExpect(status().isOk());
         mvc.perform(get("/css/sistema.css")).andExpect(status().isOk());

@@ -5,12 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="referrer" content="no-referrer">
     <meta name="robots" content="noindex">
-    <title>AgroRuta - Pago de tu pedido</title>
-    <link rel="stylesheet" href="/css/base.css">
+    <title>Pago de tu pedido - AgroRuta</title>
+    <link rel="icon" href="/img/logo.png" type="image/png">
+    <link rel="preload" href="/fonts/fuente.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/css/sistema.css">
+    <link rel="stylesheet" href="/css/publico.css">
 </head>
 <body>
-<main>
-    <h1>Pago de tu pedido</h1>
+<main class="publico">
+    <header class="publico__cabecera">
+        <img src="/img/logo.png" alt="AgroRuta">
+        <div>
+            <strong>AgroRuta</strong>
+            <span class="suave">Pago de tu pedido</span>
+        </div>
+    </header>
+
+    <h1>Paga tu pedido</h1>
 
     <section id="enlace-invalido" class="mensaje error oculto" role="alert">
         Este enlace no es válido o ya venció. Pide uno nuevo a quien te vende.
@@ -26,37 +37,49 @@
                 <dt>Total a pagar</dt>
                 <dd id="dato-monto">-</dd>
             </dl>
+            <p></p>
 
             <div id="zona-simulada" class="oculto">
                 <p class="mensaje aviso">Modo demostración: es una pasarela simulada, no se cobra dinero real. Los datos
                     de la tarjeta se revisan en tu navegador y no se envían al servidor.</p>
 
-                <label for="sim-medio">Medio de pago</label>
-                <select id="sim-medio">
-                    <option value="tarjeta">Tarjeta (Visa, Mastercard, American Express, Diners)</option>
-                    <option value="paypal">PayPal</option>
-                </select>
+                <div class="campo">
+                    <label class="campo__etiqueta" for="sim-medio">Medio de pago</label>
+                    <select class="campo__entrada" id="sim-medio">
+                        <option value="tarjeta">Tarjeta de crédito o débito</option>
+                        <option value="paypal">PayPal</option>
+                    </select>
+                </div>
 
                 <div id="sim-zona-tarjeta">
-                    <label for="sim-numero">Número de la tarjeta</label>
-                    <input id="sim-numero" type="text" inputmode="numeric" autocomplete="off" maxlength="23"
-                           placeholder="0000 0000 0000 0000">
-                    <p id="sim-marca" class="suave" aria-live="polite"></p>
-                    <label for="sim-vence">Vencimiento (MM/AA)</label>
-                    <input id="sim-vence" type="text" inputmode="numeric" autocomplete="off" maxlength="5"
-                           placeholder="12/39">
-                    <label for="sim-codigo">Código de seguridad</label>
-                    <input id="sim-codigo" type="password" inputmode="numeric" autocomplete="off" maxlength="4"
-                           placeholder="123">
+                    <div class="campo">
+                        <label class="campo__etiqueta" for="sim-numero">Número de la tarjeta</label>
+                        <input class="campo__entrada" id="sim-numero" type="text" inputmode="numeric"
+                               autocomplete="off" maxlength="23" placeholder="0000 0000 0000 0000">
+                        <span id="sim-marca" class="campo__ayuda" aria-live="polite"></span>
+                    </div>
+                    <div class="campo">
+                        <label class="campo__etiqueta" for="sim-vence">Vencimiento (MM/AA)</label>
+                        <input class="campo__entrada" id="sim-vence" type="text" inputmode="numeric"
+                               autocomplete="off" maxlength="5" placeholder="12/39">
+                    </div>
+                    <div class="campo">
+                        <label class="campo__etiqueta" for="sim-codigo">Código de seguridad</label>
+                        <input class="campo__entrada" id="sim-codigo" type="password" inputmode="numeric"
+                               autocomplete="off" maxlength="4" placeholder="123">
+                    </div>
                     <p class="suave">Tarjetas de prueba (toca una para rellenar):</p>
-                    <p id="sim-pruebas"></p>
+                    <div id="sim-pruebas" class="pruebas"></div>
                 </div>
 
                 <p id="sim-zona-paypal" class="suave oculto">Pagarás con una cuenta de PayPal de prueba. No se pide
                     contraseña: es solo una demostración.</p>
 
-                <label for="simulado-email">Correo para el comprobante</label>
-                <input id="simulado-email" type="email" autocomplete="email" placeholder="tucorreo@ejemplo.com">
+                <div class="campo">
+                    <label class="campo__etiqueta" for="simulado-email">Correo para el comprobante</label>
+                    <input class="campo__entrada" id="simulado-email" type="email" autocomplete="email"
+                           placeholder="tucorreo@ejemplo.com">
+                </div>
             </div>
 
             <div id="zona-tarjeta" class="oculto">
@@ -65,16 +88,18 @@
                 <div id="brick-tarjeta"></div>
             </div>
 
-            <button id="pagar" class="boton" type="button">Pagar</button>
+            <button id="pagar" class="boton boton-ancho boton--grande" type="button">Pagar</button>
         </section>
 
         <section id="zona-resultado" class="tarjeta oculto" aria-live="polite">
             <p id="resultado-mensaje"></p>
-            <button id="reintentar" class="boton oculto" type="button">Intentar con otra tarjeta</button>
+            <p></p>
+            <button id="reintentar" class="boton boton-ancho oculto" type="button">Intentar con otra tarjeta</button>
         </section>
 
         <section id="zona-comprobante" class="tarjeta oculto">
             <h2>Tu comprobante</h2>
+            <p></p>
             <dl class="datos">
                 <dt>Documento</dt>
                 <dd id="comp-numero">-</dd>
@@ -85,7 +110,7 @@
             <p id="comp-enlaces"></p>
         </section>
 
-        <p><a id="volver" href="#">Volver al seguimiento</a></p>
+        <p class="publico__pie"><a id="volver" href="#">Volver al seguimiento</a></p>
     </section>
 </main>
 <script src="/js/pago-simulado.js"></script>

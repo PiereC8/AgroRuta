@@ -5,15 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="referrer" content="no-referrer">
     <meta name="robots" content="noindex">
-    <title>AgroRuta - Seguimiento de tu pedido</title>
+    <title>Seguimiento de tu pedido - AgroRuta</title>
+    <link rel="icon" href="/img/logo.png" type="image/png">
+    <link rel="preload" href="/fonts/fuente.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"
           integrity="sha384-c6Rcwz4e4CITMbu/NBmnNS8yN2sC3cUElMEMfP3vqqKFp7GOYaaBBCqmaWBjmkjb"
           crossorigin="anonymous">
-    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/sistema.css">
+    <link rel="stylesheet" href="/css/publico.css">
 </head>
 <body>
-<main>
-    <h1>Seguimiento de tu pedido</h1>
+<main class="publico">
+    <header class="publico__cabecera">
+        <img src="/img/logo.png" alt="AgroRuta">
+        <div>
+            <strong>AgroRuta</strong>
+            <span class="suave">Seguimiento de tu pedido</span>
+        </div>
+    </header>
+
+    <h1>Dónde viene tu pedido</h1>
 
     <section id="enlace-invalido" class="mensaje error oculto" role="alert">
         Este enlace no es válido o ya venció. Pide uno nuevo a quien te vende.
@@ -21,7 +32,7 @@
 
     <section id="contenido" class="oculto">
         <p id="resumen" class="mensaje ok" role="status" aria-live="polite">Cargando...</p>
-        <p id="enlace-pago" class="oculto"><a id="ir-a-pagar" class="boton" href="#">Ver y pagar mi pedido</a></p>
+        <p id="enlace-pago" class="oculto"><a id="ir-a-pagar" class="boton boton-ancho boton--grande" href="#">Ver y pagar mi pedido</a></p>
         <p id="aviso-senal" class="mensaje aviso oculto" role="status" aria-live="polite"></p>
         <div id="mapa" role="img" aria-label="Mapa con la ubicación del vehículo"></div>
         <section class="tarjeta">

@@ -92,7 +92,7 @@ window.PagoSimulado = (function () {
         for (const prueba of TARJETAS_PRUEBA) {
             const boton = document.createElement('button');
             boton.type = 'button';
-            boton.className = 'boton-secundario';
+            boton.className = 'boton boton-secundario boton--pequeno';
             boton.textContent = prueba.texto;
             boton.addEventListener('click', () => {
                 $('sim-numero').value = prueba.numero.replace(/(\d{4})(?=\d)/g, '$1 ');

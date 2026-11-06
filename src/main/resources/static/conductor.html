@@ -5,21 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="referrer" content="no-referrer">
     <meta name="robots" content="noindex">
-    <title>AgroRuta - Conductor</title>
-    <link rel="stylesheet" href="/css/base.css">
+    <title>Conductor - AgroRuta</title>
+    <link rel="icon" href="/img/logo.png" type="image/png">
+    <link rel="preload" href="/fonts/fuente.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/css/sistema.css">
+    <link rel="stylesheet" href="/css/publico.css">
 </head>
 <body>
-<main>
+<main class="publico">
+    <header class="publico__cabecera">
+        <img src="/img/logo.png" alt="AgroRuta">
+        <div>
+            <strong>AgroRuta</strong>
+            <span class="suave">Seguimiento del envío</span>
+        </div>
+    </header>
+
     <h1>Compartir mi ubicación</h1>
-    <p class="suave">Seguimiento del envío para el conductor.</p>
 
     <section id="sin-enlace" class="mensaje error oculto" role="alert">
         Este enlace no es válido. Pide al operador uno nuevo.
     </section>
 
     <section id="consentimiento" class="tarjeta oculto">
-        <p><strong>Antes de empezar, lee esto:</strong></p>
-        <ul>
+        <h2>Antes de empezar, lee esto</h2>
+        <ul class="reglas">
             <li>Tu ubicación se comparte <strong>solo mientras el envío está en ruta</strong>.</li>
             <li>La ven el operador del negocio y el comprador de este pedido, y nadie más.</li>
             <li>Puedes dejar de compartir cuando quieras con el botón "Dejar de compartir".</li>
@@ -27,7 +37,8 @@
         </ul>
         <p class="suave">Para que funcione: GPS activado, permiso de ubicación, datos móviles y el cargador
             conectado. Mantén la pantalla encendida y no cambies de aplicación.</p>
-        <button id="comenzar" class="boton" type="button">Acepto y comenzar</button>
+        <p></p>
+        <button id="comenzar" class="boton boton-ancho boton--grande" type="button">Acepto y comenzar</button>
     </section>
 
     <section id="compartiendo" class="tarjeta oculto">
@@ -42,7 +53,8 @@
             <dt>Precisión</dt>
             <dd id="dato-precision">-</dd>
         </dl>
-        <button id="detener" class="boton boton-secundario" type="button">Dejar de compartir</button>
+        <p></p>
+        <button id="detener" class="boton boton-secundario boton-ancho boton--grande" type="button">Dejar de compartir</button>
     </section>
 
     <section id="mensajes" aria-live="polite"></section>

@@ -204,7 +204,7 @@ class SeguimientoWebTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Compartir mi ubicación")));
         mvc.perform(get("/seguimiento.html")).andExpect(status().isOk());
         mvc.perform(get("/js/stomp.js")).andExpect(status().isOk());
-        mvc.perform(get("/css/base.css")).andExpect(status().isOk());
+        mvc.perform(get("/css/publico.css")).andExpect(status().isOk());
     }
 
     @Test
