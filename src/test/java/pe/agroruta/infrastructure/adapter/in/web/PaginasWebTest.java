@@ -81,6 +81,41 @@ class PaginasWebTest {
                 .doesNotContain("document.write");
     }
 
+    /** Pantallas internas ya construidas (la lista crece con cada tarea de la entrega B). */
+    private static final String[] PANTALLAS = {"compradores", "transporte"};
+
+    @Test
+    void ui_js_se_sirve_define_el_kit_y_no_usa_innerhtml() throws Exception {
+        String js = mvc.perform(get("/js/ui.js")).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(js).contains("window.Ui").contains("textContent")
+                .doesNotContain("innerHTML").doesNotContain("insertAdjacentHTML").doesNotContain("document.write");
+        for (String funcion : new String[]{"tabla", "panel", "aviso", "confirmar", "pestanas", "etiqueta",
+                "puedeEscribir"}) {
+            assertThat(js).contains(funcion);
+        }
+        mvc.perform(get("/css/sistema.css")).andExpect(content().string(
+                org.hamcrest.Matchers.containsString(".panel")));
+    }
+
+    @Test
+    void todas_las_pantallas_internas_son_publicas_sin_codigo_en_linea() throws Exception {
+        for (String nombre : PANTALLAS) {
+            String html = mvc.perform(get("/" + nombre + ".html")).andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+
+            assertThat(html).doesNotContainPattern("<script(?![^>]*\\bsrc=)");
+            assertThat(html).doesNotContain(" style=").doesNotContain("onclick=").doesNotContain("<style");
+            assertThat(html).contains("/css/sistema.css").contains("/js/ui.js").contains("/js/" + nombre + ".js")
+                    .contains("id=\"menu\"").contains("id=\"encabezado\"");
+            String js = mvc.perform(get("/js/" + nombre + ".js")).andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+            assertThat(js).doesNotContain("innerHTML").doesNotContain("insertAdjacentHTML")
+                    .doesNotContain("document.write");
+        }
+    }
+
     @Test
     void el_logo_los_estilos_y_las_utilidades_se_sirven() throws Exception {
         mvc.perform(get("/img/logo.png")).andExpect(status().isOk());

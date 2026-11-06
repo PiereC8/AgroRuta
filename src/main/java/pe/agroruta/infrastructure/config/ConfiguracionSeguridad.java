@@ -50,7 +50,8 @@ public class ConfiguracionSeguridad {
                         .requestMatchers("/api/auth/login", "/actuator/health").permitAll()
                         // Páginas del conductor y del comprador, sus recursos y el WebSocket (se autentica por token).
                         .requestMatchers("/", "/conductor.html", "/seguimiento.html", "/pago.html", "/login.html",
-                                "/inicio.html", "/js/**", "/css/**", "/img/**", "/fonts/**", "/favicon.ico", "/ws/**")
+                                "/inicio.html", "/lotes.html", "/pedidos.html", "/envios.html", "/compradores.html",
+                                "/destinos.html", "/transporte.html", "/pagos.html", "/js/**", "/css/**", "/img/**", "/fonts/**", "/favicon.ico", "/ws/**")
                         .permitAll()
                         // El enlace con token del comprador: el propio caso de uso valida el token.
                         .requestMatchers("/api/publico/**").permitAll()

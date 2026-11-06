@@ -23,13 +23,13 @@ window.Estructura = (function () {
 
     const SECCIONES = [
         {id: 'inicio', texto: 'Inicio', ruta: '/inicio.html'},
-        {id: 'lotes', texto: 'Lotes', ruta: null},
-        {id: 'pedidos', texto: 'Pedidos', ruta: null},
-        {id: 'envios', texto: 'Envíos', ruta: null},
-        {id: 'compradores', texto: 'Compradores', ruta: null},
-        {id: 'destinos', texto: 'Destinos', ruta: null},
-        {id: 'transporte', texto: 'Transporte', ruta: null},
-        {id: 'pagos', texto: 'Pagos', ruta: null}
+        {id: 'lotes', texto: 'Lotes', ruta: '/lotes.html'},
+        {id: 'pedidos', texto: 'Pedidos', ruta: '/pedidos.html'},
+        {id: 'envios', texto: 'Envíos', ruta: '/envios.html'},
+        {id: 'compradores', texto: 'Compradores', ruta: '/compradores.html'},
+        {id: 'destinos', texto: 'Destinos', ruta: '/destinos.html'},
+        {id: 'transporte', texto: 'Transporte', ruta: '/transporte.html'},
+        {id: 'pagos', texto: 'Pagos', ruta: '/pagos.html'}
     ];
 
     const ROLES = {DUENO: 'Dueño', OPERADOR: 'Operador'};
