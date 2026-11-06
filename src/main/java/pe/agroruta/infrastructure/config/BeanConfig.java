@@ -35,6 +35,9 @@ import pe.agroruta.domain.port.out.GeneradorTokenPort;
 import pe.agroruta.domain.port.out.PublicadorSeguimientoPort;
 import pe.agroruta.domain.port.out.SeguimientoRepositoryPort;
 import pe.agroruta.application.service.ConsultarLiquidacionesService;
+import pe.agroruta.application.service.ConsultarPanelService;
+import pe.agroruta.domain.port.in.ConsultarPanelUseCase;
+import pe.agroruta.domain.port.out.PanelRepositoryPort;
 import pe.agroruta.application.service.RegistrarEntregaService;
 import pe.agroruta.domain.port.in.ConsultarLiquidacionesUseCase;
 import pe.agroruta.domain.port.in.RegistrarEntregaUseCase;
@@ -143,6 +146,11 @@ public class BeanConfig {
     @Bean
     ConsultarLiquidacionesUseCase consultarLiquidacionesUseCase(LiquidacionRepositoryPort liquidaciones) {
         return new ConsultarLiquidacionesService(liquidaciones);
+    }
+
+    @Bean
+    ConsultarPanelUseCase consultarPanelUseCase(PanelRepositoryPort panel, Clock reloj) {
+        return new ConsultarPanelService(panel, reloj);
     }
 
     @Bean

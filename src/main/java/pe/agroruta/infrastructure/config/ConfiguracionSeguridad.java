@@ -61,7 +61,7 @@ public class ConfiguracionSeguridad {
                         .hasAnyRole(Rol.DUENO.name(), Rol.OPERADOR.name())
                         .requestMatchers("/api/destinos/**").hasRole(Rol.DUENO.name())
                         .requestMatchers("/api/compradores/**", "/api/pedidos/**", "/api/envios/**",
-                                "/api/liquidaciones/**", "/api/pagos/**", "/api/comprobantes/**")
+                                "/api/liquidaciones/**", "/api/pagos/**", "/api/comprobantes/**", "/api/panel/**")
                         .hasAnyRole(Rol.DUENO.name(), Rol.OPERADOR.name())
                         .requestMatchers(HttpMethod.GET, "/api/transportistas/**", "/api/vehiculos/**")
                         .hasAnyRole(Rol.DUENO.name(), Rol.OPERADOR.name())
