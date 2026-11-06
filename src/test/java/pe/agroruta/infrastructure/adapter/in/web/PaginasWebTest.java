@@ -132,6 +132,13 @@ class PaginasWebTest {
     }
 
     @Test
+    void la_pagina_con_mapa_envia_el_origen_para_que_openstreetmap_no_bloquee_los_mosaicos() throws Exception {
+        String html = mvc.perform(get("/seguimiento.html")).andReturn().getResponse().getContentAsString();
+
+        assertThat(html).doesNotContain("content=\"no-referrer\"").contains("strict-origin-when-cross-origin");
+    }
+
+    @Test
     void el_logo_los_estilos_y_las_utilidades_se_sirven() throws Exception {
         mvc.perform(get("/img/logo.png")).andExpect(status().isOk());
         mvc.perform(get("/css/sistema.css")).andExpect(status().isOk());
