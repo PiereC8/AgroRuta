@@ -16,7 +16,6 @@ import pe.agroruta.domain.port.out.ComprobantePort;
 import pe.agroruta.domain.port.out.EnvioCorreoPort;
 import pe.agroruta.domain.port.out.PagoPort;
 import pe.agroruta.infrastructure.adapter.out.comprobante.ComprobanteSimulado;
-import pe.agroruta.infrastructure.adapter.out.comprobante.NubefactComprobanteAdapter;
 import pe.agroruta.infrastructure.adapter.out.correo.CorreoSimuladoAdapter;
 import pe.agroruta.infrastructure.adapter.out.correo.CorreoSmtpAdapter;
 import pe.agroruta.infrastructure.adapter.out.http.ClienteHttp;
@@ -65,21 +64,14 @@ public class ProveedoresExternosConfig {
         return new PasarelaSimulada();
     }
 
+    /**
+     * Hoy se emiten comprobantes simulados. Para un cliente con RUC se implementa ComprobantePort con el
+     * proveedor de comprobantes elegido (OSE o PSE) y se devuelve aquí en lugar del simulador.
+     */
     @Bean
-    ComprobantePort comprobantePort(ClienteHttp http, Clock reloj,
-                                    @Value("${agroruta.comprobantes.nubefact.url}") String url,
-                                    @Value("${agroruta.comprobantes.nubefact.token}") String token,
-                                    @Value("${agroruta.comprobantes.nubefact.autorizacion}") String autorizacion,
-                                    @Value("${agroruta.resiliencia.fallos-para-abrir:5}") int fallosParaAbrir,
-                                    @Value("${agroruta.resiliencia.pausa-segundos:30}") int pausaSegundos) {
-        if (url.isBlank() || token.isBlank()) {
-            REGISTRO.warn("Comprobantes: SIMULADOR (no hay URL y token de Nubefact en el .env)");
-            return new ComprobanteSimulado();
-        }
-        REGISTRO.info("Comprobantes: Nubefact");
-        return new ComprobantePortConDisyuntor(new NubefactComprobanteAdapter(http, url, token,
-                NubefactComprobanteAdapter.FormatoAutorizacion.valueOf(autorizacion)),
-                new Disyuntor("El proveedor de comprobantes", fallosParaAbrir, Duration.ofSeconds(pausaSegundos), reloj));
+    ComprobantePort comprobantePort() {
+        REGISTRO.warn("Comprobantes: SIMULADOR (no hay un proveedor de comprobantes configurado)");
+        return new ComprobanteSimulado();
     }
 
     @Bean

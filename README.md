@@ -53,7 +53,7 @@ Necesitas Java 21 y una base de datos MySQL 8.
 
 3. Abre `http://localhost:8080/login.html`.
 
-Si no configuras las llaves de Mercado Pago y Nubefact, el sistema usa un pago y un comprobante simulados, así que se puede probar todo sin cuentas externas.
+Si no configuras las llaves de Mercado Pago, el sistema usa un pago simulado, y los comprobantes siempre son simulados, así que se puede probar todo sin cuentas externas.
 
 ### Correo de los avisos
 

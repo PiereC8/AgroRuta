@@ -44,10 +44,6 @@ agroruta:
   comprobantes:
     serie-boleta: ${COMPROBANTES_SERIE_BOLETA:B001}
     serie-factura: ${COMPROBANTES_SERIE_FACTURA:F001}
-    nubefact:
-      url: ${NUBEFACT_URL:}
-      token: ${NUBEFACT_TOKEN:}
-      autorizacion: ${NUBEFACT_AUTORIZACION:SOLO_TOKEN}
 
 server:
   servlet:
