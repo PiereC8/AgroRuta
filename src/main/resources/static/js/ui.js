@@ -489,6 +489,21 @@ window.Ui = (function () {
         return caja;
     }
 
+    /** Código QR de un texto (por ejemplo un enlace), dibujado en el navegador con la biblioteca propia. */
+    function codigoQr(texto, descripcion) {
+        const figura = el('figure', 'codigo-qr');
+        const qr = window.qrcode(0, 'M');
+        qr.addData(texto);
+        qr.make();
+        const imagen = el('img');
+        imagen.src = qr.createDataURL(5, 2);
+        imagen.alt = 'Código QR: ' + descripcion;
+        imagen.width = 220;
+        imagen.height = 220;
+        figura.append(imagen, el('figcaption', 'suave', descripcion));
+        return figura;
+    }
+
     function errorDePagina(mensaje) {
         const caja = document.getElementById('error');
         if (!caja) {
@@ -506,5 +521,5 @@ window.Ui = (function () {
     }
 
     return {el, boton, dinero, kilos, fecha, dia, puedeEscribir, cargarPagina, etiqueta, tabla, aviso, pestanas,
-        panel, detalle, confirmar, errorDePagina, alReintentar, listaPaginada, campoCopiable, TAMANO_PAGINA};
+        panel, detalle, confirmar, errorDePagina, alReintentar, listaPaginada, campoCopiable, codigoQr, TAMANO_PAGINA};
 })();

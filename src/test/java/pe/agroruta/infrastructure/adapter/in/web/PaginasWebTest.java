@@ -139,6 +139,35 @@ class PaginasWebTest {
     }
 
     @Test
+    void la_biblioteca_de_qr_se_sirve_desde_el_propio_sitio_y_no_llama_a_servicios_externos() throws Exception {
+        String js = mvc.perform(get("/js/vendor/qrcode.js")).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(js).contains("createDataURL").contains("MIT");
+        assertThat(js).doesNotContain("XMLHttpRequest").doesNotContain("fetch(");
+    }
+
+    @Test
+    void envios_carga_el_qr_propio_y_ui_expone_codigoQr_sin_innerhtml() throws Exception {
+        String html = mvc.perform(get("/envios.html")).andReturn().getResponse().getContentAsString();
+        String ui = mvc.perform(get("/js/ui.js")).andReturn().getResponse().getContentAsString();
+        String envios = mvc.perform(get("/js/envios.js")).andReturn().getResponse().getContentAsString();
+
+        assertThat(html).contains("/js/vendor/qrcode.js");
+        assertThat(html.indexOf("/js/vendor/qrcode.js")).isLessThan(html.indexOf("/js/envios.js"));
+        assertThat(ui).contains("codigoQr").doesNotContain("innerHTML");
+        assertThat(envios).contains("codigoQr");
+    }
+
+    @Test
+    void las_alertas_de_envio_usan_los_tipos_reales_del_sistema() throws Exception {
+        String envios = mvc.perform(get("/js/envios.js")).andReturn().getResponse().getContentAsString();
+
+        assertThat(envios).contains("GPS_DESACTIVADO").contains("DETENIDO").contains("LLEGADA")
+                .doesNotContain("DESVIO").doesNotContain("SIN_SENAL");
+    }
+
+    @Test
     void el_logo_los_estilos_y_las_utilidades_se_sirven() throws Exception {
         mvc.perform(get("/img/logo.png")).andExpect(status().isOk());
         mvc.perform(get("/css/sistema.css")).andExpect(status().isOk());

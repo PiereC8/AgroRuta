@@ -9,8 +9,8 @@
     const el = window.Ui.el;
     const ESTADOS = {PROGRAMADO: ['Programado', 'espera'], EN_RUTA: ['En ruta', ''], ENTREGADO: ['Entregado', 'neutro']};
     const FILTROS = [['', 'Todos'], ['PROGRAMADO', 'Programados'], ['EN_RUTA', 'En ruta'], ['ENTREGADO', 'Entregados']];
-    const ALERTAS = {DESVIO: 'Se desvió de la ruta', DETENIDO: 'Lleva mucho tiempo detenido',
-        SIN_SENAL: 'Perdimos la señal del conductor'};
+    const ALERTAS = {GPS_DESACTIVADO: 'El conductor desactivó el GPS', DETENIDO: 'Lleva mucho tiempo detenido',
+        LLEGADA: 'Llegó al destino'};
     const REFRESCO_MAPA_MS = 15000;
     const TOLERANCIA_KG = 0.0005;
 
@@ -171,11 +171,14 @@
             const enlaces = await window.Api.pedir('/api/envios/' + envio.idEnvio + '/enlaces', {metodo: 'POST'});
             const contenido = el('div');
             if (enlaces.rutaConductor) {
-                contenido.appendChild(window.Ui.campoCopiable('Enlace del conductor',
-                    window.location.origin + enlaces.rutaConductor));
+                const urlConductor = window.location.origin + enlaces.rutaConductor;
+                contenido.appendChild(window.Ui.campoCopiable('Enlace del conductor', urlConductor));
+                contenido.appendChild(window.Ui.codigoQr(urlConductor,
+                    'Pídele al conductor que escanee este código con la cámara de su celular'));
             }
-            contenido.appendChild(window.Ui.campoCopiable('Enlace del comprador',
-                window.location.origin + enlaces.rutaComprador));
+            const urlComprador = window.location.origin + enlaces.rutaComprador;
+            contenido.appendChild(window.Ui.campoCopiable('Enlace del comprador', urlComprador));
+            contenido.appendChild(window.Ui.codigoQr(urlComprador, 'Código para el comprador, si prefiere escanearlo'));
             contenido.appendChild(el('p', 'suave', 'Quien tenga el enlace puede verlo, sin contraseña. Vence el '
                 + window.Ui.fecha(enlaces.fechaExpiracion) + '. Envíalo solo a quien corresponde.'));
             await window.Ui.detalle({titulo: 'Enlaces del envío ' + envio.idEnvio, contenido, ancho: true});
