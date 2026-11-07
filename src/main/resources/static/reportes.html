@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex">
+    <title>Reportes - AgroRuta</title>
+    <link rel="icon" href="/img/logo.png" type="image/png">
+    <link rel="preload" href="/fonts/fuente.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/css/sistema.css">
+</head>
+<body>
+<div class="estructura">
+    <nav id="menu"></nav>
+
+    <main class="contenido">
+        <header id="encabezado"></header>
+
+        <div class="barra">
+            <p class="suave barra__texto">Cuánto ganas, cuánto pierdes y por qué, comparado con el período anterior.</p>
+            <div class="fila-acciones">
+                <button class="boton boton-secundario" id="exportar-csv" type="button">Descargar CSV</button>
+                <button class="boton" id="exportar-pdf" type="button">Descargar PDF</button>
+            </div>
+        </div>
+
+        <div id="error" class="aviso aviso--error oculto" role="alert">
+            <span id="error-texto"></span>
+            <button class="boton boton-secundario" id="reintentar" type="button">Volver a cargar</button>
+        </div>
+
+        <section class="tarjeta bloque" aria-label="Filtros">
+            <div class="filtros" id="periodos" role="group" aria-label="Período"></div>
+            <div class="filtros-detalle">
+                <div id="rango" class="filtros-detalle__rango oculto">
+                    <label>Desde <input type="date" id="desde"></label>
+                    <label>Hasta <input type="date" id="hasta"></label>
+                    <button class="boton boton-secundario" id="aplicar-rango" type="button">Aplicar</button>
+                </div>
+                <label>Producto
+                    <select id="producto"><option value="">Todos</option></select>
+                </label>
+                <label>Destino
+                    <select id="destino"><option value="">Todos</option></select>
+                </label>
+            </div>
+            <p class="suave" id="periodo-texto"></p>
+        </section>
+
+        <section id="veredicto" class="veredicto bloque" aria-live="polite"></section>
+
+        <div class="rejilla-cifras bloque" id="cifras"></div>
+
+        <section class="tarjeta bloque"><h2>Qué cambió</h2><div id="causas"></div></section>
+        <section class="tarjeta bloque"><h2>Contra el período anterior</h2><div id="comparacion"></div></section>
+        <section class="tarjeta bloque"><h2>Ganancia en el tiempo</h2><div class="grafico" id="grafico"></div></section>
+
+        <div class="rejilla-principal">
+            <section class="tarjeta bloque"><h2>Por destino</h2><div id="rank-destino"></div></section>
+            <section class="tarjeta bloque"><h2>Por producto</h2><div id="rank-producto"></div></section>
+        </div>
+        <section class="tarjeta bloque"><h2>Por comprador</h2><div id="rank-comprador"></div></section>
+    </main>
+</div>
+<script src="/js/api.js"></script>
+<script src="/js/estructura.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/js/reportes.js"></script>
+</body>
+</html>

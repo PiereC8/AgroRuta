@@ -1011,3 +1011,88 @@ a {
     max-width: 36ch;
     text-align: center;
 }
+
+/* ---------- Reportes ---------- */
+
+.filtros-detalle {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 16px;
+    margin-bottom: 8px;
+}
+
+.filtros-detalle label {
+    display: grid;
+    gap: 4px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.filtros-detalle__rango {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px;
+}
+
+.filtros-detalle__rango.oculto {
+    display: none;
+}
+
+.veredicto {
+    padding: 20px 24px;
+    border: 1.5px solid var(--borde);
+    border-left-width: 8px;
+    border-radius: var(--radio);
+    background: var(--tarjeta);
+}
+
+.veredicto__titulo {
+    display: block;
+    font-size: 1.375rem;
+}
+
+.veredicto__texto {
+    margin: 6px 0 0;
+}
+
+.veredicto--ganando {
+    border-color: var(--verde);
+    background: var(--verde-claro);
+}
+
+.veredicto--menos {
+    border-color: var(--amarillo);
+    background: var(--amarillo-claro);
+}
+
+.veredicto--perdiendo {
+    border-color: var(--error);
+    background: var(--error-claro);
+}
+
+.causas {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.causas__fila {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--borde);
+}
+
+.causas__fila span:first-child {
+    min-width: 12rem;
+    font-weight: 600;
+}
+
+.grafico .barra--perdida {
+    fill: var(--error-claro);
+    stroke: var(--error);
+}

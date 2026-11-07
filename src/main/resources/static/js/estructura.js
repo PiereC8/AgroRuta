@@ -14,7 +14,8 @@ window.Estructura = (function () {
             'M17 4.5a3 3 0 010 6', 'M19 14c2 .7 3 2.6 3 5'],
         destinos: ['M12 21s7-6 7-12a7 7 0 10-14 0c0 6 7 12 7 12z', 'M12 11.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z'],
         transporte: ['M4 17V8l3-4h10l3 4v9', 'M4 12h16', 'M7 20v-3', 'M17 20v-3'],
-        pagos: ['M2 6h20v13H2z', 'M2 10h20', 'M6 15h4']
+        pagos: ['M2 6h20v13H2z', 'M2 10h20', 'M6 15h4'],
+        reportes: ['M4 20V4', 'M4 20h16', 'M8 16v-5', 'M12 16V8', 'M16 16v-3']
     };
 
     const SECCIONES = [
@@ -25,7 +26,8 @@ window.Estructura = (function () {
         {id: 'compradores', texto: 'Compradores', ruta: '/compradores.html'},
         {id: 'destinos', texto: 'Destinos', ruta: '/destinos.html'},
         {id: 'transporte', texto: 'Transporte', ruta: '/transporte.html'},
-        {id: 'pagos', texto: 'Pagos', ruta: '/pagos.html'}
+        {id: 'pagos', texto: 'Pagos', ruta: '/pagos.html'},
+        {id: 'reportes', texto: 'Reportes', ruta: '/reportes.html', soloDueno: true}
     ];
 
     const ROLES = {DUENO: 'Dueño', OPERADOR: 'Operador'};
@@ -71,7 +73,8 @@ window.Estructura = (function () {
         marca.appendChild(logo);
 
         const lista = elemento('ul', 'menu__lista');
-        for (const seccion of SECCIONES) {
+        const esDueno = (window.Api.usuario() || {}).rolUsuario === 'DUENO';
+        for (const seccion of SECCIONES.filter((x) => !x.soloDueno || esDueno)) {
             const item = document.createElement('li');
             const pronto = seccion.ruta === null;
             const enlace = document.createElement(pronto ? 'span' : 'a');
