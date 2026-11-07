@@ -1,6 +1,9 @@
 package pe.agroruta.infrastructure.config;
 
 import java.time.Clock;
+import pe.agroruta.domain.port.out.EquipoRepositoryPort;
+import pe.agroruta.domain.port.in.AdministrarEquipoUseCase;
+import pe.agroruta.application.service.EquipoService;
 import pe.agroruta.infrastructure.adapter.out.reporte.ExportadorPdf;
 import pe.agroruta.infrastructure.adapter.out.reporte.ExportadorCsv;
 import pe.agroruta.domain.port.in.ExportarReporteUseCase;
@@ -179,6 +182,11 @@ public class BeanConfig {
                                                   Clock reloj) {
         return new ExportarReporteService(consultas, negocios,
                 Map.of(Formato.CSV, new ExportadorCsv(), Formato.PDF, new ExportadorPdf()), reloj);
+    }
+
+    @Bean
+    AdministrarEquipoUseCase administrarEquipoUseCase(EquipoRepositoryPort equipo, HashClavePort hashes) {
+        return new EquipoService(equipo, hashes);
     }
 
     @Bean
