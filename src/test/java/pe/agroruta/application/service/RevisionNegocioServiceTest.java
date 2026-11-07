@@ -27,6 +27,10 @@ import pe.agroruta.domain.model.Reporte;
 import pe.agroruta.domain.model.Resumen;
 import pe.agroruta.domain.model.Veredicto;
 import pe.agroruta.domain.port.in.ConsultarReportesUseCase;
+import pe.agroruta.domain.model.HechoDelNegocio.AlertaDeEnvio;
+import pe.agroruta.domain.model.HechoDelNegocio.EntregaRegistrada;
+import pe.agroruta.domain.model.HechoDelNegocio.PagoRecibido;
+import pe.agroruta.domain.model.TipoAlerta;
 import pe.agroruta.domain.model.HechoDelNegocio.CobroVencido;
 import pe.agroruta.domain.model.HechoDelNegocio.ComprobanteAtascado;
 import pe.agroruta.domain.model.HechoDelNegocio.ComprobanteRechazado;
@@ -41,6 +45,24 @@ class RevisionNegocioServiceTest {
 
     static class RevisionFalsa implements RevisionRepositoryPort {
         final List<Instant> consultas = new ArrayList<>();
+
+        @Override
+        public List<EntregaRegistrada> entregasDesde(Instant desde) {
+            consultas.add(desde);
+            return List.of(new EntregaRegistrada(7L, "Ana Torres", "Palta Hass", "Mercado Lima",
+                    new BigDecimal("100.000"), new BigDecimal("3.000"), new BigDecimal("2.000"), Dinero.de("-50.00"),
+                    Dinero.de("120.00")));
+        }
+
+        @Override
+        public List<PagoRecibido> pagosAprobadosDesde(Instant desde) {
+            return List.of(new PagoRecibido(4L, "Ana Torres", Dinero.de("1500.00"), 7L));
+        }
+
+        @Override
+        public List<AlertaDeEnvio> alertasDesde(Instant desde) {
+            return List.of(new AlertaDeEnvio(11L, 6L, TipoAlerta.LLEGADA, "Mercado Lima", "Llegó"));
+        }
 
         @Override
         public List<ComprobanteRechazado> comprobantesRechazadosDesde(Instant desde) {
@@ -124,6 +146,16 @@ class RevisionNegocioServiceTest {
 
         assertThat(bandeja.todas).extracting(Notificacion::tipo).containsExactlyInAnyOrder(
                 TipoAviso.COMPROBANTE_RECHAZADO, TipoAviso.COMPROBANTE_ATASCADO, TipoAviso.COBRO_VENCIDO);
+    }
+
+    @Test
+    void lo_reciente_avisa_de_la_perdida_del_pago_y_de_la_llegada_una_sola_vez() {
+        servicio.revisarRecientes();
+        servicio.revisarRecientes();
+
+        assertThat(bandeja.todas).extracting(Notificacion::tipo).containsExactlyInAnyOrder(
+                TipoAviso.ENTREGA_CON_PERDIDA, TipoAviso.PAGO_RECIBIDO);
+        assertThat(revision.consultas).contains(AHORA.minusSeconds(2 * 3600L));
     }
 
     @Test

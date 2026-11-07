@@ -2,18 +2,23 @@ package pe.agroruta.infrastructure.config;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.util.Properties;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
 
 import pe.agroruta.domain.model.SeriesComprobante;
 import pe.agroruta.domain.port.out.ComprobantePort;
+import pe.agroruta.domain.port.out.EnvioCorreoPort;
 import pe.agroruta.domain.port.out.PagoPort;
 import pe.agroruta.infrastructure.adapter.out.comprobante.ComprobanteSimulado;
 import pe.agroruta.infrastructure.adapter.out.comprobante.NubefactComprobanteAdapter;
+import pe.agroruta.infrastructure.adapter.out.correo.CorreoSimuladoAdapter;
+import pe.agroruta.infrastructure.adapter.out.correo.CorreoSmtpAdapter;
 import pe.agroruta.infrastructure.adapter.out.http.ClienteHttp;
 import pe.agroruta.infrastructure.adapter.out.pago.MercadoPagoPagoAdapter;
 import pe.agroruta.infrastructure.adapter.out.pago.PasarelaSimulada;
@@ -81,5 +86,31 @@ public class ProveedoresExternosConfig {
     SeriesComprobante seriesComprobante(@Value("${agroruta.comprobantes.serie-boleta}") String boleta,
                                         @Value("${agroruta.comprobantes.serie-factura}") String factura) {
         return new SeriesComprobante(boleta, factura);
+    }
+
+    @Bean
+    EnvioCorreoPort envioCorreoPort(@Value("${agroruta.correo.servidor}") String servidor,
+                                    @Value("${agroruta.correo.puerto}") int puerto,
+                                    @Value("${agroruta.correo.usuario}") String usuario,
+                                    @Value("${agroruta.correo.clave}") String clave,
+                                    @Value("${agroruta.correo.remitente}") String remitente) {
+        if (usuario.isBlank() || clave.isBlank()) {
+            REGISTRO.warn("Correo: SIMULADOR (no hay usuario y clave de aplicación del correo en el .env)");
+            return new CorreoSimuladoAdapter();
+        }
+        JavaMailSenderImpl envio = new JavaMailSenderImpl();
+        envio.setHost(servidor);
+        envio.setPort(puerto);
+        envio.setUsername(usuario);
+        envio.setPassword(clave);
+        envio.setDefaultEncoding("UTF-8");
+        Properties propiedades = envio.getJavaMailProperties();
+        propiedades.put("mail.smtp.auth", "true");
+        propiedades.put("mail.smtp.starttls.enable", "true");
+        propiedades.put("mail.smtp.connectiontimeout", "10000");
+        propiedades.put("mail.smtp.timeout", "10000");
+        propiedades.put("mail.smtp.writetimeout", "10000");
+        REGISTRO.info("Correo: SMTP en {}:{}", servidor, puerto);
+        return new CorreoSmtpAdapter(envio, remitente.isBlank() ? usuario : remitente);
     }
 }

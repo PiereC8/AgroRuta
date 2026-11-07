@@ -31,6 +31,16 @@ agroruta:
       url-base: ${MERCADOPAGO_URL_BASE:https://api.mercadopago.com}
       llave-publica: ${MERCADOPAGO_LLAVE_PUBLICA:}
       token-acceso: ${MERCADOPAGO_TOKEN_ACCESO:}
+  correo:
+    servidor: ${CORREO_SERVIDOR:smtp.gmail.com}
+    puerto: ${CORREO_PUERTO:587}
+    usuario: ${CORREO_USUARIO:}
+    clave: ${CORREO_CLAVE_APLICACION:}
+    remitente: ${CORREO_REMITENTE:}
+  avisos:
+    merma-alta-porcentaje: ${AVISOS_MERMA_ALTA_PORCENTAJE:10}
+    dias-cobro-vencido: ${AVISOS_DIAS_COBRO_VENCIDO:7}
+    horas-comprobante-atascado: ${AVISOS_HORAS_COMPROBANTE_ATASCADO:24}
   comprobantes:
     serie-boleta: ${COMPROBANTES_SERIE_BOLETA:B001}
     serie-factura: ${COMPROBANTES_SERIE_FACTURA:F001}

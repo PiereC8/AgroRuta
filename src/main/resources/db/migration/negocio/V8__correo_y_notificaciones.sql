@@ -13,9 +13,9 @@ CREATE TABLE notificacion (
     estado            VARCHAR(12)   NOT NULL,
     intentos          INT           NOT NULL DEFAULT 0,
     ultimo_error      VARCHAR(300)  NULL,
-    fecha_creacion    TIMESTAMP     NOT NULL,
-    proximo_intento   TIMESTAMP     NOT NULL,
-    fecha_envio       TIMESTAMP     NULL,
+    fecha_creacion    TIMESTAMP(3)  NOT NULL,
+    proximo_intento   TIMESTAMP(3)  NOT NULL,
+    fecha_envio       TIMESTAMP(3)  NULL,
     PRIMARY KEY (id_notificacion),
     UNIQUE KEY uk_notificacion_clave (clave_unica),
     KEY ix_notificacion_pendientes (estado, proximo_intento)

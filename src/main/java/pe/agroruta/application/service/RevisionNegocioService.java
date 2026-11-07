@@ -17,6 +17,8 @@ import pe.agroruta.domain.port.out.RevisionRepositoryPort;
 public class RevisionNegocioService implements RevisarNegocioUseCase {
 
     private static final Duration VENTANA_RECHAZADOS = Duration.ofHours(48);
+    /** Se mira más atrás de lo necesario: si el sistema estuvo apagado un rato, al volver no se pierde nada. */
+    private static final Duration VENTANA_RECIENTES = Duration.ofHours(2);
 
     private final PublicarAvisosUseCase avisos;
     private final RevisionRepositoryPort revision;
@@ -34,6 +36,14 @@ public class RevisionNegocioService implements RevisarNegocioUseCase {
         this.reloj = reloj;
         this.horasComprobanteAtascado = horasComprobanteAtascado;
         this.diasCobroVencido = diasCobroVencido;
+    }
+
+    @Override
+    public void revisarRecientes() {
+        Instant desde = reloj.instant().minus(VENTANA_RECIENTES);
+        revision.entregasDesde(desde).forEach(avisos::publicar);
+        revision.pagosAprobadosDesde(desde).forEach(avisos::publicar);
+        revision.alertasDesde(desde).forEach(avisos::publicar);
     }
 
     @Override

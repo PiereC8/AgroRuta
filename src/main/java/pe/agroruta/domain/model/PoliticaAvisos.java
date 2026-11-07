@@ -15,15 +15,9 @@ import pe.agroruta.domain.model.HechoDelNegocio.PagoRecibido;
 import pe.agroruta.domain.model.HechoDelNegocio.ResumenSemanal;
 
 /** Decide qué hechos merecen un correo, a qué roles y qué dicen. Sin tocar la base ni el correo. */
-public final class PoliticaAvisos {
+public record PoliticaAvisos(BigDecimal mermaAltaPorcentaje) {
 
     private static final BigDecimal CIEN = BigDecimal.valueOf(100);
-
-    private final BigDecimal mermaAltaPorcentaje;
-
-    public PoliticaAvisos(BigDecimal mermaAltaPorcentaje) {
-        this.mermaAltaPorcentaje = mermaAltaPorcentaje;
-    }
 
     public List<Aviso> avisosDe(HechoDelNegocio hecho) {
         return switch (hecho) {
