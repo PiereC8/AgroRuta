@@ -3,12 +3,14 @@ package pe.agroruta.application.service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.DayOfWeek;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -26,6 +28,7 @@ import pe.agroruta.domain.model.FiltroReporte;
 import pe.agroruta.domain.model.Indicadores;
 import pe.agroruta.domain.model.OpcionesFiltro;
 import pe.agroruta.domain.model.PuntoSerie;
+import pe.agroruta.domain.model.Reporte;
 import pe.agroruta.domain.model.Resumen;
 import pe.agroruta.domain.model.Veredicto;
 import pe.agroruta.domain.port.in.ConsultarReportesUseCase;
@@ -50,12 +53,34 @@ public class ConsultarReportesService implements ConsultarReportesUseCase {
 
     @Override
     public Resumen resumen(FiltroReporte filtro) {
-        Indicadores actual = Indicadores.de(entregas(filtro));
-        Indicadores anterior = Indicadores.de(entregas(filtro.periodoAnterior()));
-        Veredicto veredicto = AnalisisFinanciero.veredicto(actual, anterior);
-        return new Resumen(filtro, actual, anterior, veredicto,
-                AnalisisFinanciero.explicacion(veredicto, actual, anterior),
-                AnalisisFinanciero.comparar(actual, anterior));
+        return resumen(filtro, entregas(filtro), entregas(filtro.periodoAnterior()));
+    }
+
+    @Override
+    public List<PuntoSerie> serie(FiltroReporte filtro) {
+        return serie(filtro, entregas(filtro));
+    }
+
+    @Override
+    public List<FilaRanking> ranking(FiltroReporte filtro, Dimension dimension) {
+        return ranking(entregas(filtro), dimension);
+    }
+
+    @Override
+    public Reporte completo(FiltroReporte filtro, String negocio, String generadoPor, Instant ahora) {
+        List<FilaEntrega> actuales = entregas(filtro);
+        List<FilaEntrega> anteriores = entregas(filtro.periodoAnterior());
+        Map<Dimension, List<FilaRanking>> rankings = new EnumMap<>(Dimension.class);
+        for (Dimension dimension : Dimension.values()) {
+            rankings.put(dimension, ranking(actuales, dimension));
+        }
+        return new Reporte(negocio, generadoPor, ahora, nombreDelDestino(filtro), resumen(filtro, actuales, anteriores),
+                serie(filtro, actuales), rankings, actuales);
+    }
+
+    @Override
+    public OpcionesFiltro opciones() {
+        return new OpcionesFiltro(reportes.productosConEntregas(), opcionesDeDestino());
     }
 
     @Override
@@ -67,8 +92,16 @@ public class ConsultarReportesService implements ConsultarReportesUseCase {
         return filas;
     }
 
-    @Override
-    public List<PuntoSerie> serie(FiltroReporte filtro) {
+    private Resumen resumen(FiltroReporte filtro, List<FilaEntrega> actuales, List<FilaEntrega> anteriores) {
+        Indicadores actual = Indicadores.de(actuales);
+        Indicadores anterior = Indicadores.de(anteriores);
+        Veredicto veredicto = AnalisisFinanciero.veredicto(actual, anterior);
+        return new Resumen(filtro, actual, anterior, veredicto,
+                AnalisisFinanciero.explicacion(veredicto, actual, anterior),
+                AnalisisFinanciero.comparar(actual, anterior));
+    }
+
+    private List<PuntoSerie> serie(FiltroReporte filtro, List<FilaEntrega> entregas) {
         long dias = filtro.dias();
         Function<LocalDate, LocalDate> inicioDelTramo;
         Function<LocalDate, LocalDate> siguiente;
@@ -91,7 +124,7 @@ public class ConsultarReportesService implements ConsultarReportesUseCase {
              tramo = siguiente.apply(tramo)) {
             porTramo.put(tramo, new ArrayList<>());
         }
-        for (FilaEntrega fila : entregas(filtro)) {
+        for (FilaEntrega fila : entregas) {
             LocalDate diaLocal = fila.fechaEntrega().atZone(LIMA).toLocalDate();
             List<FilaEntrega> destino = porTramo.get(inicioDelTramo.apply(diaLocal));
             if (destino != null) {
@@ -107,15 +140,14 @@ public class ConsultarReportesService implements ConsultarReportesUseCase {
         return serie;
     }
 
-    @Override
-    public List<FilaRanking> ranking(FiltroReporte filtro, Dimension dimension) {
+    private List<FilaRanking> ranking(List<FilaEntrega> entregas, Dimension dimension) {
         Function<FilaEntrega, String> clave = switch (dimension) {
             case DESTINO -> FilaEntrega::destino;
             case PRODUCTO -> FilaEntrega::producto;
             case COMPRADOR -> FilaEntrega::comprador;
         };
         Map<String, List<FilaEntrega>> grupos = new LinkedHashMap<>();
-        for (FilaEntrega fila : entregas(filtro)) {
+        for (FilaEntrega fila : entregas) {
             grupos.computeIfAbsent(clave.apply(fila), k -> new ArrayList<>()).add(fila);
         }
         List<FilaRanking> ranking = new ArrayList<>();
@@ -136,11 +168,17 @@ public class ConsultarReportesService implements ConsultarReportesUseCase {
                         .divide(ingreso.monto(), 1, RoundingMode.HALF_UP);
     }
 
-    @Override
-    public OpcionesFiltro opciones() {
-        List<OpcionesFiltro.OpcionDestino> opcionesDeDestino = destinos.listarActivos().stream()
+    private String nombreDelDestino(FiltroReporte filtro) {
+        if (filtro.idDestino() == null) {
+            return null;
+        }
+        return opcionesDeDestino().stream().filter(o -> o.idDestinoVenta().equals(filtro.idDestino()))
+                .map(OpcionesFiltro.OpcionDestino::nombre).findFirst().orElse(null);
+    }
+
+    private List<OpcionesFiltro.OpcionDestino> opcionesDeDestino() {
+        return destinos.listarActivos().stream()
                 .map((DestinoVenta d) -> new OpcionesFiltro.OpcionDestino(d.idDestinoVenta(), d.nombreDestino()))
                 .toList();
-        return new OpcionesFiltro(reportes.productosConEntregas(), opcionesDeDestino);
     }
 }

@@ -1,6 +1,12 @@
 package pe.agroruta.infrastructure.config;
 
 import java.time.Clock;
+import pe.agroruta.infrastructure.adapter.out.reporte.ExportadorPdf;
+import pe.agroruta.infrastructure.adapter.out.reporte.ExportadorCsv;
+import pe.agroruta.domain.port.in.ExportarReporteUseCase;
+import pe.agroruta.domain.model.Formato;
+import pe.agroruta.application.service.ExportarReporteService;
+import java.util.Map;
 import java.time.ZoneId;
 
 import org.springframework.context.annotation.Bean;
@@ -166,6 +172,13 @@ public class BeanConfig {
     ConsultarReportesUseCase consultarReportesUseCase(ReporteRepositoryPort reportes,
                                                       DestinoRepositoryPort destinos) {
         return new ConsultarReportesService(reportes, destinos);
+    }
+
+    @Bean
+    ExportarReporteUseCase exportarReporteUseCase(ConsultarReportesUseCase consultas, NegocioRepositoryPort negocios,
+                                                  Clock reloj) {
+        return new ExportarReporteService(consultas, negocios,
+                Map.of(Formato.CSV, new ExportadorCsv(), Formato.PDF, new ExportadorPdf()), reloj);
     }
 
     @Bean

@@ -206,6 +206,28 @@ class ReportesServiceTest {
     }
 
     @Test
+    void el_reporte_completo_trae_todo_con_solo_dos_consultas_a_la_base() {
+        reporte.filasPorInicio.put(LocalDate.of(2026, 11, 1), List.of(
+                fila("2026-11-03T15:00:00Z", "Ana", "Palta", "Lima", "5000.00", "1000.00", "200.00", "10"),
+                fila("2026-11-05T15:00:00Z", "Luis", "Mango", "Tacna", "3000.00", "500.00", "100.00", "6")));
+        FiltroReporte filtro = new FiltroReporte(LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 7), null, 3L);
+
+        pe.agroruta.domain.model.Reporte completo = servicio.completo(filtro, "Chacra Demo", "dueno.empresa",
+                Instant.parse("2026-11-07T13:00:00Z"));
+
+        assertThat(reporte.consultas).hasSize(2);
+        assertThat(completo.negocio()).isEqualTo("Chacra Demo");
+        assertThat(completo.generadoPor()).isEqualTo("dueno.empresa");
+        assertThat(completo.nombreDestino()).isEqualTo("Mercado Lima");
+        assertThat(completo.entregas()).hasSize(2);
+        assertThat(completo.serie()).hasSize(7);
+        assertThat(completo.rankings()).containsKeys(Dimension.DESTINO, Dimension.PRODUCTO, Dimension.COMPRADOR);
+        assertThat(completo.rankings().get(Dimension.COMPRADOR)).extracting(FilaRanking::nombre)
+                .containsExactly("Ana", "Luis");
+        assertThat(completo.resumen().actual().gananciaReal()).isEqualTo(Dinero.de("6500.00"));
+    }
+
+    @Test
     void las_opciones_traen_los_productos_con_entregas_y_los_destinos_activos() {
         reporte.productos = List.of("Mango", "Palta Hass");
 

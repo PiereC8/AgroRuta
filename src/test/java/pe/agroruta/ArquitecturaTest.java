@@ -62,7 +62,7 @@ class ArquitecturaTest {
             .and().areTopLevelClasses()
             .and().areNotEnums()
             .and().areNotInterfaces()
-            .and().areNotAssignableTo(Throwable.class)
+            .and().haveSimpleNameNotEndingWith("Exception")
             .and().areNotRecords()
             .should().haveOnlyPrivateConstructors();
 
