@@ -2,6 +2,7 @@ package pe.agroruta.infrastructure.adapter.in.web;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Map;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,6 +25,7 @@ import pe.agroruta.domain.model.TipoEnlace;
 import pe.agroruta.domain.port.in.AutenticarEnlaceUseCase;
 import pe.agroruta.domain.port.in.ConsultarEstadoPagoUseCase;
 import pe.agroruta.domain.port.in.PagarPedidoUseCase;
+import pe.agroruta.domain.port.in.SimularPagoEfectivoUseCase;
 import pe.agroruta.infrastructure.config.ConfiguracionPasarela;
 import pe.agroruta.infrastructure.config.TenantContext;
 
@@ -35,14 +37,16 @@ public class PublicoPagoController {
     private final PagarPedidoUseCase pagar;
     private final ConsultarEstadoPagoUseCase consultarEstado;
     private final ConfiguracionPasarela pasarela;
+    private final SimularPagoEfectivoUseCase simularPagoEfectivo;
 
     public PublicoPagoController(AutenticarEnlaceUseCase enlaces, PagarPedidoUseCase pagar,
                                  ConsultarEstadoPagoUseCase consultarEstado,
-                                 ConfiguracionPasarela pasarela) {
+                                 ConfiguracionPasarela pasarela, SimularPagoEfectivoUseCase simularPagoEfectivo) {
         this.enlaces = enlaces;
         this.pagar = pagar;
         this.consultarEstado = consultarEstado;
         this.pasarela = pasarela;
+        this.simularPagoEfectivo = simularPagoEfectivo;
     }
 
     @GetMapping
@@ -64,6 +68,17 @@ public class PublicoPagoController {
                         solicitud.email(), claveIdempotencia, solicitud.metodoPago(), solicitud.emisor())));
         return new ResultadoRespuesta(resultado.estadoPago(), resultado.mensaje(), resultado.monto().monto(),
                 ComprobanteRespuesta.de(resultado.comprobante()));
+    }
+
+    /** Solo para la demostración: hace como si el comprador hubiera pagado su código en un agente. */
+    @PostMapping("/simular-agente")
+    public Map<String, Boolean> simularAgente(@RequestHeader(PublicoController.ENCABEZADO_TOKEN) String token) {
+        SesionEnlace sesion = sesion(token);
+        TenantContext.ejecutarEn(sesion.identificadorNegocio(), () -> {
+            simularPagoEfectivo.simular(sesion);
+            return null;
+        });
+        return Map.of("pagado", true);
     }
 
     private SesionEnlace sesion(String token) {

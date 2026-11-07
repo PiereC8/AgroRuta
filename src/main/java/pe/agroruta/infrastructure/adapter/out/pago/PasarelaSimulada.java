@@ -1,5 +1,10 @@
 package pe.agroruta.infrastructure.adapter.out.pago;
 
+import java.security.SecureRandom;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,13 +33,34 @@ public class PasarelaSimulada implements PagoPort {
     private static final Pattern FORMATO = Pattern
             .compile("^sim_(aprobada|sin_fondos|vencida|sin_respuesta)(?:_(visa|mastercard|amex|diners|paypal)(?:_(\\d{4}))?)?$");
 
+    /** Token del medio «pago con código»: no es una tarjeta, se genera un CIP que se paga luego en un agente. */
+    public static final String PAGO_EFECTIVO = "sim_pagoefectivo";
+    private static final String MEDIO_PAGO_EFECTIVO = "PagoEfectivo";
+    private static final Duration VIGENCIA_DEL_CODIGO = Duration.ofHours(48);
+    private static final ZoneId LIMA = ZoneId.of("America/Lima");
+    private static final DateTimeFormatter FECHA_VENCIMIENTO = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
+            .withZone(LIMA);
+
     private final Map<String, ResultadoCobro> cargos = new ConcurrentHashMap<>();
+    private final Clock reloj;
+    private final SecureRandom azar = new SecureRandom();
+
+    public PasarelaSimulada() {
+        this(Clock.system(LIMA));
+    }
+
+    public PasarelaSimulada(Clock reloj) {
+        this.reloj = reloj;
+    }
 
     @Override
     public ResultadoCobro cobrar(SolicitudCobro solicitud) {
         // Con la forma de un cargo real (chr_xxx_...) para que la notificación de la pasarela también se pueda probar.
         String idCargo = "chr_sim_" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
         Map<String, String> metadatos = solicitud.metadatos();
+        if (PAGO_EFECTIVO.equals(solicitud.tokenTarjeta())) {
+            return guardar(generarCodigo(metadatos));
+        }
         Matcher token = FORMATO.matcher(solicitud.tokenTarjeta() == null ? "" : solicitud.tokenTarjeta());
         if (!token.matches()) {
             return guardar(ResultadoCobro.rechazado(idCargo, "datos_invalidos",
@@ -56,6 +82,26 @@ public class PasarelaSimulada implements PagoPort {
                     + " sí se hizo)");
         }
         return aprobado;
+    }
+
+    private ResultadoCobro generarCodigo(Map<String, String> metadatos) {
+        String cip = String.format("%012d", azar.nextLong(1_000_000_000_000L));
+        String vence = FECHA_VENCIMIENTO.format(reloj.instant().plus(VIGENCIA_DEL_CODIGO));
+        String mensaje = "Tu código de pago (CIP) es " + cip + ". Págalo en un agente, una bodega o por banca por "
+                + "internet hasta el " + vence + ". Cuando lo pagues, tu pedido figurará como pagado.";
+        return ResultadoCobro.pendiente("cip_sim_" + cip, ResultadoCobro.CIP_GENERADO, mensaje, MEDIO_PAGO_EFECTIVO,
+                metadatos);
+    }
+
+    @Override
+    public boolean simularPagoEnAgente(String idCargo) {
+        ResultadoCobro cargo = cargos.get(idCargo);
+        if (cargo == null || cargo.estado() != ResultadoCobro.Estado.PENDIENTE
+                || !ResultadoCobro.CIP_GENERADO.equals(cargo.codigoRespuesta())) {
+            return false;
+        }
+        cargos.put(idCargo, ResultadoCobro.aprobado(idCargo, MEDIO_PAGO_EFECTIVO, null, cargo.metadatos()));
+        return true;
     }
 
     private static String nombreDeMarca(String marca) {

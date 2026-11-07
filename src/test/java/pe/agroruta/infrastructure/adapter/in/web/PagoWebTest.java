@@ -94,6 +94,8 @@ class PagoWebTest {
     @MockitoBean
     ConfirmarPagoUseCase confirmar;
     @MockitoBean
+    pe.agroruta.domain.port.in.SimularPagoEfectivoUseCase simularPagoEfectivo;
+    @MockitoBean
     ConsultarPagosUseCase consultarPagos;
     @MockitoBean
     EmitirComprobanteUseCase comprobantes;
@@ -116,6 +118,27 @@ class PagoWebTest {
 
     private void tokenValido() {
         when(enlaces.resolver("tok-comp")).thenReturn(Optional.of(COMPRADOR));
+    }
+
+    // ---------- pago con código (simulado) ----------
+
+    @Test
+    void simular_el_pago_en_agente_usa_el_negocio_del_enlace_y_responde_pagado() throws Exception {
+        tokenValido();
+
+        mvc.perform(post("/api/publico/pago/simular-agente").header(TOKEN, "tok-comp"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.pagado").value(true));
+
+        verify(simularPagoEfectivo).simular(COMPRADOR);
+    }
+
+    @Test
+    void simular_con_un_enlace_que_no_es_de_comprador_responde_no_encontrado() throws Exception {
+        when(enlaces.resolver("tok-cond")).thenReturn(Optional.of(new SesionEnlace("empresa_demo", 7L, TipoEnlace.CONDUCTOR)));
+
+        mvc.perform(post("/api/publico/pago/simular-agente").header(TOKEN, "tok-cond"))
+                .andExpect(status().isNotFound());
     }
 
     // ---------- estado del pago ----------

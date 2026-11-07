@@ -15,4 +15,12 @@ public interface PagoPort {
     ResultadoCobro cobrar(SolicitudCobro solicitud);
 
     Optional<ResultadoCobro> consultarCargo(String idCargo);
+
+    /**
+     * Marca como pagado un código de pago (CIP) como si el comprador lo hubiera pagado en un agente. Solo la pasarela
+     * simulada lo permite; las demás devuelven falso.
+     */
+    default boolean simularPagoEnAgente(String idCargo) {
+        return false;
+    }
 }
