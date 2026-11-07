@@ -13,6 +13,9 @@ Proyecto del curso Programación III (UPT).
 - Seguimiento en vivo: el conductor comparte su ubicación desde el celular y el comprador ve el mapa con un enlace.
 - Cobro con tarjeta o PayPal en modo de pruebas, y boleta o factura electrónica.
 - Panel de inicio con ganancia del mes, envíos en curso, merma y cobros pendientes.
+- Código QR en los enlaces del conductor y del comprador, para abrirlos desde el celular sin escribir nada.
+- Reportes del Dueño: ganancia, comparación con el período anterior (con el motivo del cambio), gráfico, rankings por destino, producto y comprador, filtros por período, producto y destino, y descarga en CSV o PDF.
+- Equipo y avisos por correo: el Dueño pone el correo de cada persona y recibe avisos de pérdidas, merma alta, pagos, comprobantes con problemas, cobros vencidos y un resumen semanal; el Operador recibe las alertas de los envíos.
 - Un negocio por base de datos (multi-tenant) y dos roles: Dueño y Operador.
 
 ## Tecnologías
@@ -22,6 +25,7 @@ Proyecto del curso Programación III (UPT).
 - Spring Security con JWT, WebSocket (STOMP) para el seguimiento
 - HTML, CSS y JavaScript sin frameworks; mapas con Leaflet y OpenStreetMap
 - Pruebas con JUnit 5, Mockito y ArchUnit
+- OpenPDF para los reportes en PDF y Spring Mail para los avisos
 
 ## Estructura
 
@@ -50,6 +54,17 @@ Necesitas Java 21 y una base de datos MySQL 8.
 3. Abre `http://localhost:8080/login.html`.
 
 Si no configuras las llaves de Mercado Pago y Nubefact, el sistema usa un pago y un comprobante simulados, así que se puede probar todo sin cuentas externas.
+
+### Correo de los avisos
+
+Los avisos salen por SMTP. Con Gmail hace falta una contraseña de aplicación (Cuenta de Google, Seguridad, Verificación en dos pasos, Contraseñas de aplicaciones). En el `.env`:
+
+```
+CORREO_USUARIO=tu-cuenta@gmail.com
+CORREO_CLAVE_APLICACION=la-contraseña-de-aplicación
+```
+
+Si se dejan vacíos, los correos se simulan: no salen, pero quedan en el historial de la pantalla Equipo. Desde esa pantalla también se puede enviar un correo de prueba.
 
 ## Pruebas
 
