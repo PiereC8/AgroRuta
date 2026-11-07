@@ -23,7 +23,22 @@ class ArquitecturaTest {
                     "org.springframework..",
                     "jakarta.persistence..",
                     "jakarta.servlet..",
+                    "jakarta.mail..",
+                    "com.lowagie..",
                     "com.fasterxml.jackson..");
+
+    @ArchTest
+    static final ArchRule aplicacion_no_depende_de_el_correo_ni_del_pdf = noClasses()
+            .that().resideInAPackage("..application..")
+            .should().dependOnClassesThat().resideInAnyPackage("jakarta.mail..", "com.lowagie..",
+                    "org.springframework.mail..");
+
+    @ArchTest
+    static final ArchRule los_exportadores_y_el_correo_implementan_un_puerto_de_salida = classes()
+            .that().resideInAnyPackage("..infrastructure.adapter.out.reporte..",
+                    "..infrastructure.adapter.out.correo..")
+            .and().areTopLevelClasses()
+            .should().implement(JavaClass.Predicates.resideInAPackage("..domain.port.out.."));
 
     @ArchTest
     static final ArchRule dominio_no_depende_de_otras_capas = noClasses()

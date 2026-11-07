@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex">
+    <title>Equipo - AgroRuta</title>
+    <link rel="icon" href="/img/logo.png" type="image/png">
+    <link rel="preload" href="/fonts/fuente.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/css/sistema.css">
+</head>
+<body>
+<div class="estructura">
+    <nav id="menu"></nav>
+
+    <main class="contenido">
+        <header id="encabezado"></header>
+
+        <div class="barra">
+            <p class="suave barra__texto">Las personas de tu negocio y el correo donde reciben los avisos: pérdidas, pagos, envíos detenidos y el resumen de la semana.</p>
+            <button class="boton" id="accion-principal" type="button">Agregar operador</button>
+        </div>
+
+        <div id="error" class="aviso aviso--error oculto" role="alert">
+            <span id="error-texto"></span>
+            <button class="boton boton-secundario" id="reintentar" type="button">Volver a cargar</button>
+        </div>
+
+        <section class="tarjeta">
+            <div id="pestanas"></div>
+            <div id="personas" class="oculto"><div id="lista-personas"></div></div>
+            <div id="correos" class="oculto">
+                <div class="barra">
+                    <p class="suave barra__texto" id="texto-correos">Los últimos correos que preparó el sistema y si llegaron a salir.</p>
+                    <button class="boton boton-secundario" id="probar-correo" type="button">Enviar correo de prueba</button>
+                </div>
+                <div id="lista-correos"></div>
+            </div>
+        </section>
+    </main>
+</div>
+<script src="/js/api.js"></script>
+<script src="/js/estructura.js"></script>
+<script src="/js/ui.js"></script>
+<script src="/js/equipo.js"></script>
+</body>
+</html>

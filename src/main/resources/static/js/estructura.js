@@ -15,7 +15,8 @@ window.Estructura = (function () {
         destinos: ['M12 21s7-6 7-12a7 7 0 10-14 0c0 6 7 12 7 12z', 'M12 11.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z'],
         transporte: ['M4 17V8l3-4h10l3 4v9', 'M4 12h16', 'M7 20v-3', 'M17 20v-3'],
         pagos: ['M2 6h20v13H2z', 'M2 10h20', 'M6 15h4'],
-        reportes: ['M4 20V4', 'M4 20h16', 'M8 16v-5', 'M12 16V8', 'M16 16v-3']
+        reportes: ['M4 20V4', 'M4 20h16', 'M8 16v-5', 'M12 16V8', 'M16 16v-3'],
+        equipo: ['M9 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7z', 'M2 20c0-3.5 3-6 7-6s7 2.5 7 6', 'M18 8v6', 'M15 11h6']
     };
 
     const SECCIONES = [
@@ -27,7 +28,8 @@ window.Estructura = (function () {
         {id: 'destinos', texto: 'Destinos', ruta: '/destinos.html'},
         {id: 'transporte', texto: 'Transporte', ruta: '/transporte.html'},
         {id: 'pagos', texto: 'Pagos', ruta: '/pagos.html'},
-        {id: 'reportes', texto: 'Reportes', ruta: '/reportes.html', soloDueno: true}
+        {id: 'reportes', texto: 'Reportes', ruta: '/reportes.html', soloDueno: true},
+        {id: 'equipo', texto: 'Equipo', ruta: '/equipo.html', soloDueno: true}
     ];
 
     const ROLES = {DUENO: 'Dueño', OPERADOR: 'Operador'};

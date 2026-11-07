@@ -80,7 +80,7 @@ class PaginasWebTest {
                 .doesNotContain("document.write");
     }
 
-    private static final String[] PANTALLAS = {"compradores", "transporte", "destinos", "lotes", "pedidos", "envios", "pagos", "reportes"};
+    private static final String[] PANTALLAS = {"compradores", "transporte", "destinos", "lotes", "pedidos", "envios", "pagos", "reportes", "equipo"};
 
     @Test
     void ui_js_se_sirve_define_el_kit_y_no_usa_innerhtml() throws Exception {

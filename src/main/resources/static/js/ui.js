@@ -264,11 +264,12 @@ window.Ui = (function () {
                     }
                 } else {
                     entrada = el('input', 'campo__entrada');
-                    entrada.type = campo.tipo === 'fecha' ? 'date' : campo.tipo === 'telefono' ? 'tel' : 'text';
+                    entrada.type = campo.tipo === 'fecha' ? 'date' : campo.tipo === 'telefono' ? 'tel'
+                        : campo.tipo === 'correo' ? 'email' : campo.tipo === 'clave' ? 'password' : 'text';
                     if (campo.tipo === 'numero') {
                         entrada.inputMode = 'decimal';
                     }
-                    entrada.autocomplete = 'off';
+                    entrada.autocomplete = campo.tipo === 'clave' ? 'new-password' : 'off';
                     if (campo.marcador) {
                         entrada.placeholder = campo.marcador;
                     }
