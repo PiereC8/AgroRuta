@@ -79,3 +79,12 @@ Si se dejan vacíos, los correos se simulan: no salen, pero quedan en el histori
 ```
 ./mvnw verify
 ```
+
+## Despliegue en el VPS
+
+La carpeta `despliegue/` tiene lo necesario para un VPS Ubuntu, sin contenedores: el servicio systemd (reinicia la aplicación si se cae), la configuración de Nginx (proxy, WebSocket y página de mantenimiento) y dos scripts.
+
+1. En el VPS, como root, una sola vez: `bash instalar.sh tu-dominio`. Instala Java 21, MySQL 8 y Nginx, crea la base y su usuario (bases con sufijo `_prod`), genera las claves en `/opt/agroruta/.env` y activa el firewall. La clave del administrador queda en `/root/agroruta-admin.txt`.
+2. Desde la PC, para cada versión nueva: `bash despliegue/desplegar.sh root@IP`. Compila, sube el `.jar` y reinicia el servicio.
+3. HTTPS: `certbot --nginx -d tu-dominio --redirect` (el certificado se renueva solo).
+

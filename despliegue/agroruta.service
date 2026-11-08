@@ -1,0 +1,24 @@
+[Unit]
+Description=AgroRuta Despacho
+After=network-online.target mysql.service
+Wants=network-online.target
+Requires=mysql.service
+
+[Service]
+User=agroruta
+Group=agroruta
+WorkingDirectory=/opt/agroruta
+ExecStart=/usr/bin/java -Xms256m -Xmx768m -jar /opt/agroruta/agroruta.jar
+Environment=SERVER_ADDRESS=127.0.0.1
+Environment=SERVER_PORT=8080
+Environment=SERVER_FORWARD_HEADERS_STRATEGY=native
+Restart=always
+RestartSec=5
+SuccessExitStatus=143
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
