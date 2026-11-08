@@ -98,6 +98,9 @@
             mostrarResultado(resultado.mensaje, false);
             mostrar('zona-pago', false);
             mostrar('zona-cip', estado.pagoConCodigo);
+            resumen(estado.pagoConCodigo
+                ? 'Tienes un código de pago pendiente. No pagues de nuevo con otro medio.'
+                : 'Estamos confirmando tu pago. No pagues de nuevo.', 'aviso');
             revisarPendiente();
         }
     }
@@ -115,9 +118,16 @@
                 return;
             }
             mostrar('zona-cip', false);
-            const datos = await cargar();
-            if (datos) {
-                pintar(datos);
+            // El comprobante se emite justo después de confirmar el pago: se espera un poco si aún no aparece.
+            for (let intento = 0; intento < 5; intento++) {
+                const datos = await cargar();
+                if (datos) {
+                    pintar(datos);
+                }
+                if (!datos || datos.comprobante) {
+                    break;
+                }
+                await new Promise((listo) => setTimeout(listo, 2000));
             }
         } catch (e) {
             mostrarResultado('No pudimos conectar. Revisa tu señal e intenta de nuevo.', false);
