@@ -41,6 +41,37 @@
         return a;
     }
 
+    /** El PDF lo arma AgroRuta (el del proveedor suma el IGV a una línea exonerada). */
+    async function descargarPdf(idPago, boton) {
+        boton.disabled = true;
+        try {
+            const token = sessionStorage.getItem('agroruta.token');
+            const respuesta = await fetch('/api/pagos/' + idPago + '/comprobante.pdf',
+                {headers: {'Authorization': 'Bearer ' + token}, cache: 'no-store'});
+            if (!respuesta.ok) {
+                const datos = await respuesta.json().catch(() => null);
+                throw new Error((datos && datos.error) || 'No se pudo generar el PDF. Inténtalo de nuevo.');
+            }
+            guardar(await respuesta.blob(), respuesta.headers.get('Content-Disposition'), 'comprobante.pdf');
+        } catch (error) {
+            window.Ui.aviso(error.message, 'error');
+        } finally {
+            boton.disabled = false;
+        }
+    }
+
+    function guardar(contenido, disposicion, nombrePorDefecto) {
+        const nombre = /filename="?([^";]+)"?/.exec(disposicion || '');
+        const enlace = document.createElement('a');
+        const url = URL.createObjectURL(contenido);
+        enlace.href = url;
+        enlace.download = nombre ? nombre[1] : nombrePorDefecto;
+        document.body.appendChild(enlace);
+        enlace.click();
+        enlace.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
     async function verComprobante(pago) {
         const contenido = el('div');
         contenido.appendChild(el('p', 'suave', 'Cargando…'));
@@ -62,10 +93,13 @@
                 contenido.appendChild(el('p', 'suave', comprobante.mensajeSunat));
             }
             const enlaces = el('p');
-            for (const a of [enlaceHttps('Ver PDF', comprobante.enlacePdf), enlaceHttps('Ver XML', comprobante.enlaceXml)]) {
-                if (a) {
-                    enlaces.append(a, document.createTextNode('   '));
-                }
+            if (comprobante.estadoComprobante === 'ACEPTADO' || comprobante.estadoComprobante === 'OBSERVADO') {
+                const pdf = window.Ui.boton('Descargar PDF', 'boton-secundario', () => descargarPdf(pago.idPago, pdf));
+                enlaces.append(pdf, document.createTextNode('   '));
+            }
+            const xml = enlaceHttps('Ver XML enviado a SUNAT', comprobante.enlaceXml);
+            if (xml) {
+                enlaces.append(xml);
             }
             contenido.appendChild(enlaces);
             if (comprobante.estadoComprobante === 'PENDIENTE') {

@@ -1,6 +1,9 @@
 package pe.agroruta.infrastructure.config;
 
 import java.time.Clock;
+import pe.agroruta.application.service.DescargarComprobanteService;
+import pe.agroruta.domain.port.in.DescargarComprobanteUseCase;
+import pe.agroruta.domain.port.out.RepresentacionComprobantePort;
 import pe.agroruta.application.service.SimularPagoEfectivoService;
 import pe.agroruta.domain.port.in.SimularPagoEfectivoUseCase;
 import pe.agroruta.domain.port.out.EquipoRepositoryPort;
@@ -237,6 +240,18 @@ public class BeanConfig {
                                           PagoPort pasarela, EmitirComprobanteUseCase emitirComprobante, Clock reloj) {
         return new PagarPedidoService(envios, pedidos, liquidaciones, compradores, pagos, comprobantes, pasarela,
                 emitirComprobante, reloj);
+    }
+
+    @Bean
+    DescargarComprobanteUseCase descargarComprobanteUseCase(PagoRepositoryPort pagos,
+                                                            ComprobanteRepositoryPort comprobantes,
+                                                            EnvioRepositoryPort envios,
+                                                            LiquidacionRepositoryPort liquidaciones,
+                                                            PedidoRepositoryPort pedidos,
+                                                            CompradorRepositoryPort compradores, LoteRepositoryPort lotes,
+                                                            RepresentacionComprobantePort representacion) {
+        return new DescargarComprobanteService(pagos, comprobantes, envios, liquidaciones, pedidos, compradores, lotes,
+                representacion);
     }
 
     @Bean

@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Map;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -24,6 +25,7 @@ import pe.agroruta.domain.model.TipoComprobante;
 import pe.agroruta.domain.model.TipoEnlace;
 import pe.agroruta.domain.port.in.AutenticarEnlaceUseCase;
 import pe.agroruta.domain.port.in.ConsultarEstadoPagoUseCase;
+import pe.agroruta.domain.port.in.DescargarComprobanteUseCase;
 import pe.agroruta.domain.port.in.PagarPedidoUseCase;
 import pe.agroruta.domain.port.in.SimularPagoEfectivoUseCase;
 import pe.agroruta.infrastructure.config.ConfiguracionPasarela;
@@ -38,15 +40,25 @@ public class PublicoPagoController {
     private final ConsultarEstadoPagoUseCase consultarEstado;
     private final ConfiguracionPasarela pasarela;
     private final SimularPagoEfectivoUseCase simularPagoEfectivo;
+    private final DescargarComprobanteUseCase descargar;
 
     public PublicoPagoController(AutenticarEnlaceUseCase enlaces, PagarPedidoUseCase pagar,
                                  ConsultarEstadoPagoUseCase consultarEstado,
-                                 ConfiguracionPasarela pasarela, SimularPagoEfectivoUseCase simularPagoEfectivo) {
+                                 ConfiguracionPasarela pasarela, SimularPagoEfectivoUseCase simularPagoEfectivo,
+                                 DescargarComprobanteUseCase descargar) {
         this.enlaces = enlaces;
         this.pagar = pagar;
         this.consultarEstado = consultarEstado;
         this.pasarela = pasarela;
         this.simularPagoEfectivo = simularPagoEfectivo;
+        this.descargar = descargar;
+    }
+
+    @GetMapping("/comprobante.pdf")
+    public ResponseEntity<byte[]> comprobantePdf(@RequestHeader(PublicoController.ENCABEZADO_TOKEN) String token) {
+        SesionEnlace sesion = sesion(token);
+        return ArchivoRespuesta.descarga(
+                TenantContext.ejecutarEn(sesion.identificadorNegocio(), () -> descargar.pdfDelComprador(sesion)));
     }
 
     @GetMapping

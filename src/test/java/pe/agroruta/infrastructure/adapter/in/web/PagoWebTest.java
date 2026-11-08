@@ -99,6 +99,8 @@ class PagoWebTest {
     ConsultarPagosUseCase consultarPagos;
     @MockitoBean
     EmitirComprobanteUseCase comprobantes;
+    @MockitoBean
+    pe.agroruta.domain.port.in.DescargarComprobanteUseCase descargar;
 
     private static Pago pago(EstadoPago estado) {
         return new Pago(5L, 1L, 1L, Dinero.de("6372.00"), estado, "clave-de-operacion-1", "chr_test_1", null,
@@ -131,6 +133,32 @@ class PagoWebTest {
                 .andExpect(jsonPath("$.pagado").value(true));
 
         verify(simularPagoEfectivo).simular(COMPRADOR);
+    }
+
+    @Test
+    void el_comprador_descarga_el_pdf_del_comprobante_dentro_de_su_negocio() throws Exception {
+        tokenValido();
+        when(descargar.pdfDelComprador(COMPRADOR)).thenAnswer(invocacion -> {
+            assertThat(TenantContext.actual()).contains("empresa_demo");
+            return new pe.agroruta.domain.model.Archivo("boleta-B001-1.pdf", "application/pdf", new byte[]{1, 2});
+        });
+
+        mvc.perform(get("/api/publico/pago/comprobante.pdf").header(TOKEN, "tok-comp"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith("application/pdf"))
+                .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.containsString("boleta-B001-1.pdf")))
+                .andExpect(header().string("Cache-Control", "no-store"));
+    }
+
+    @Test
+    void el_pdf_del_comprobante_interno_pide_iniciar_sesion() throws Exception {
+        when(descargar.pdfDePago(5L))
+                .thenReturn(new pe.agroruta.domain.model.Archivo("factura-F001-1.pdf", "application/pdf", new byte[]{1}));
+
+        mvc.perform(get("/api/pagos/5/comprobante.pdf")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/pagos/5/comprobante.pdf").header("Authorization", bearer("empresa_demo", Rol.DUENO)))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith("application/pdf"));
     }
 
     @Test

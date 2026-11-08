@@ -8,16 +8,11 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import pe.agroruta.domain.model.Comprador;
 import pe.agroruta.domain.model.Comprobante;
 import pe.agroruta.domain.model.DatosComprobante;
 import pe.agroruta.domain.model.EstadoComprobante;
 import pe.agroruta.domain.model.EstadoPago;
-import pe.agroruta.domain.model.Liquidacion;
-import pe.agroruta.domain.model.Lote;
-import pe.agroruta.domain.model.LoteNoEncontradoException;
 import pe.agroruta.domain.model.Pago;
-import pe.agroruta.domain.model.Pedido;
 import pe.agroruta.domain.model.RecursoNoEncontradoException;
 import pe.agroruta.domain.model.ReglasComprobante;
 import pe.agroruta.domain.model.ResultadoEmision;
@@ -40,10 +35,7 @@ public class EmitirComprobanteService implements EmitirComprobanteUseCase {
 
     private final PagoRepositoryPort pagos;
     private final ComprobanteRepositoryPort comprobantes;
-    private final LiquidacionRepositoryPort liquidaciones;
-    private final PedidoRepositoryPort pedidos;
-    private final CompradorRepositoryPort compradores;
-    private final LoteRepositoryPort lotes;
+    private final DescargarComprobanteService.ArmadorDatosComprobante armador;
     private final CorrelativoPort correlativos;
     private final ComprobantePort emisor;
     private final SeriesComprobante series;
@@ -56,10 +48,7 @@ public class EmitirComprobanteService implements EmitirComprobanteUseCase {
                                     Clock reloj) {
         this.pagos = pagos;
         this.comprobantes = comprobantes;
-        this.liquidaciones = liquidaciones;
-        this.pedidos = pedidos;
-        this.compradores = compradores;
-        this.lotes = lotes;
+        this.armador = new DescargarComprobanteService.ArmadorDatosComprobante(liquidaciones, pedidos, compradores, lotes);
         this.correlativos = correlativos;
         this.emisor = emisor;
         this.series = series;
@@ -79,8 +68,7 @@ public class EmitirComprobanteService implements EmitirComprobanteUseCase {
             return existente.get().esPendiente() ? intentar(existente.get()) : existente.get();
         }
 
-        Contexto contexto = contexto(pago);
-        TipoComprobante tipo = ReglasComprobante.tipoPara(contexto.comprador(), pago.monto());
+        TipoComprobante tipo = ReglasComprobante.tipoPara(armador.comprador(pago), pago.monto());
         String serie = series.paraTipo(tipo);
         int numero = correlativos.siguiente(serie);
         Instant ahora = reloj.instant();
@@ -131,8 +119,7 @@ public class EmitirComprobanteService implements EmitirComprobanteUseCase {
         Instant ahora = reloj.instant();
         Pago pago = pagos.buscarPorId(comprobante.idPago())
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe el pago " + comprobante.idPago()));
-        Contexto contexto = contexto(pago);
-        DatosComprobante datos = datos(comprobante, pago, contexto);
+        DatosComprobante datos = armador.armar(comprobante, pago);
         Comprobante resultado;
         try {
             resultado = comprobante.conResultado(emisor.emitir(datos), ahora);
@@ -145,33 +132,8 @@ public class EmitirComprobanteService implements EmitirComprobanteUseCase {
         return resultado;
     }
 
-    private DatosComprobante datos(Comprobante comprobante, Pago pago, Contexto contexto) {
-        Liquidacion liquidacion = contexto.liquidacion();
-        DatosComprobante.Item item = new DatosComprobante.Item("KGM", "PROD-" + contexto.lote().idLote(),
-                contexto.lote().productoLote(), liquidacion.cantidadRecibidaKg(), liquidacion.precioAcordadoPorKg(),
-                liquidacion.ingresoReal());
-        return new DatosComprobante(comprobante.tipoComprobante(), comprobante.serie(), comprobante.numero(),
-                comprobante.fechaEmision(), ReglasComprobante.clienteDe(contexto.comprador(), pago.emailPagador()),
-                List.of(item), pago.monto());
-    }
-
-    private Contexto contexto(Pago pago) {
-        Liquidacion liquidacion = liquidaciones.buscarPorId(pago.idLiquidacion()).orElseThrow(
-                () -> new RecursoNoEncontradoException("No existe la liquidación " + pago.idLiquidacion()));
-        Pedido pedido = pedidos.buscarPorId(pago.idPedido())
-                .orElseThrow(() -> new RecursoNoEncontradoException("No existe el pedido " + pago.idPedido()));
-        Comprador comprador = compradores.buscarPorId(pedido.idComprador()).orElseThrow(
-                () -> new RecursoNoEncontradoException("No existe el comprador " + pedido.idComprador()));
-        Lote lote = lotes.buscarPorId(liquidacion.idLote())
-                .orElseThrow(() -> new LoteNoEncontradoException(liquidacion.idLote()));
-        return new Contexto(liquidacion, comprador, lote);
-    }
-
     private Comprobante obtener(Long idComprobante) {
         return comprobantes.buscarPorId(idComprobante)
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe el comprobante " + idComprobante));
-    }
-
-    private record Contexto(Liquidacion liquidacion, Comprador comprador, Lote lote) {
     }
 }

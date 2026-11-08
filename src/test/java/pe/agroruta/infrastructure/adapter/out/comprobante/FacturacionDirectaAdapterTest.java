@@ -29,7 +29,7 @@ class FacturacionDirectaAdapterTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final Clock RELOJ = Clock.fixed(Instant.parse("2026-11-08T04:50:00Z"), ZoneOffset.UTC);
-    private static final FacturacionDirectaAdapter.Emisor EMISOR = new FacturacionDirectaAdapter.Emisor(
+    private static final DatosEmisor EMISOR = new DatosEmisor(
             "20000000001", "AGRORUTA DEMO", "AGRORUTA", "AV. BOLOGNESI 100", "230101", "TACNA", "TACNA", "TACNA");
     private static final String ACEPTADA = """
             {"data":{"error":"false","respuesta_sunat_codigo":"0",

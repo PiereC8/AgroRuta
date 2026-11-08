@@ -29,11 +29,6 @@ import pe.agroruta.infrastructure.adapter.out.http.ClienteHttp;
  */
 public class FacturacionDirectaAdapter implements ComprobantePort {
 
-    /** Datos del emisor que van en cada comprobante. En beta se puede usar el RUC de prueba 20000000001. */
-    public record Emisor(String ruc, String razonSocial, String nombreComercial, String domicilioFiscal,
-                         String ubigeo, String distrito, String provincia, String departamento) {
-    }
-
     private static final String MODO_BETA = "0";
     private static final String USUARIO_BETA = "MODDATOS";
     // Productos agrícolas en estado natural: exonerados del IGV (Apéndice I de la Ley del IGV).
@@ -52,11 +47,11 @@ public class FacturacionDirectaAdapter implements ComprobantePort {
 
     private final ClienteHttp http;
     private final String urlBase;
-    private final Emisor emisor;
+    private final DatosEmisor emisor;
     private final Clock reloj;
     private final ObjectMapper json = new ObjectMapper();
 
-    public FacturacionDirectaAdapter(ClienteHttp http, String urlBase, Emisor emisor, Clock reloj) {
+    public FacturacionDirectaAdapter(ClienteHttp http, String urlBase, DatosEmisor emisor, Clock reloj) {
         this.http = http;
         this.urlBase = urlBase.endsWith("/") ? urlBase.substring(0, urlBase.length() - 1) : urlBase;
         this.emisor = emisor;

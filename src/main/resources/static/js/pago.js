@@ -166,15 +166,46 @@
         $('comp-mensaje').textContent = comprobante.mensaje || '';
         const enlaces = $('comp-enlaces');
         enlaces.replaceChildren();
-        for (const [texto, url] of [['Ver PDF', comprobante.enlacePdf], ['Ver XML', comprobante.enlaceXml]]) {
-            if (url && /^https:\/\//.test(url)) {
-                const a = document.createElement('a');
-                a.href = url;
-                a.target = '_blank';
-                a.rel = 'noopener noreferrer';
-                a.textContent = texto;
-                enlaces.append(a, document.createTextNode('  '));
+        if (comprobante.estado === 'ACEPTADO' || comprobante.estado === 'OBSERVADO') {
+            const boton = document.createElement('button');
+            boton.type = 'button';
+            boton.className = 'boton boton-secundario';
+            boton.textContent = 'Descargar PDF';
+            boton.addEventListener('click', () => descargarPdf(boton));
+            enlaces.append(boton, document.createTextNode('  '));
+        }
+        if (comprobante.enlaceXml && /^https:\/\//.test(comprobante.enlaceXml)) {
+            const a = document.createElement('a');
+            a.href = comprobante.enlaceXml;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.textContent = 'Ver XML';
+            enlaces.append(a);
+        }
+    }
+
+    async function descargarPdf(boton) {
+        boton.disabled = true;
+        try {
+            const respuesta = await fetch('/api/publico/pago/comprobante.pdf',
+                {headers: {'X-Token-Seguimiento': token}, cache: 'no-store'});
+            if (!respuesta.ok) {
+                const cuerpo = await respuesta.json().catch(() => ({}));
+                throw new Error(cuerpo.error || 'No se pudo descargar el comprobante. Intenta de nuevo.');
             }
+            const nombre = /filename="?([^";]+)"?/.exec(respuesta.headers.get('Content-Disposition') || '');
+            const url = URL.createObjectURL(await respuesta.blob());
+            const enlace = document.createElement('a');
+            enlace.href = url;
+            enlace.download = nombre ? nombre[1] : 'comprobante.pdf';
+            document.body.appendChild(enlace);
+            enlace.click();
+            enlace.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        } catch (e) {
+            $('comp-mensaje').textContent = e.message;
+        } finally {
+            boton.disabled = false;
         }
     }
 

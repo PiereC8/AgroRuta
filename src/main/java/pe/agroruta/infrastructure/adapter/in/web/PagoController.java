@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,6 +17,7 @@ import pe.agroruta.domain.model.EstadoPago;
 import pe.agroruta.domain.model.Pago;
 import pe.agroruta.domain.model.TipoComprobante;
 import pe.agroruta.domain.port.in.ConsultarPagosUseCase;
+import pe.agroruta.domain.port.in.DescargarComprobanteUseCase;
 import pe.agroruta.domain.port.in.EmitirComprobanteUseCase;
 
 @RestController
@@ -23,10 +25,13 @@ public class PagoController {
 
     private final ConsultarPagosUseCase consultarPagos;
     private final EmitirComprobanteUseCase comprobantes;
+    private final DescargarComprobanteUseCase descargar;
 
-    public PagoController(ConsultarPagosUseCase consultarPagos, EmitirComprobanteUseCase comprobantes) {
+    public PagoController(ConsultarPagosUseCase consultarPagos, EmitirComprobanteUseCase comprobantes,
+                          DescargarComprobanteUseCase descargar) {
         this.consultarPagos = consultarPagos;
         this.comprobantes = comprobantes;
+        this.descargar = descargar;
     }
 
     @GetMapping("/api/pagos")
@@ -43,6 +48,11 @@ public class PagoController {
     @GetMapping("/api/pagos/{idPago}/comprobante")
     public ComprobanteRespuesta comprobanteDePago(@PathVariable Long idPago) {
         return ComprobanteRespuesta.de(consultarPagos.comprobanteDePago(idPago));
+    }
+
+    @GetMapping("/api/pagos/{idPago}/comprobante.pdf")
+    public ResponseEntity<byte[]> pdfDePago(@PathVariable Long idPago) {
+        return ArchivoRespuesta.descarga(descargar.pdfDePago(idPago));
     }
 
     @PostMapping("/api/comprobantes/{idComprobante}/reintentar")

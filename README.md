@@ -59,7 +59,9 @@ Si no configuras las llaves de Mercado Pago, el sistema usa un pago simulado, y 
 
 Con `COMPROBANTES_PROVEEDOR=facturaciondirecta` en el `.env`, cada boleta o factura se envía al ambiente beta de SUNAT mediante la API de facturaciondirecta.com. La API arma el XML UBL 2.1, lo firma, lo envía y devuelve la constancia (CDR), el XML y un PDF. La beta no tiene validez tributaria y no pide RUC propio ni certificado digital; se puede usar el RUC de prueba `20000000001` (los datos del emisor van en las variables `EMISOR_*`). El producto se declara exonerado del IGV, porque se trata de productos agrícolas en estado natural.
 
-Limitaciones: el proveedor deja el XML y el PDF en enlaces abiertos, así que solo deben usarse datos de prueba. Además, su PDF suma el IGV en el total de la línea aunque el producto esté exonerado (el total del comprobante y el XML están bien). Para producción harían falta un RUC, un usuario SOL secundario, un certificado digital y un acuerdo con el proveedor.
+El PDF del comprobante lo arma AgroRuta (botón «Descargar PDF» en Pagos y en la página de pago del comprador), con los mismos datos que se enviaron a SUNAT; no se usa el PDF del proveedor porque suma el IGV a la línea exonerada y lleva la marca de otra empresa. Solo se descarga si SUNAT aceptó el comprobante.
+
+Limitaciones: el proveedor deja el XML en un enlace abierto, así que solo deben usarse datos de prueba. Para producción harían falta un RUC, un usuario SOL secundario, un certificado digital y un acuerdo con el proveedor.
 
 ### Correo de los avisos
 
