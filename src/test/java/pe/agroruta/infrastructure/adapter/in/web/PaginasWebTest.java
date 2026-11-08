@@ -182,6 +182,21 @@ class PaginasWebTest {
     }
 
     @Test
+    void la_direccion_del_sitio_lleva_al_inicio_de_sesion_y_hay_una_pagina_404_propia() throws Exception {
+        mvc.perform(get("/")).andExpect(status().is3xxRedirection())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl("/login.html"));
+        mvc.perform(get("/no-existe.html")).andExpect(status().isNotFound());
+        // Spring Boot la muestra sola ante un 404 (static/error/404.html), en lugar de la página genérica.
+        String pagina;
+        try (var in = getClass().getResourceAsStream("/static/error/404.html")) {
+            assertThat(in).isNotNull();
+            pagina = new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+        }
+        assertThat(pagina).contains("No encontramos esta página").contains("/css/sistema.css")
+                .doesNotContain("<script").doesNotContain(" style=");
+    }
+
+    @Test
     void el_logo_los_estilos_y_las_utilidades_se_sirven() throws Exception {
         mvc.perform(get("/img/logo.png")).andExpect(status().isOk());
         mvc.perform(get("/css/sistema.css")).andExpect(status().isOk());

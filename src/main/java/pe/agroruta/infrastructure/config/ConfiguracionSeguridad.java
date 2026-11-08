@@ -48,10 +48,10 @@ public class ConfiguracionSeguridad {
                 .authorizeHttpRequests(a -> a
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers("/api/auth/login", "/actuator/health").permitAll()
-                        // Páginas del conductor y del comprador, sus recursos y el WebSocket (se autentica por token).
-                        .requestMatchers("/", "/conductor.html", "/seguimiento.html", "/pago.html", "/login.html",
-                                "/inicio.html", "/lotes.html", "/pedidos.html", "/envios.html", "/compradores.html",
-                                "/destinos.html", "/transporte.html", "/pagos.html", "/reportes.html", "/equipo.html", "/js/**", "/css/**", "/img/**", "/fonts/**", "/favicon.ico", "/ws/**")
+                        // Las páginas son públicas (los datos se piden a la API con el token), igual que sus recursos
+                        // y el WebSocket (se autentica por token). Una página que no existe responde con la 404 propia.
+                        .requestMatchers(HttpMethod.GET, "/", "/*.html").permitAll()
+                        .requestMatchers("/js/**", "/css/**", "/img/**", "/fonts/**", "/favicon.ico", "/ws/**")
                         .permitAll()
                         // El enlace con token del comprador: el propio caso de uso valida el token.
                         .requestMatchers("/api/publico/**").permitAll()
