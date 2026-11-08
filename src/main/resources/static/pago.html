@@ -48,6 +48,7 @@
                     <select class="campo__entrada" id="sim-medio">
                         <option value="tarjeta">Tarjeta de crédito o débito</option>
                         <option value="paypal">PayPal</option>
+                        <option value="pagoefectivo">PagoEfectivo (código para pagar en agente o banco)</option>
                     </select>
                 </div>
 
@@ -75,6 +76,10 @@
                 <p id="sim-zona-paypal" class="suave oculto">Pagarás con una cuenta de PayPal de prueba. No se pide
                     contraseña: es solo una demostración.</p>
 
+                <p id="sim-zona-pagoefectivo" class="suave oculto">Te daremos un código de pago (CIP). Lo pagas en
+                    efectivo en un agente o bodega, o por banca por internet, dentro de las 48 horas. Tu pedido figura
+                    como pagado cuando se paga el código.</p>
+
                 <div class="campo">
                     <label class="campo__etiqueta" for="simulado-email">Correo para el comprobante</label>
                     <input class="campo__entrada" id="simulado-email" type="email" autocomplete="email"
@@ -94,6 +99,12 @@
         <section id="zona-resultado" class="tarjeta oculto" aria-live="polite">
             <p id="resultado-mensaje"></p>
             <p></p>
+            <div id="zona-cip" class="oculto">
+                <p class="mensaje aviso">Modo demostración: no hay un agente real. Usa este botón para hacer como si
+                    ya hubieras pagado el código.</p>
+                <button id="simular-agente" class="boton boton-ancho" type="button">Simular pago en agente (solo
+                    demostración)</button>
+            </div>
             <button id="reintentar" class="boton boton-ancho oculto" type="button">Intentar con otra tarjeta</button>
         </section>
 

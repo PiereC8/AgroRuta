@@ -132,6 +132,20 @@ class PaginasWebTest {
     }
 
     @Test
+    void la_pagina_de_pago_ofrece_pagoefectivo_y_simula_el_pago_en_agente_solo_como_demostracion() throws Exception {
+        String html = mvc.perform(get("/pago.html")).andReturn().getResponse().getContentAsString();
+        String simulado = mvc.perform(get("/js/pago-simulado.js")).andReturn().getResponse().getContentAsString();
+        String pago = mvc.perform(get("/js/pago.js")).andReturn().getResponse().getContentAsString();
+
+        assertThat(html).contains("value=\"pagoefectivo\"").contains("id=\"sim-zona-pagoefectivo\"")
+                .contains("id=\"zona-cip\"").contains("Simular pago en agente (solo")
+                .contains("Modo demostración: no hay un agente real");
+        assertThat(simulado).contains("'sim_pagoefectivo'");
+        assertThat(pago).contains("/api/publico/pago/simular-agente").contains("'PagoEfectivo'")
+                .doesNotContain("innerHTML");
+    }
+
+    @Test
     void la_pagina_con_mapa_envia_el_origen_para_que_openstreetmap_no_bloquee_los_mosaicos() throws Exception {
         String html = mvc.perform(get("/seguimiento.html")).andReturn().getResponse().getContentAsString();
 

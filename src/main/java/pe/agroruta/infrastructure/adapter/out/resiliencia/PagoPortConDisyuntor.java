@@ -26,4 +26,9 @@ public class PagoPortConDisyuntor implements PagoPort {
     public Optional<ResultadoCobro> consultarCargo(String idCargo) {
         return disyuntor.ejecutar(() -> pasarela.consultarCargo(idCargo));
     }
+
+    @Override
+    public boolean simularPagoEnAgente(String idCargo) {
+        return pasarela.simularPagoEnAgente(idCargo);
+    }
 }

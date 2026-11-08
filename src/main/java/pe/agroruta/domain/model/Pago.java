@@ -41,7 +41,16 @@ public record Pago(Long idPago, Long idLiquidacion, Long idPedido, Dinero monto,
     }
 
     public Pago aplicar(ResultadoCobro resultado, Instant ahora) {
-        if (estadoPago == EstadoPago.APROBADO || resultado.estado() == ResultadoCobro.Estado.PENDIENTE) {
+        if (resultado.estado() == ResultadoCobro.Estado.PENDIENTE) {
+            boolean codigoGenerado = estadoPago == EstadoPago.PENDIENTE && resultado.idCargo() != null
+                    && ResultadoCobro.CIP_GENERADO.equals(resultado.codigoRespuesta());
+            return codigoGenerado
+                    ? new Pago(idPago, idLiquidacion, idPedido, monto, EstadoPago.PENDIENTE, claveIdempotencia,
+                            resultado.idCargo(), resultado.codigoRespuesta(), resultado.mensajePasarela(),
+                            resultado.marcaTarjeta(), null, emailPagador, fechaCreacion, ahora)
+                    : this;
+        }
+        if (estadoPago == EstadoPago.APROBADO) {
             return this;
         }
         if (estadoPago == EstadoPago.RECHAZADO && resultado.estado() == ResultadoCobro.Estado.RECHAZADO) {

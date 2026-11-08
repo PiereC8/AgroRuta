@@ -85,6 +85,10 @@ public class PagarPedidoService implements PagarPedidoUseCase {
             throw new ConflictoDominioException("Este pedido ya está pagado");
         }
         if (pagos.existePendienteDe(idLiquidacion)) {
+            Optional<Pago> anterior = pagos.ultimoDeLiquidacion(idLiquidacion);
+            if (anterior.isPresent() && ResultadoCobro.CIP_GENERADO.equals(anterior.get().codigoRespuesta())) {
+                throw new ConflictoDominioException("Ya generaste un código de pago. " + anterior.get().mensajeUsuario());
+            }
             throw new ConflictoDominioException("Estamos confirmando un pago anterior. Espera unos minutos antes de pagar de nuevo");
         }
         if (comando.tokenTarjeta() == null || comando.tokenTarjeta().isBlank() || comando.tokenTarjeta().length() > 100) {
@@ -135,7 +139,8 @@ public class PagarPedidoService implements PagarPedidoUseCase {
         String mensaje = switch (pago.estadoPago()) {
             case APROBADO -> "¡Pago recibido! Gracias.";
             case RECHAZADO -> pago.mensajeUsuario();
-            case PENDIENTE -> "Estamos confirmando tu pago. No pagues de nuevo: vuelve a revisar en unos minutos.";
+            case PENDIENTE -> ResultadoCobro.CIP_GENERADO.equals(pago.codigoRespuesta()) ? pago.mensajeUsuario()
+                    : "Estamos confirmando tu pago. No pagues de nuevo: vuelve a revisar en unos minutos.";
         };
         return new ResultadoPago(pago.idPago(), pago.estadoPago(), mensaje, pago.monto(), comprobante);
     }
