@@ -16,6 +16,7 @@ import pe.agroruta.domain.port.out.ComprobantePort;
 import pe.agroruta.domain.port.out.EnvioCorreoPort;
 import pe.agroruta.domain.port.out.PagoPort;
 import pe.agroruta.infrastructure.adapter.out.comprobante.ComprobanteSimulado;
+import pe.agroruta.infrastructure.adapter.out.comprobante.FacturacionDirectaAdapter;
 import pe.agroruta.infrastructure.adapter.out.correo.CorreoSimuladoAdapter;
 import pe.agroruta.infrastructure.adapter.out.correo.CorreoSmtpAdapter;
 import pe.agroruta.infrastructure.adapter.out.http.ClienteHttp;
@@ -65,12 +66,32 @@ public class ProveedoresExternosConfig {
     }
 
     /**
-     * Hoy se emiten comprobantes simulados. Para un cliente con RUC se implementa ComprobantePort con el
-     * proveedor de comprobantes elegido (OSE o PSE) y se devuelve aquí en lugar del simulador.
+     * Con COMPROBANTES_PROVEEDOR=facturaciondirecta los comprobantes van al ambiente beta de SUNAT por esa API (sin
+     * validez tributaria); si no, se simulan. Para producción haría falta RUC, usuario SOL secundario y certificado.
      */
     @Bean
-    ComprobantePort comprobantePort() {
-        REGISTRO.warn("Comprobantes: SIMULADOR (no hay un proveedor de comprobantes configurado)");
+    ComprobantePort comprobantePort(ClienteHttp http, Clock reloj,
+                                    @Value("${agroruta.comprobantes.proveedor}") String proveedor,
+                                    @Value("${agroruta.comprobantes.facturaciondirecta.url-base}") String urlBase,
+                                    @Value("${agroruta.comprobantes.emisor.ruc}") String ruc,
+                                    @Value("${agroruta.comprobantes.emisor.razon-social}") String razonSocial,
+                                    @Value("${agroruta.comprobantes.emisor.nombre-comercial}") String nombreComercial,
+                                    @Value("${agroruta.comprobantes.emisor.domicilio-fiscal}") String domicilio,
+                                    @Value("${agroruta.comprobantes.emisor.ubigeo}") String ubigeo,
+                                    @Value("${agroruta.comprobantes.emisor.distrito}") String distrito,
+                                    @Value("${agroruta.comprobantes.emisor.provincia}") String provincia,
+                                    @Value("${agroruta.comprobantes.emisor.departamento}") String departamento,
+                                    @Value("${agroruta.resiliencia.fallos-para-abrir:5}") int fallosParaAbrir,
+                                    @Value("${agroruta.resiliencia.pausa-segundos:30}") int pausaSegundos) {
+        if ("facturaciondirecta".equalsIgnoreCase(proveedor.trim())) {
+            REGISTRO.info("Comprobantes: SUNAT BETA por facturaciondirecta.com (RUC emisor {})", ruc);
+            var emisor = new FacturacionDirectaAdapter.Emisor(ruc, razonSocial, nombreComercial, domicilio, ubigeo,
+                    distrito, provincia, departamento);
+            return new ComprobantePortConDisyuntor(new FacturacionDirectaAdapter(http, urlBase, emisor, reloj),
+                    new Disyuntor("El proveedor de comprobantes", fallosParaAbrir, Duration.ofSeconds(pausaSegundos),
+                            reloj));
+        }
+        REGISTRO.warn("Comprobantes: SIMULADOR (COMPROBANTES_PROVEEDOR no es facturaciondirecta)");
         return new ComprobanteSimulado();
     }
 

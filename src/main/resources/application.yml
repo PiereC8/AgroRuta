@@ -44,6 +44,18 @@ agroruta:
   comprobantes:
     serie-boleta: ${COMPROBANTES_SERIE_BOLETA:B001}
     serie-factura: ${COMPROBANTES_SERIE_FACTURA:F001}
+    proveedor: ${COMPROBANTES_PROVEEDOR:simulado}
+    facturaciondirecta:
+      url-base: ${FACTURACIONDIRECTA_URL:https://facturaciondirecta.com/API_SUNAT}
+    emisor:
+      ruc: ${EMISOR_RUC:20000000001}
+      razon-social: ${EMISOR_RAZON_SOCIAL:AGRORUTA DEMO}
+      nombre-comercial: ${EMISOR_NOMBRE_COMERCIAL:AGRORUTA}
+      domicilio-fiscal: ${EMISOR_DOMICILIO:AV. BOLOGNESI 100}
+      ubigeo: ${EMISOR_UBIGEO:230101}
+      distrito: ${EMISOR_DISTRITO:TACNA}
+      provincia: ${EMISOR_PROVINCIA:TACNA}
+      departamento: ${EMISOR_DEPARTAMENTO:TACNA}
 
 server:
   servlet:
