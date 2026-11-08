@@ -8,7 +8,7 @@
     const token = new URLSearchParams(location.hash.slice(1)).get('t');
     const dinero = new Intl.NumberFormat('es-PE', {style: 'currency', currency: 'PEN'});
 
-    const estado = {datos: null, clave: null, enCurso: false, brickMontado: false, revisiones: 0};
+    const estado = {datos: null, clave: null, enCurso: false, brickMontado: false, revisiones: 0, pagoConCodigo: false};
 
     const ESTADOS_COMPROBANTE = {
         PENDIENTE: 'Pendiente: lo estamos enviando a SUNAT',
@@ -97,7 +97,32 @@
         } else {
             mostrarResultado(resultado.mensaje, false);
             mostrar('zona-pago', false);
+            mostrar('zona-cip', estado.pagoConCodigo);
             revisarPendiente();
+        }
+    }
+
+    async function simularPagoEnAgente() {
+        $('simular-agente').disabled = true;
+        try {
+            const respuesta = await fetch('/api/publico/pago/simular-agente', {
+                method: 'POST',
+                headers: {'X-Token-Seguimiento': token}
+            });
+            const cuerpo = await respuesta.json().catch(() => ({}));
+            if (!respuesta.ok) {
+                mostrarResultado(cuerpo.error || 'No se pudo simular el pago. Intenta de nuevo.', false);
+                return;
+            }
+            mostrar('zona-cip', false);
+            const datos = await cargar();
+            if (datos) {
+                pintar(datos);
+            }
+        } catch (e) {
+            mostrarResultado('No pudimos conectar. Revisa tu señal e intenta de nuevo.', false);
+        } finally {
+            $('simular-agente').disabled = false;
         }
     }
 
@@ -149,6 +174,7 @@
         $('pagar').textContent = 'Pagar ' + dinero.format(datos.monto);
         $('volver').href = '/seguimiento.html#t=' + encodeURIComponent(token);
         mostrar('zona-resultado', false);
+        mostrar('zona-cip', false);
         mostrar('zona-comprobante', false);
 
         const ultimo = datos.ultimoPago;
@@ -156,6 +182,12 @@
             mostrar('zona-pago', false);
             resumen('Este pedido ya está pagado. ¡Gracias!', 'ok');
             pintarComprobante(datos.comprobante);
+        } else if (ultimo && ultimo.estadoPago === 'PENDIENTE' && ultimo.marcaTarjeta === 'PagoEfectivo') {
+            mostrar('zona-pago', false);
+            resumen('Tienes un código de pago pendiente. No pagues de nuevo con otro medio.', 'aviso');
+            mostrarResultado(ultimo.mensaje, false);
+            mostrar('zona-cip', datos.modo === 'SIMULADO');
+            revisarPendiente();
         } else if (ultimo && ultimo.estadoPago === 'PENDIENTE') {
             mostrar('zona-pago', false);
             resumen('Estamos confirmando tu pago. No pagues de nuevo.', 'aviso');
@@ -199,6 +231,7 @@
             mostrarResultado(tokenizado.error, false);
             return;
         }
+        estado.pagoConCodigo = tokenizado.token === 'sim_pagoefectivo';
         enviarPago({tokenTarjeta: tokenizado.token, email});
     }
 
@@ -283,6 +316,7 @@
     }
 
     $('pagar').addEventListener('click', alPulsarPagar);
+    $('simular-agente').addEventListener('click', simularPagoEnAgente);
     $('reintentar').addEventListener('click', () => {
         estado.clave = null;
         mostrar('zona-resultado', false);

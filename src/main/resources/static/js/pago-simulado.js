@@ -79,9 +79,10 @@ window.PagoSimulado = (function () {
     }
 
     function cambiarMedio() {
-        const paypal = $('sim-medio').value === 'paypal';
-        $('sim-zona-tarjeta').classList.toggle('oculto', paypal);
-        $('sim-zona-paypal').classList.toggle('oculto', !paypal);
+        const medio = $('sim-medio').value;
+        $('sim-zona-tarjeta').classList.toggle('oculto', medio !== 'tarjeta');
+        $('sim-zona-paypal').classList.toggle('oculto', medio !== 'paypal');
+        $('sim-zona-pagoefectivo').classList.toggle('oculto', medio !== 'pagoefectivo');
     }
 
     function preparar() {
@@ -109,6 +110,9 @@ window.PagoSimulado = (function () {
     function tokenizar() {
         if ($('sim-medio').value === 'paypal') {
             return {token: 'sim_aprobada_paypal'};
+        }
+        if ($('sim-medio').value === 'pagoefectivo') {
+            return {token: 'sim_pagoefectivo'};
         }
         const numero = soloDigitos($('sim-numero').value);
         if (numero.length < 13 || numero.length > 19 || !cumpleLuhn(numero) || !marcaDe(numero)) {
