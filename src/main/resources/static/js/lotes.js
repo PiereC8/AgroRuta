@@ -103,21 +103,49 @@
         await abierto;
     }
 
-    const lista = window.Ui.listaPaginada({
-        ruta: '/api/lotes',
-        mas: $('mas'),
-        alCargar: (lotes) => window.Ui.tabla($('lista'), [
+    let lotes = [];
+    const filtros = window.Ui.barraFiltros($('barra-filtros'), [
+        {id: 'texto', tipo: 'busqueda', etiqueta: 'Buscar', marcador: 'Producto o chacra…'},
+        {id: 'estado', tipo: 'select', etiqueta: 'Estado',
+            opciones: Object.entries(ESTADOS).map(([valor, [texto]]) => [valor, texto])},
+        {id: 'producto', tipo: 'select', etiqueta: 'Producto'},
+        {id: 'chacra', tipo: 'select', etiqueta: 'Chacra', todos: 'Todas'},
+        {id: 'desde', tipo: 'fecha', etiqueta: 'Cosecha desde'},
+        {id: 'hasta', tipo: 'fecha', etiqueta: 'Cosecha hasta'}
+    ], pintar);
+
+    function pintar() {
+        const f = filtros.valores();
+        const visibles = lotes.filter((l) => window.Ui.coincide(f.texto, l.productoLote, l.chacraOrigen)
+            && (!f.estado || l.estadoLote === f.estado)
+            && (!f.producto || l.productoLote === f.producto)
+            && (!f.chacra || l.chacraOrigen === f.chacra)
+            && window.Ui.entreFechas(l.fechaCosecha, f.desde, f.hasta));
+        filtros.contar(visibles.length, lotes.length);
+        const filtrando = Object.values(f).some(Boolean);
+        window.Ui.tabla($('lista'), [
             {titulo: 'Producto', clase: 'largo', valor: (l) => l.productoLote},
-            {titulo: 'Cantidad', valor: (l) => window.Ui.kilos(l.cantidadKg)},
+            {titulo: 'Cantidad', clase: 'numero', valor: (l) => window.Ui.kilos(l.cantidadKg)},
             {titulo: 'Cosecha', valor: (l) => window.Ui.dia(l.fechaCosecha)},
             {titulo: 'Chacra', clase: 'largo', valor: (l) => l.chacraOrigen},
             {titulo: 'Estado', valor: (l) => window.Ui.etiqueta((ESTADOS[l.estadoLote] || [l.estadoLote])[0],
                 (ESTADOS[l.estadoLote] || [])[1])}
-        ], lotes, {
-            vacio: {titulo: 'Aún no hay lotes', texto: 'Registra tu primera cosecha para empezar a calcular ganancias.'},
+        ], visibles, {
+            vacio: filtrando
+                ? {titulo: 'Ningún lote coincide', texto: 'Cambia la búsqueda o pulsa «Limpiar».'}
+                : {titulo: 'Aún no hay lotes', texto: 'Registra tu primera cosecha para empezar a calcular ganancias.'},
             acciones: (l) => [window.Ui.boton('Ver detalle', 'boton-secundario', () => verDetalle(l))]
-        })
-    });
+        });
+    }
+
+    const lista = {
+        async cargar() {
+            lotes = await window.Ui.cargarTodo('/api/lotes');
+            filtros.opciones('producto', window.Ui.opcionesUnicas(lotes, (l) => l.productoLote));
+            filtros.opciones('chacra', window.Ui.opcionesUnicas(lotes, (l) => l.chacraOrigen));
+            pintar();
+        }
+    };
 
     async function cargar() {
         window.Ui.errorDePagina('');

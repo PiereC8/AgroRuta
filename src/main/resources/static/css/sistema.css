@@ -1096,3 +1096,152 @@ a {
     fill: var(--error-claro);
     stroke: var(--error);
 }
+
+/* ---------- Tabla compacta (tarjetas del inicio) ---------- */
+
+.tabla--compacta {
+    font-size: 0.875rem;
+}
+
+.tabla--compacta td,
+.tabla--compacta th {
+    padding-left: 6px;
+    padding-right: 6px;
+    vertical-align: middle;
+}
+
+/* En el inicio, la tabla de envíos necesita casi tanto espacio como el gráfico. */
+@media (min-width: 1101px) {
+    #rejilla-principal {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+}
+
+.tabla--compacta td.largo,
+.tabla--compacta th.largo {
+    min-width: 0;
+}
+
+.tabla td.numero,
+.tabla th.numero {
+    text-align: right;
+}
+
+/* ---------- Barra de búsqueda y filtros de las listas ---------- */
+
+.barra-filtros {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.barra-filtros label {
+    display: grid;
+    gap: 4px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--texto-suave);
+}
+
+.barra-filtros .campo__entrada {
+    min-height: 40px;
+    min-width: 0;
+    width: 150px;
+    padding: 0 10px;
+    font-size: 0.9375rem;
+    color: var(--texto);
+    font-weight: 400;
+}
+
+.barra-filtros__busqueda {
+    flex: 1 1 200px;
+}
+
+.barra-filtros input[type="date"] {
+    width: 140px;
+}
+
+.barra-filtros__busqueda .campo__entrada {
+    width: 100%;
+}
+
+.barra-filtros__cuenta {
+    margin: 0 0 12px;
+    font-size: 0.875rem;
+}
+
+@media (max-width: 700px) {
+    .barra-filtros label {
+        flex: 1 1 calc(50% - 6px);
+    }
+
+    .barra-filtros .barra-filtros__busqueda {
+        flex-basis: 100%;
+    }
+
+    .barra-filtros .campo__entrada,
+    .barra-filtros input[type="date"] {
+        width: 100%;
+    }
+}
+
+/* ---------- Elegir un punto en el mapa ---------- */
+
+.mapa-elegir {
+    height: 320px;
+    margin-bottom: 8px;
+    border: 1px solid var(--borde);
+    border-radius: var(--radio-chico);
+}
+
+.mapa-busqueda {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.mapa-busqueda .campo__entrada {
+    flex: 1;
+}
+
+.mapa-resultados {
+    list-style: none;
+    margin: 0 0 12px;
+    padding: 0;
+    border: 1px solid var(--borde);
+    border-radius: var(--radio-chico);
+}
+
+.mapa-resultados:empty {
+    display: none;
+}
+
+.mapa-resultados button {
+    width: 100%;
+    padding: 10px 12px;
+    border: 0;
+    border-bottom: 1px solid var(--borde);
+    background: #FFFFFF;
+    font: inherit;
+    font-size: 0.875rem;
+    text-align: left;
+    cursor: pointer;
+}
+
+.mapa-resultados li:last-child button {
+    border-bottom: 0;
+}
+
+.mapa-resultados button:hover,
+.mapa-resultados button:focus-visible {
+    background: var(--verde-claro);
+}
+
+.marcador-destino--grande {
+    width: 24px;
+    height: 24px;
+    cursor: grab;
+}
+

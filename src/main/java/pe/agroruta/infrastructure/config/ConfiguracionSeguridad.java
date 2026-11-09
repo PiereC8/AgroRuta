@@ -41,7 +41,8 @@ public class ConfiguracionSeguridad {
                                 + "style-src 'self' https://cdnjs.cloudflare.com https://*.mlstatic.com; "
                                 + "img-src 'self' data: https://tile.openstreetmap.org "
                                 + "https://*.tile.openstreetmap.org https://*.mlstatic.com https://*.mercadopago.com; "
-                                + "connect-src 'self' ws: wss: https://*.mercadopago.com https://*.mercadolibre.com; "
+                                + "connect-src 'self' ws: wss: https://*.mercadopago.com https://*.mercadolibre.com "
+                                + "https://nominatim.openstreetmap.org; "
                                 + "frame-src https://*.mercadopago.com https://*.mercadolibre.com; "
                                 + "frame-ancestors 'none'; base-uri 'self'; form-action 'self'")))
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

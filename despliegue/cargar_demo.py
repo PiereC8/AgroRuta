@@ -19,7 +19,8 @@ from datetime import date, timedelta
 
 API = os.environ.get("AGRORUTA_API", "http://127.0.0.1:8080")
 SUFIJO = os.environ.get("BD_SUFIJO", "_prod")
-SALIDA = "/root/agroruta-cuentas.txt"
+SALIDA = os.environ.get("AGRORUTA_SALIDA", "/root/agroruta-cuentas.txt")
+SIN_FECHAS = os.environ.get("SIN_FECHAS") == "1"  # sin cliente mysql: deja las fechas de hoy
 random.seed(2026)
 
 # Destinos: (nombre, ciudad, local, lat, lon, flete por kg)
@@ -141,7 +142,7 @@ class Api:
         for k, v in (encabezados or {}).items():
             req.add_header(k, v)
         try:
-            with urllib.request.urlopen(req, timeout=60) as r:
+            with urllib.request.urlopen(req, timeout=900) as r:
                 texto = r.read().decode()
                 return json.loads(texto) if texto else None
         except urllib.error.HTTPError as e:
@@ -284,7 +285,8 @@ def cargar(admin, n):
                                                      "metodoPago": metodo}, cabeceras)
         pagos["tarjeta"] += 1
 
-    retroceder_fechas(n["id"], entregas)
+    if not SIN_FECHAS:
+        retroceder_fechas(n["id"], entregas)
     return cuentas, {"lotes": total, "entregados": entregados, "en_ruta": en_ruta, "despachados": despachados,
                      "con_pedido": con_pedido, "solo_lote": solo_lote, **pagos,
                      "destinos": len(destinos), "compradores": len(compradores), "vehiculos": len(vehiculos)}
@@ -321,7 +323,8 @@ def main():
         datos = dict(l.split(":", 1) for l in f.read().splitlines() if ":" in l)
     admin = login(None, datos["Usuario"].strip(), datos["Clave"].strip())
     lineas = ["Cuentas de demostración AgroRuta (https://agroruta.duckdns.org)", ""]
-    for n in NEGOCIOS:
+    solo = os.environ.get("SOLO")
+    for n in [x for x in NEGOCIOS if not solo or x["id"] == solo]:
         cuentas, resumen = cargar(admin, n)
         print(n["id"], n["plan"], json.dumps(resumen))
         lineas.append(f"Plan {n['plan']} – {n['nombre']}")

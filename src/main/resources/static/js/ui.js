@@ -521,6 +521,116 @@ window.Ui = (function () {
         }
     }
 
+    /** Trae todas las páginas de una lista (de 200 en 200) para poder buscar y filtrar en el navegador. */
+    async function cargarTodo(ruta) {
+        const MAXIMO = 200;
+        let todas = [];
+        for (let pagina = 0; pagina < 50; pagina++) {
+            const lote = await cargarPagina(ruta, {pagina, tamano: MAXIMO});
+            todas = todas.concat(lote);
+            if (lote.length < MAXIMO) {
+                break;
+            }
+        }
+        return todas;
+    }
+
+    /** Texto sin tildes y en minúsculas, para buscar «oregano» y encontrar «Orégano». */
+    function normalizar(texto) {
+        return String(texto === null || texto === undefined ? '' : texto)
+            .normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    }
+
+    /** ¿Todas las palabras buscadas aparecen en alguno de los textos? */
+    function coincide(busqueda, ...textos) {
+        const palabras = normalizar(busqueda).split(/\s+/).filter(Boolean);
+        const donde = normalizar(textos.join(' '));
+        return palabras.every((p) => donde.includes(p));
+    }
+
+    /**
+     * Barra de búsqueda y filtros. Campos: {id, tipo: 'busqueda'|'select'|'fecha', etiqueta, marcador, opciones}.
+     * Las opciones de un select son pares [valor, texto]; la primera («Todos») se agrega sola.
+     */
+    function barraFiltros(contenedor, campos, alCambiar) {
+        const controles = {};
+        const caja = el('div', 'barra-filtros');
+        caja.setAttribute('role', 'search');
+        for (const c of campos) {
+            const etiquetaCampo = el('label', c.tipo === 'busqueda' ? 'barra-filtros__busqueda' : null, c.etiqueta);
+            let control;
+            if (c.tipo === 'select') {
+                control = el('select', 'campo__entrada');
+                control.appendChild(new Option(c.todos || 'Todos', ''));
+                for (const [valor, texto] of c.opciones || []) {
+                    control.appendChild(new Option(texto, valor));
+                }
+                control.addEventListener('change', alCambiar);
+            } else {
+                control = el('input', 'campo__entrada');
+                control.type = c.tipo === 'fecha' ? 'date' : 'search';
+                if (c.marcador) {
+                    control.placeholder = c.marcador;
+                }
+                control.addEventListener(c.tipo === 'fecha' ? 'change' : 'input', alCambiar);
+            }
+            controles[c.id] = control;
+            etiquetaCampo.appendChild(control);
+            caja.appendChild(etiquetaCampo);
+        }
+        const limpiar = boton('Limpiar', 'boton-secundario', () => {
+            for (const control of Object.values(controles)) {
+                control.value = '';
+            }
+            alCambiar();
+        });
+        caja.appendChild(limpiar);
+        const cuenta = el('p', 'suave barra-filtros__cuenta');
+        cuenta.setAttribute('aria-live', 'polite');
+        contenedor.replaceChildren(caja, cuenta);
+        return {
+            valores: () => Object.fromEntries(Object.entries(controles).map(([id, c]) => [id, c.value])),
+            opciones(id, pares) {
+                const control = controles[id];
+                const actual = control.value;
+                control.replaceChildren(control.firstChild);
+                for (const [valor, texto] of pares) {
+                    control.appendChild(new Option(texto, valor));
+                }
+                control.value = pares.some(([v]) => String(v) === actual) ? actual : '';
+            },
+            contar(visibles, total) {
+                cuenta.textContent = visibles === total ? total + (total === 1 ? ' registro' : ' registros')
+                    : 'Mostrando ' + visibles + ' de ' + total;
+            }
+        };
+    }
+
+    /** Pares [valor, texto] únicos y ordenados, para llenar un select de filtro. */
+    function opcionesUnicas(lista, valor, texto) {
+        const vistos = new Map();
+        for (const x of lista) {
+            const v = valor(x);
+            if (v !== null && v !== undefined && v !== '' && !vistos.has(String(v))) {
+                vistos.set(String(v), texto ? texto(x) : String(v));
+            }
+        }
+        return [...vistos.entries()].sort((a, b) => a[1].localeCompare(b[1], 'es'));
+    }
+
+    /** ¿La fecha (ISO) cae entre desde y hasta (YYYY-MM-DD, ambos opcionales) en la hora de Perú? */
+    function entreFechas(fechaIso, desde, hasta) {
+        if (!desde && !hasta) {
+            return true;
+        }
+        if (!fechaIso) {
+            return false;
+        }
+        const diaLocal = fechaIso.length === 10 ? fechaIso : new Date(fechaIso).toLocaleDateString('en-CA');
+        return (!desde || diaLocal >= desde) && (!hasta || diaLocal <= hasta);
+    }
+
     return {el, boton, dinero, kilos, fecha, dia, puedeEscribir, cargarPagina, etiqueta, tabla, aviso, pestanas,
-        panel, detalle, confirmar, errorDePagina, alReintentar, listaPaginada, campoCopiable, codigoQr, TAMANO_PAGINA};
+        panel, detalle, confirmar, errorDePagina, alReintentar, listaPaginada, campoCopiable, codigoQr, TAMANO_PAGINA,
+        cargarTodo, coincide, barraFiltros, opcionesUnicas, entreFechas};
 })();

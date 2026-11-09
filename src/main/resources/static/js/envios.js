@@ -282,18 +282,40 @@
         return botones;
     }
 
+    const barra = window.Ui.barraFiltros($('barra-filtros'), [
+        {id: 'texto', tipo: 'busqueda', etiqueta: 'Buscar', marcador: 'N.º, comprador, destino o placa…'},
+        {id: 'destino', tipo: 'select', etiqueta: 'Destino'},
+        {id: 'comprador', tipo: 'select', etiqueta: 'Comprador'},
+        {id: 'vehiculo', tipo: 'select', etiqueta: 'Vehículo'},
+        {id: 'desde', tipo: 'fecha', etiqueta: 'Desde'},
+        {id: 'hasta', tipo: 'fecha', etiqueta: 'Hasta'}
+    ], pintar);
+
+    const destinoDeEnvio = (e) => (pedidoDe(e.idPedido) || {}).idDestinoVenta;
+    const compradorDeEnvio = (e) => (pedidoDe(e.idPedido) || {}).idComprador;
+    const fechaDeEnvio = (e) => e.fechaEntrega || e.fechaSalida || e.fechaProgramada;
+
     function pintar() {
-        const visibles = envios.filter((e) => !filtro || e.estadoEnvio === filtro);
+        const f = barra.valores();
+        const visibles = envios.filter((e) => (!filtro || e.estadoEnvio === filtro)
+            && window.Ui.coincide(f.texto, e.idEnvio, e.idPedido, compradorDe(compradorDeEnvio(e)),
+                destinoDe(destinoDeEnvio(e)), placaDe(e.idVehiculo))
+            && (!f.destino || String(destinoDeEnvio(e)) === f.destino)
+            && (!f.comprador || String(compradorDeEnvio(e)) === f.comprador)
+            && (!f.vehiculo || String(e.idVehiculo) === f.vehiculo)
+            && window.Ui.entreFechas(fechaDeEnvio(e), f.desde, f.hasta));
+        barra.contar(visibles.length, envios.length);
+        const filtrando = filtro || Object.values(f).some(Boolean);
         window.Ui.tabla($('lista'), [
             {titulo: 'N.º', valor: (e) => e.idEnvio},
             {titulo: 'Pedido', clase: 'largo', valor: resumenPedido},
-            {titulo: 'Destino', clase: 'largo', valor: (e) => destinoDe((pedidoDe(e.idPedido) || {}).idDestinoVenta)},
+            {titulo: 'Destino', clase: 'largo', valor: (e) => destinoDe(destinoDeEnvio(e))},
             {titulo: 'Vehículo', valor: (e) => placaDe(e.idVehiculo)},
             {titulo: 'Estado', valor: (e) => window.Ui.etiqueta(ESTADOS[e.estadoEnvio][0], ESTADOS[e.estadoEnvio][1])},
             {titulo: 'Novedad', valor: novedad}
         ], visibles, {
-            vacio: {titulo: filtro ? 'No hay envíos en este estado' : 'Aún no hay envíos',
-                texto: filtro ? 'Cambia el filtro para ver los demás.' : 'Despacha un pedido para empezar.'},
+            vacio: {titulo: filtrando ? 'Ningún envío coincide' : 'Aún no hay envíos',
+                texto: filtrando ? 'Cambia el filtro o pulsa «Limpiar».' : 'Despacha un pedido para empezar.'},
             acciones
         });
     }
@@ -310,17 +332,22 @@
         }
     }
 
-    const lista = window.Ui.listaPaginada({
-        ruta: '/api/envios',
-        mas: $('mas'),
-        alCargar: (todos) => { envios = todos; pintar(); }
-    });
+    const lista = {
+        async cargar() {
+            envios = await window.Ui.cargarTodo('/api/envios');
+            barra.opciones('destino', window.Ui.opcionesUnicas(destinos, (d) => d.idDestinoVenta, (d) => d.nombreDestino));
+            barra.opciones('comprador', window.Ui.opcionesUnicas(compradores, (c) => c.idComprador,
+                (c) => c.nombreComprador));
+            barra.opciones('vehiculo', window.Ui.opcionesUnicas(vehiculos, (v) => v.idVehiculo, (v) => v.placaVehiculo));
+            pintar();
+        }
+    };
 
     async function cargar() {
         window.Ui.errorDePagina('');
         try {
             [pedidos, compradores, destinos, vehiculos] = await Promise.all([
-                window.Ui.cargarPagina('/api/pedidos', {tamano: 200}), window.Api.pedir('/api/compradores'),
+                window.Ui.cargarTodo('/api/pedidos'), window.Api.pedir('/api/compradores'),
                 window.Api.pedir('/api/destinos'), window.Api.pedir('/api/vehiculos')]);
             await lista.cargar();
         } catch (error) {

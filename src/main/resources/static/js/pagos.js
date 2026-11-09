@@ -17,11 +17,11 @@
     let compradores = [];
 
     const pedidoDe = (id) => pedidos.find((p) => p.idPedido === id);
-    const compradorDe = (idPedido) => {
+    const compradorDelPedido = (idPedido) => {
         const p = pedidoDe(idPedido);
-        const c = p && compradores.find((x) => x.idComprador === p.idComprador);
-        return c ? c.nombreComprador : '—';
+        return p && compradores.find((x) => x.idComprador === p.idComprador);
     };
+    const compradorDe = (idPedido) => (compradorDelPedido(idPedido) || {}).nombreComprador || '—';
 
     function medioDePago(p) {
         if (!p.marcaTarjeta) {
@@ -134,11 +134,29 @@
     async function enlaceDePago(liquidacion) {
         try {
             const enlaces = await window.Api.pedir('/api/envios/' + liquidacion.idEnvio + '/enlaces', {metodo: 'POST'});
+            const url = window.location.origin + '/pago.html#t=' + enlaces.tokenComprador;
             const contenido = el('div');
-            const caja = window.Ui.campoCopiable('Enlace de pago para el comprador',
-                window.location.origin + '/pago.html#t=' + enlaces.tokenComprador);
-            contenido.append(caja, el('p', 'suave', 'Con este enlace el comprador paga con tarjeta, sin contraseña. Vence el '
-                + window.Ui.fecha(enlaces.fechaExpiracion) + '.'));
+            const botones = el('div', 'fila-acciones bloque');
+            const abrir = el('a', 'boton', 'Abrir la página de pago');
+            abrir.href = url;
+            abrir.target = '_blank';
+            abrir.rel = 'noopener';
+            botones.appendChild(abrir);
+            const comprador = compradorDelPedido(liquidacion.idPedido);
+            const telefono = ((comprador && comprador.telefonoComprador) || '').replace(/\D/g, '');
+            if (telefono.length >= 9) {
+                const whatsapp = el('a', 'boton boton-secundario', 'Enviar por WhatsApp');
+                const numero = telefono.length === 9 ? '51' + telefono : telefono;
+                whatsapp.href = 'https://wa.me/' + numero + '?text=' + encodeURIComponent('Hola, este es el enlace '
+                    + 'para pagar el pedido ' + liquidacion.idPedido + ' (' + window.Ui.dinero(liquidacion.ingresoReal)
+                    + '): ' + url);
+                whatsapp.target = '_blank';
+                whatsapp.rel = 'noopener noreferrer';
+                botones.appendChild(whatsapp);
+            }
+            contenido.append(botones, window.Ui.campoCopiable('O copia el enlace y envíaselo al comprador', url),
+                el('p', 'suave', 'Con este enlace el comprador paga con tarjeta, PayPal o PagoEfectivo, sin contraseña. '
+                    + 'Vence el ' + window.Ui.fecha(enlaces.fechaExpiracion) + '.'));
             await window.Ui.detalle({titulo: 'Cobrar el pedido ' + liquidacion.idPedido, contenido, ancho: true});
         } catch (error) {
             window.Ui.aviso(error.message, 'error');
@@ -165,25 +183,49 @@
         });
     }
 
-    const lista = window.Ui.listaPaginada({
-        ruta: '/api/pagos',
-        mas: $('mas'),
-        alCargar: (pagos) => window.Ui.tabla($('lista'), [
+    let pagos = [];
+    const MEDIOS = {visa: 'Visa', mastercard: 'Mastercard', amex: 'American Express', diners: 'Diners',
+        paypal: 'PayPal', pagoefectivo: 'PagoEfectivo'};
+    const filtros = window.Ui.barraFiltros($('barra-filtros'), [
+        {id: 'texto', tipo: 'busqueda', etiqueta: 'Buscar', marcador: 'N.º, pedido, comprador o correo…'},
+        {id: 'estado', tipo: 'select', etiqueta: 'Estado',
+            opciones: Object.entries(ESTADOS_PAGO).map(([valor, [texto]]) => [valor, texto])},
+        {id: 'medio', tipo: 'select', etiqueta: 'Medio de pago'},
+        {id: 'comprador', tipo: 'select', etiqueta: 'Comprador'},
+        {id: 'desde', tipo: 'fecha', etiqueta: 'Desde'},
+        {id: 'hasta', tipo: 'fecha', etiqueta: 'Hasta'}
+    ], pintarPagos);
+
+    const medioClave = (p) => (p.marcaTarjeta || '').toLowerCase();
+    const idCompradorDe = (p) => (pedidoDe(p.idPedido) || {}).idComprador;
+
+    function pintarPagos() {
+        const f = filtros.valores();
+        const visibles = pagos.filter((p) => window.Ui.coincide(f.texto, p.idPago, p.idPedido,
+            compradorDe(p.idPedido), p.emailPagador)
+            && (!f.estado || p.estadoPago === f.estado)
+            && (!f.medio || medioClave(p) === f.medio)
+            && (!f.comprador || String(idCompradorDe(p)) === f.comprador)
+            && window.Ui.entreFechas(p.fechaActualizacion, f.desde, f.hasta));
+        filtros.contar(visibles.length, pagos.length);
+        const filtrando = Object.values(f).some(Boolean);
+        window.Ui.tabla($('lista'), [
             {titulo: 'N.º', valor: (p) => p.idPago},
-            {titulo: 'Pedido', clase: 'largo', valor: (p) => p.idPedido},
+            {titulo: 'Pedido', valor: (p) => p.idPedido},
             {titulo: 'Comprador', clase: 'largo', valor: (p) => compradorDe(p.idPedido)},
-            {titulo: 'Monto', valor: (p) => window.Ui.dinero(p.monto)},
+            {titulo: 'Monto', clase: 'numero', valor: (p) => window.Ui.dinero(p.monto)},
             {titulo: 'Estado', valor: (p) => window.Ui.etiqueta((ESTADOS_PAGO[p.estadoPago] || [p.estadoPago])[0],
                 (ESTADOS_PAGO[p.estadoPago] || [])[1])},
             {titulo: 'Medio de pago', valor: medioDePago},
             {titulo: 'Correo', clase: 'largo', valor: (p) => p.emailPagador},
             {titulo: 'Fecha', valor: (p) => window.Ui.fecha(p.fechaActualizacion)}
-        ], pagos, {
-            vacio: {titulo: 'Aún no hay pagos', texto: 'Cuando un comprador pague con su enlace, aparecerá aquí.'},
+        ], visibles, {
+            vacio: filtrando ? {titulo: 'Ningún pago coincide', texto: 'Cambia la búsqueda o pulsa «Limpiar».'}
+                : {titulo: 'Aún no hay pagos', texto: 'Cuando un comprador pague con su enlace, aparecerá aquí.'},
             acciones: (p) => p.estadoPago === 'APROBADO'
                 ? [window.Ui.boton('Ver comprobante', 'boton-secundario', () => verComprobante(p))] : []
-        })
-    });
+        });
+    }
 
     async function cargar() {
         window.Ui.errorDePagina('');
@@ -191,11 +233,15 @@
             let liquidaciones;
             let todosLosPagos;
             [pedidos, compradores, liquidaciones, todosLosPagos] = await Promise.all([
-                window.Ui.cargarPagina('/api/pedidos', {tamano: 200}), window.Api.pedir('/api/compradores'),
-                window.Ui.cargarPagina('/api/liquidaciones', {tamano: 200}),
-                window.Ui.cargarPagina('/api/pagos', {tamano: 200})]);
+                window.Ui.cargarTodo('/api/pedidos'), window.Api.pedir('/api/compradores'),
+                window.Ui.cargarTodo('/api/liquidaciones'), window.Ui.cargarTodo('/api/pagos')]);
             pintarPorCobrar(liquidaciones, todosLosPagos);
-            await lista.cargar();
+            pagos = todosLosPagos;
+            filtros.opciones('medio', window.Ui.opcionesUnicas(pagos, medioClave,
+                (p) => MEDIOS[medioClave(p)] || p.marcaTarjeta));
+            filtros.opciones('comprador', window.Ui.opcionesUnicas(compradores, (c) => c.idComprador,
+                (c) => c.nombreComprador));
+            pintarPagos();
         } catch (error) {
             window.Ui.errorDePagina(error.message);
         }

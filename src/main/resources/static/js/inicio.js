@@ -102,12 +102,15 @@
             return;
         }
         const tabla = document.createElement('table');
-        tabla.className = 'tabla';
+        tabla.className = 'tabla tabla--compacta';
         const cabecera = document.createElement('tr');
-        for (const texto of ['Destino', 'Comprador', 'Estado', 'Kilos']) {
+        for (const [texto, clase] of [['Destino', 'largo'], ['Comprador', 'largo'], ['Estado', ''], ['Kilos', 'numero']]) {
             const th = document.createElement('th');
             th.scope = 'col';
             th.textContent = texto;
+            if (clase) {
+                th.className = clase;
+            }
             cabecera.appendChild(th);
         }
         const encabezado = document.createElement('thead');
@@ -115,17 +118,20 @@
         const cuerpo = document.createElement('tbody');
         for (const envio of datos.enviosEnCurso) {
             const fila = document.createElement('tr');
-            fila.append(celda(envio.destino), celda(envio.comprador));
+            fila.append(celda(envio.destino, 'largo'), celda(envio.comprador, 'largo'));
             const estado = document.createElement('td');
             const etiqueta = document.createElement('span');
             etiqueta.className = 'etiqueta-estado' + (envio.estadoEnvio === 'PROGRAMADO' ? ' etiqueta-estado--espera' : '');
             etiqueta.textContent = ESTADOS[envio.estadoEnvio] || envio.estadoEnvio;
             estado.appendChild(etiqueta);
-            fila.append(estado, celda(kilos(envio.cantidadKg)));
+            fila.append(estado, celda(kilos(envio.cantidadKg), 'numero'));
             cuerpo.appendChild(fila);
         }
         tabla.append(encabezado, cuerpo);
-        destino.appendChild(tabla);
+        const envoltorio = document.createElement('div');
+        envoltorio.className = 'tabla-envoltorio';
+        envoltorio.appendChild(tabla);
+        destino.appendChild(envoltorio);
     }
 
     function svg(nombre, atributos, texto) {
