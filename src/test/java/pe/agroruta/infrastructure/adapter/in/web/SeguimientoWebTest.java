@@ -44,6 +44,7 @@ import pe.agroruta.domain.model.TipoAlerta;
 import pe.agroruta.domain.model.TipoEnlace;
 import pe.agroruta.domain.port.in.AutenticarEnlaceUseCase;
 import pe.agroruta.domain.port.in.ConsultarSeguimientoUseCase;
+import pe.agroruta.domain.port.in.EnviarEnlacePagoUseCase;
 import pe.agroruta.domain.port.in.GenerarEnlacesEnvioUseCase;
 import pe.agroruta.infrastructure.adapter.out.seguridad.ServicioJwt;
 import pe.agroruta.infrastructure.config.ConfiguracionSeguridad;
@@ -76,6 +77,8 @@ class SeguimientoWebTest {
     AutenticarEnlaceUseCase autenticarEnlace;
     @MockitoBean
     ConsultarSeguimientoUseCase consultar;
+    @MockitoBean
+    EnviarEnlacePagoUseCase enviarEnlacePago;
 
     private String bearer(String negocio, Rol rol) {
         return "Bearer " + jwt.emitir(negocio, "operador.demo", rol);
@@ -98,6 +101,20 @@ class SeguimientoWebTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.rutaConductor").value("/conductor.html#t=tok-cond"))
                 .andExpect(jsonPath("$.rutaComprador").value("/seguimiento.html#t=tok-comp"));
+    }
+
+    @Test
+    void el_enlace_de_pago_se_manda_al_correo_con_la_direccion_del_sitio() throws Exception {
+        when(enviarEnlacePago.enviar(new EnviarEnlacePagoUseCase.Comando("empresa_demo", 7L, "compras@ejemplo.pe",
+                "http://localhost"))).thenReturn(new EnviarEnlacePagoUseCase.Resultado("compras@ejemplo.pe",
+                "http://localhost/pago.html#t=tok", AHORA.plusSeconds(86400)));
+
+        mvc.perform(post("/api/envios/7/enlace-pago/correo").header("Authorization", bearer("empresa_demo", Rol.DUENO))
+                        .contentType("application/json").content("{\"correo\":\"compras@ejemplo.pe\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.correo").value("compras@ejemplo.pe"));
+        mvc.perform(post("/api/envios/7/enlace-pago/correo").contentType("application/json").content("{}"))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

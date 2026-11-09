@@ -16,6 +16,8 @@
     const solesRedondos = new Intl.NumberFormat('es-PE', {style: 'currency', currency: 'PEN', maximumFractionDigits: 0});
 
     const PERIODOS = [
+        {id: 'hoy', texto: 'Hoy'},
+        {id: 'dia', texto: 'Un día'},
         {id: '7', texto: 'Últimos 7 días'},
         {id: '30', texto: 'Últimos 30 días'},
         {id: '90', texto: 'Últimos 90 días'},
@@ -60,6 +62,8 @@
         const anio = f.getUTCFullYear();
         const mes = f.getUTCMonth();
         switch (id) {
+            case 'hoy': return {desde: fin, hasta: fin};
+            case 'dia': return {desde: $('dia').value, hasta: $('dia').value};
             case '7': return {desde: sumarDias(fin, -6), hasta: fin};
             case '90': return {desde: sumarDias(fin, -89), hasta: fin};
             case 'mes': return {desde: aTexto(new Date(Date.UTC(anio, mes, 1))), hasta: fin};
@@ -124,10 +128,14 @@
             caja.appendChild(b);
         }
         $('rango').classList.toggle('oculto', periodo !== 'rango');
+        $('dia-elegido').classList.toggle('oculto', periodo !== 'dia');
     }
 
     function elegir(id) {
         periodo = id;
+        if (id === 'dia' && !$('dia').value) {
+            $('dia').value = hoy();
+        }
         pintarPeriodos();
         if (id === 'rango') {
             if (!$('desde').value) {
@@ -278,8 +286,12 @@
             if (turno !== cargando) {
                 return;
             }
-            $('periodo-texto').textContent = 'Del ' + window.Ui.dia(resumen.desde) + ' al ' + window.Ui.dia(resumen.hasta)
-                + ', comparado con el ' + window.Ui.dia(resumen.anteriorDesde) + ' al ' + window.Ui.dia(resumen.anteriorHasta) + '.';
+            const unDia = resumen.desde === resumen.hasta;
+            $('periodo-texto').textContent = (unDia
+                ? 'El ' + window.Ui.dia(resumen.desde) + ', comparado con el ' + window.Ui.dia(resumen.anteriorDesde) + '.'
+                : 'Del ' + window.Ui.dia(resumen.desde) + ' al ' + window.Ui.dia(resumen.hasta) + ', comparado con el '
+                    + window.Ui.dia(resumen.anteriorDesde) + ' al ' + window.Ui.dia(resumen.anteriorHasta) + '.')
+                + ' El PDF y el CSV se descargan con este mismo período y filtros.';
             pintarVeredicto(resumen);
             pintarCifras(resumen);
             pintarCausas(resumen);
@@ -347,6 +359,7 @@
     $('producto').addEventListener('change', cargar);
     $('destino').addEventListener('change', cargar);
     $('aplicar-rango').addEventListener('click', cargar);
+    $('dia').addEventListener('change', () => { if ($('dia').value) { cargar(); } });
     $('exportar-csv').addEventListener('click', () => descargar('csv'));
     $('exportar-pdf').addEventListener('click', () => descargar('pdf'));
     window.Ui.alReintentar(cargar);

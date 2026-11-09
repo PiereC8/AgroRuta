@@ -131,6 +131,66 @@
         await cerrado;
     }
 
+    /** El último correo con el que pagó ese comprador, para no escribirlo de nuevo. */
+    function correoConocido(idPedido) {
+        const comprador = compradorDelPedido(idPedido);
+        if (!comprador) {
+            return '';
+        }
+        const suyo = pagos.filter((p) => (pedidoDe(p.idPedido) || {}).idComprador === comprador.idComprador
+            && p.emailPagador).sort((a, b) => b.idPago - a.idPago)[0];
+        return suyo ? suyo.emailPagador : '';
+    }
+
+    /** Casilla para mandar el enlace al correo del comprador (Gmail u otro). */
+    function formularioCorreo(liquidacion, alCambiarEnlace) {
+        const caja = el('div', 'bloque');
+        const etiqueta = el('label', 'campo__etiqueta', 'Enviar el enlace al correo del comprador');
+        etiqueta.htmlFor = 'correo-comprador';
+        const fila = el('div', 'enlace-copiable');
+        const entrada = el('input', 'campo__entrada');
+        entrada.id = 'correo-comprador';
+        entrada.type = 'email';
+        entrada.autocomplete = 'off';
+        entrada.placeholder = 'comprador@gmail.com';
+        entrada.value = correoConocido(liquidacion.idPedido);
+        const enviar = window.Ui.boton('Enviar al correo', '');
+        fila.append(entrada, enviar);
+        const nota = el('p', 'suave');
+        nota.setAttribute('aria-live', 'polite');
+        caja.append(etiqueta, fila, nota);
+        async function mandar() {
+            const correo = entrada.value.trim();
+            if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo)) {
+                nota.textContent = 'Escribe un correo válido, por ejemplo comprador@gmail.com.';
+                entrada.focus();
+                return;
+            }
+            enviar.disabled = true;
+            nota.textContent = 'Enviando…';
+            try {
+                const r = await window.Api.pedir('/api/envios/' + liquidacion.idEnvio + '/enlace-pago/correo',
+                    {metodo: 'POST', cuerpo: {correo}});
+                alCambiarEnlace(r.urlPago);
+                nota.textContent = 'Listo: el correo sale en un minuto hacia ' + r.correo
+                    + '. El enlace de arriba se actualizó: es el mismo que recibirá el comprador.';
+                window.Ui.aviso('Enlace enviado a ' + r.correo);
+            } catch (error) {
+                nota.textContent = error.message;
+            } finally {
+                enviar.disabled = false;
+            }
+        }
+        enviar.addEventListener('click', mandar);
+        entrada.addEventListener('keydown', (evento) => {
+            if (evento.key === 'Enter') {
+                evento.preventDefault();
+                mandar();
+            }
+        });
+        return caja;
+    }
+
     async function enlaceDePago(liquidacion) {
         try {
             const enlaces = await window.Api.pedir('/api/envios/' + liquidacion.idEnvio + '/enlaces', {metodo: 'POST'});
@@ -142,19 +202,12 @@
             abrir.target = '_blank';
             abrir.rel = 'noopener';
             botones.appendChild(abrir);
-            const comprador = compradorDelPedido(liquidacion.idPedido);
-            const telefono = ((comprador && comprador.telefonoComprador) || '').replace(/\D/g, '');
-            if (telefono.length >= 9) {
-                const whatsapp = el('a', 'boton boton-secundario', 'Enviar por WhatsApp');
-                const numero = telefono.length === 9 ? '51' + telefono : telefono;
-                whatsapp.href = 'https://wa.me/' + numero + '?text=' + encodeURIComponent('Hola, este es el enlace '
-                    + 'para pagar el pedido ' + liquidacion.idPedido + ' (' + window.Ui.dinero(liquidacion.ingresoReal)
-                    + '): ' + url);
-                whatsapp.target = '_blank';
-                whatsapp.rel = 'noopener noreferrer';
-                botones.appendChild(whatsapp);
-            }
-            contenido.append(botones, window.Ui.campoCopiable('O copia el enlace y envíaselo al comprador', url),
+            const copiable = window.Ui.campoCopiable('O copia el enlace y envíaselo al comprador', url);
+            const cambiarEnlace = (nueva) => {
+                abrir.href = nueva;
+                copiable.querySelector('input').value = nueva;
+            };
+            contenido.append(botones, formularioCorreo(liquidacion, cambiarEnlace), copiable,
                 el('p', 'suave', 'Con este enlace el comprador paga con tarjeta, PayPal o PagoEfectivo, sin contraseña. '
                     + 'Vence el ' + window.Ui.fecha(enlaces.fechaExpiracion) + '.'));
             await window.Ui.detalle({titulo: 'Cobrar el pedido ' + liquidacion.idPedido, contenido, ancho: true});

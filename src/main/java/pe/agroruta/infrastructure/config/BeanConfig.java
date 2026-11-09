@@ -38,10 +38,12 @@ import pe.agroruta.domain.port.out.PagoPort;
 import pe.agroruta.domain.port.out.PagoRepositoryPort;
 import pe.agroruta.application.service.AutenticarEnlaceService;
 import pe.agroruta.application.service.ConsultarSeguimientoService;
+import pe.agroruta.application.service.EnviarEnlacePagoService;
 import pe.agroruta.application.service.GenerarEnlacesEnvioService;
 import pe.agroruta.application.service.SeguimientoConductorService;
 import pe.agroruta.domain.port.in.AutenticarEnlaceUseCase;
 import pe.agroruta.domain.port.in.ConsultarSeguimientoUseCase;
+import pe.agroruta.domain.port.in.EnviarEnlacePagoUseCase;
 import pe.agroruta.domain.port.in.GenerarEnlacesEnvioUseCase;
 import pe.agroruta.domain.port.in.SeguimientoConductorUseCase;
 import pe.agroruta.domain.port.out.EnlaceEnvioRepositoryPort;
@@ -61,6 +63,7 @@ import pe.agroruta.application.service.RegistrarEntregaService;
 import pe.agroruta.domain.port.in.ConsultarLiquidacionesUseCase;
 import pe.agroruta.domain.port.in.RegistrarEntregaUseCase;
 import pe.agroruta.domain.port.out.LiquidacionRepositoryPort;
+import pe.agroruta.domain.port.out.NotificacionRepositoryPort;
 import pe.agroruta.application.service.AdministrarCompradoresService;
 import pe.agroruta.application.service.AdministrarTransporteService;
 import pe.agroruta.application.service.DespacharEnvioService;
@@ -199,6 +202,13 @@ public class BeanConfig {
                                                           EnlaceEnvioRepositoryPort enlaces,
                                                           GeneradorTokenPort generador, Clock reloj) {
         return new GenerarEnlacesEnvioService(envios, enlaces, generador, reloj);
+    }
+
+    @Bean
+    EnviarEnlacePagoUseCase enviarEnlacePagoUseCase(GenerarEnlacesEnvioUseCase enlaces, EnvioRepositoryPort envios,
+                                                    LiquidacionRepositoryPort liquidaciones,
+                                                    NotificacionRepositoryPort bandeja, Clock reloj) {
+        return new EnviarEnlacePagoService(enlaces, envios, liquidaciones, bandeja, reloj);
     }
 
     @Bean

@@ -138,9 +138,18 @@ class AnalisisFinancieroTest {
 
         String texto = AnalisisFinanciero.explicacion(Veredicto.GANANDO_MENOS, actual, anterior);
 
-        assertThat(texto).contains("S/ 2,600.00").contains("S/ 1,200.00").contains("menos")
-                .contains("S/ 450.00").contains("el flete costó S/ 400.00 más");
-        assertThat(texto).doesNotContain("merma");
+        assertThat(texto).isEqualTo("Ganaste S/ 2,600.00 en este período. Es S/ 1,200.00 menos de ganancia que en "
+                + "el período anterior, cuando ganaste S/ 3,800.00. Por qué: se vendió S/ 450.00 menos y el flete "
+                + "costó S/ 400.00 más.");
+    }
+
+    @Test
+    void la_explicacion_de_una_mejora_dice_la_ganancia_de_antes() {
+        String texto = AnalisisFinanciero.explicacion(Veredicto.GANANDO, periodo(4, "5800.00", "2000.00", "300.00"),
+                periodo(5, "5000.00", "2400.00", "650.00"));
+
+        assertThat(texto).isEqualTo("Ganaste S/ 3,800.00 en este período. Es S/ 1,200.00 más de ganancia que en "
+                + "el período anterior, cuando ganaste S/ 2,600.00.");
     }
 
     @Test
@@ -156,6 +165,7 @@ class AnalisisFinancieroTest {
         assertThat(AnalisisFinanciero.explicacion(Veredicto.SIN_DATOS, SIN_ENTREGAS, SIN_ENTREGAS))
                 .isEqualTo("No hay entregas en este período.");
         assertThat(AnalisisFinanciero.explicacion(Veredicto.GANANDO, periodo(2, "3000.00", "500.00", "0.00"),
-                SIN_ENTREGAS)).isEqualTo("Ganaste S/ 2,500.00. No hay entregas en el período anterior para comparar.");
+                SIN_ENTREGAS)).isEqualTo("Ganaste S/ 2,500.00 en este período. No hay entregas en el período anterior "
+                + "para comparar.");
     }
 }

@@ -14,6 +14,8 @@ public enum TipoAviso {
     GPS_DESACTIVADO(Set.of(Rol.OPERADOR, Rol.DUENO)),
     ENVIO_LLEGADO(Set.of(Rol.OPERADOR)),
     RESUMEN_SEMANAL(Set.of(Rol.DUENO)),
+    /** Va al correo que escribe quien cobra, no a un rol del equipo. */
+    ENLACE_PAGO(Set.of()),
     PRUEBA(Set.of(Rol.DUENO));
 
     private final Set<Rol> destinatarios;

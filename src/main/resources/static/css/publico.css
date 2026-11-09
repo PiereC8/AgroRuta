@@ -125,13 +125,6 @@
     margin-bottom: 8px;
 }
 
-.pruebas {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 16px;
-}
-
 .publico__pie {
     margin-top: 24px;
     text-align: center;

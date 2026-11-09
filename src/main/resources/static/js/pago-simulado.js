@@ -85,24 +85,13 @@ window.PagoSimulado = (function () {
         $('sim-zona-pagoefectivo').classList.toggle('oculto', medio !== 'pagoefectivo');
     }
 
+    let preparado = false;
+
     function preparar() {
-        const caja = $('sim-pruebas');
-        if (caja.childElementCount > 0) {
+        if (preparado) {
             return;
         }
-        for (const prueba of TARJETAS_PRUEBA) {
-            const boton = document.createElement('button');
-            boton.type = 'button';
-            boton.className = 'boton boton-secundario boton--pequeno';
-            boton.textContent = prueba.texto;
-            boton.addEventListener('click', () => {
-                $('sim-numero').value = prueba.numero.replace(/(\d{4})(?=\d)/g, '$1 ');
-                $('sim-vence').value = '12/39';
-                $('sim-codigo').value = '123';
-                mostrarMarca();
-            });
-            caja.append(boton, document.createTextNode(' '));
-        }
+        preparado = true;
         $('sim-medio').addEventListener('change', cambiarMedio);
         $('sim-numero').addEventListener('input', mostrarMarca);
     }

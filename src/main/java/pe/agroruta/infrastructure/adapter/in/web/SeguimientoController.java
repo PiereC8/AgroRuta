@@ -8,9 +8,11 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import pe.agroruta.domain.model.AlertaEnvio;
 import pe.agroruta.domain.model.EstadoEnvio;
@@ -18,6 +20,7 @@ import pe.agroruta.domain.model.Posicion;
 import pe.agroruta.domain.model.Seguimiento;
 import pe.agroruta.domain.model.TipoAlerta;
 import pe.agroruta.domain.port.in.ConsultarSeguimientoUseCase;
+import pe.agroruta.domain.port.in.EnviarEnlacePagoUseCase;
 import pe.agroruta.domain.port.in.GenerarEnlacesEnvioUseCase;
 import pe.agroruta.infrastructure.adapter.in.websocket.Canales;
 import pe.agroruta.infrastructure.adapter.out.seguridad.ServicioJwt.DatosToken;
@@ -28,10 +31,13 @@ public class SeguimientoController {
 
     private final GenerarEnlacesEnvioUseCase generarEnlaces;
     private final ConsultarSeguimientoUseCase consultar;
+    private final EnviarEnlacePagoUseCase enviarEnlacePago;
 
-    public SeguimientoController(GenerarEnlacesEnvioUseCase generarEnlaces, ConsultarSeguimientoUseCase consultar) {
+    public SeguimientoController(GenerarEnlacesEnvioUseCase generarEnlaces, ConsultarSeguimientoUseCase consultar,
+                                 EnviarEnlacePagoUseCase enviarEnlacePago) {
         this.generarEnlaces = generarEnlaces;
         this.consultar = consultar;
+        this.enviarEnlacePago = enviarEnlacePago;
     }
 
     /** Los tokens solo se muestran aquí, una vez. Si se pierden, se generan otros y los anteriores dejan de valer. */
@@ -57,9 +63,24 @@ public class SeguimientoController {
         return consultar.recorrido(idEnvio).stream().map(PosicionRespuesta::de).toList();
     }
 
+    /** Manda al comprador, por correo, un enlace nuevo para pagar el pedido entregado. */
+    @PostMapping("/enlace-pago/correo")
+    public EnvioEnlaceRespuesta enviarEnlacePago(@PathVariable Long idEnvio, @RequestBody CorreoSolicitud solicitud,
+                                                 @AuthenticationPrincipal DatosToken usuario) {
+        var resultado = enviarEnlacePago.enviar(new EnviarEnlacePagoUseCase.Comando(usuario.identificadorNegocio(),
+                idEnvio, solicitud.correo(), ServletUriComponentsBuilder.fromCurrentContextPath().toUriString()));
+        return new EnvioEnlaceRespuesta(resultado.correo(), resultado.urlPago(), resultado.fechaExpiracion());
+    }
+
     @GetMapping("/alertas")
     public List<AlertaRespuesta> alertas(@PathVariable Long idEnvio) {
         return consultar.alertas(idEnvio).stream().map(AlertaRespuesta::de).toList();
+    }
+
+    public record CorreoSolicitud(String correo) {
+    }
+
+    public record EnvioEnlaceRespuesta(String correo, String urlPago, Instant fechaExpiracion) {
     }
 
     public record EnlacesRespuesta(String tokenConductor, String rutaConductor, String tokenComprador,

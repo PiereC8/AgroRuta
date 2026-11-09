@@ -74,24 +74,31 @@ public final class AnalisisFinanciero {
             return "No hay entregas en este período.";
         }
         Dinero ganancia = actual.gananciaReal();
-        String base;
-        if (ganancia.monto().signum() == 0) {
-            base = "No ganaste nada en este período";
-        } else if (ganancia.esNegativo()) {
-            base = "Perdiste " + soles(new Dinero(ganancia.monto().negate())) + " en este período";
-        } else {
-            base = "Ganaste " + soles(ganancia);
-        }
+        String base = resultado(ganancia, "No ganaste nada", "Ganaste ", "Perdiste ") + " en este período.";
         if (anterior.entregas() == 0) {
-            return base + ". No hay entregas en el período anterior para comparar.";
+            return base + " No hay entregas en el período anterior para comparar.";
         }
+        // Cada monto dice qué es: la ganancia de ahora, la diferencia y la ganancia de antes.
+        String antes = ", cuando " + resultado(anterior.gananciaReal(), "no ganaste nada", "ganaste ", "perdiste ")
+                + ".";
         Dinero cambio = ganancia.restar(anterior.gananciaReal());
-        if (cambio.monto().signum() >= 0) {
-            return base + ", " + soles(cambio) + " más que el período anterior.";
+        if (cambio.monto().signum() == 0) {
+            return base + " Es lo mismo que en el período anterior" + antes;
+        }
+        if (cambio.monto().signum() > 0) {
+            return base + " Es " + soles(cambio) + " más de ganancia que en el período anterior" + antes;
         }
         String motivos = motivos(causas(actual, anterior));
-        return base + ", " + soles(new Dinero(cambio.monto().negate())) + " menos que el período anterior"
-                + (motivos.isEmpty() ? "." : ": " + motivos + ".");
+        return base + " Es " + soles(new Dinero(cambio.monto().negate()))
+                + " menos de ganancia que en el período anterior" + antes
+                + (motivos.isEmpty() ? "" : " Por qué: " + motivos + ".");
+    }
+
+    private static String resultado(Dinero monto, String cero, String gano, String perdio) {
+        if (monto.monto().signum() == 0) {
+            return cero;
+        }
+        return monto.esNegativo() ? perdio + soles(new Dinero(monto.monto().negate())) : gano + soles(monto);
     }
 
     /** Las dos causas que más restaron, por ejemplo "se vendió S/ 450.00 menos y el flete costó S/ 400.00 más". */
