@@ -159,6 +159,23 @@ class DestinosServiceTest {
     }
 
     @Test
+    void la_ubicacion_del_destino_debe_estar_dentro_del_peru() {
+        administrar.registrarDestino("Gran Mercado Mayorista de Tacna", "Tacna", true);
+
+        // Madrid, Santiago de Chile y el océano frente a Lima: fuera del Perú.
+        assertThatThrownBy(() -> administrar.fijarCoordenadas(1L, 40.4168, -3.7038))
+                .isInstanceOf(DominioException.class).hasMessageContaining("Perú");
+        assertThatThrownBy(() -> administrar.fijarCoordenadas(1L, -33.4489, -70.6693))
+                .isInstanceOf(DominioException.class);
+        assertThatThrownBy(() -> administrar.fijarCoordenadas(1L, -12.05, -82.0))
+                .isInstanceOf(DominioException.class);
+        assertThat(destinos.coordenadas).isEmpty();
+
+        administrar.fijarCoordenadas(1L, -18.0105, -70.2486);
+        assertThat(destinos.coordenadas).containsKey(1L);
+    }
+
+    @Test
     void un_destino_local_no_acepta_tarifa_y_el_flete_no_puede_ser_negativo() {
         administrar.registrarDestino("Mercado Tacna", "Tacna", true);
         administrar.registrarDestino("Mercado Lima", "Lima", false);

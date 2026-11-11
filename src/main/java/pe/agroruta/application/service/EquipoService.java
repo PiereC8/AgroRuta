@@ -60,6 +60,19 @@ public class EquipoService implements AdministrarEquipoUseCase {
         equipo.actualizarActivo(miembro.idUsuario(), activo);
     }
 
+    @Override
+    public void restablecerClave(Long idUsuario, String claveNueva, String solicitante) {
+        MiembroEquipo miembro = existente(idUsuario);
+        if (miembro.nombreUsuario().equals(solicitante)) {
+            throw new DominioException("Tu propia contraseña se cambia con el botón «Contraseña», sabiendo la actual");
+        }
+        if (miembro.rol() != Rol.OPERADOR) {
+            throw new DominioException("Solo se puede restablecer la contraseña de un operador");
+        }
+        PoliticaClave.validar(claveNueva);
+        equipo.restablecerClave(miembro.idUsuario(), hashes.cifrar(claveNueva));
+    }
+
     private MiembroEquipo existente(Long idUsuario) {
         return equipo.buscar(idUsuario)
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe esa persona en el equipo"));

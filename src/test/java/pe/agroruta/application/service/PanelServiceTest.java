@@ -132,6 +132,7 @@ class PanelServiceTest {
         assertThat(panel.gananciaMes()).isNull();
         assertThat(panel.gananciaMesAnterior()).isNull();
         assertThat(panel.gananciaUltimosMeses()).isNull();
+        assertThat(panel.perdidaMermaMes()).isNull();
         assertThat(panel.mermaMesKg()).isEqualByComparingTo("40.5");
         assertThat(panel.enviosEnCurso()).hasSize(1);
         assertThat(panel.cobrosPendientes().monto()).isEqualTo(Dinero.de("6372.00"));

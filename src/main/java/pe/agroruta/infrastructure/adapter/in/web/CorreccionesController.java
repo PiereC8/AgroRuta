@@ -44,6 +44,7 @@ public class CorreccionesController {
                                                 @Valid @RequestBody EntregaSolicitud solicitud,
                                                 @AuthenticationPrincipal DatosToken usuario) {
         return LiquidacionRespuesta.de(corregirEntrega.corregir(new CorregirEntregaUseCase.Comando(idEnvio,
-                solicitud.cantidadRecibidaKg(), solicitud.mermaKg(), solicitud.rechazoKg(), usuario.nombreUsuario())));
+                solicitud.cantidadRecibidaKg(), solicitud.mermaKg(), solicitud.rechazoKg(), usuario.nombreUsuario())),
+                usuario);
     }
 }

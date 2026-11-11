@@ -58,6 +58,16 @@ public class EquipoController {
         equipo.cambiarActivo(idUsuario, solicitud.activo(), usuario.nombreUsuario());
     }
 
+    @PutMapping("/{idUsuario}/clave")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void restablecerClave(@AuthenticationPrincipal DatosToken usuario, @PathVariable Long idUsuario,
+                                 @Valid @RequestBody ClaveSolicitud solicitud) {
+        equipo.restablecerClave(idUsuario, solicitud.claveNueva(), usuario.nombreUsuario());
+    }
+
+    public record ClaveSolicitud(@NotBlank @Size(max = 72) String claveNueva) {
+    }
+
     public record OperadorSolicitud(@NotBlank @Size(max = 50) String nombreUsuario,
                                     @NotBlank @Size(max = 72) String clave, @Size(max = 120) String correo) {
     }

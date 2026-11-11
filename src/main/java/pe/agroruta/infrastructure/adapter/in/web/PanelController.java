@@ -44,7 +44,8 @@ public class PanelController {
             BigDecimal ganancia = panel.gananciaMes() == null ? null : panel.gananciaMes().monto();
             BigDecimal anterior = panel.gananciaMesAnterior() == null ? null : panel.gananciaMesAnterior().monto();
             return new PanelRespuesta(panel.mes().toString(), ganancia, anterior, variacion(ganancia, anterior),
-                    panel.mermaMesKg(), panel.mermaTotalKg(), panel.perdidaMermaMes().monto(),
+                    panel.mermaMesKg(), panel.mermaTotalKg(),
+                    panel.perdidaMermaMes() == null ? null : panel.perdidaMermaMes().monto(),
                     panel.enviosEnCurso().stream().map(EnvioRespuesta::de).toList(),
                     new CobrosRespuesta(panel.cobrosPendientes().monto().monto(),
                             panel.cobrosPendientes().cantidad()),

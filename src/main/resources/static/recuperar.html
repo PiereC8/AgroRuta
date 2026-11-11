@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex">
+    <meta name="referrer" content="no-referrer">
+    <title>Recuperar contraseña - AgroRuta</title>
+    <link rel="icon" href="/img/logo.png" type="image/png">
+    <link rel="preload" href="/fonts/fuente.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/css/sistema.css">
+</head>
+<body>
+<div class="entrada">
+    <section class="entrada__lado" aria-label="AgroRuta">
+        <img src="/img/logo.png" alt="AgroRuta">
+        <h1>Vuelve a entrar a tu negocio.</h1>
+        <p>Te mandamos un enlace a tu correo para que pongas una contraseña nueva. Si eres operador y no tienes correo,
+            pídele al dueño que te la cambie desde Equipo.</p>
+    </section>
+
+    <main class="entrada__formulario">
+        <div class="entrada__caja">
+            <h2 id="titulo">Recuperar contraseña</h2>
+            <p class="suave" id="explicacion">Escribe tu negocio y tu usuario.</p>
+
+            <div id="aviso" class="aviso oculto" role="alert" tabindex="-1"></div>
+
+            <form id="pedir" novalidate>
+                <div class="campo" id="campo-negocio">
+                    <label class="campo__etiqueta" for="negocio">Negocio</label>
+                    <input class="campo__entrada" id="negocio" type="text" autocomplete="organization"
+                           autocapitalize="none" spellcheck="false" aria-describedby="negocio-error">
+                    <span class="campo__error oculto" id="negocio-error"></span>
+                </div>
+                <div class="campo" id="campo-usuario">
+                    <label class="campo__etiqueta" for="usuario">Usuario</label>
+                    <input class="campo__entrada" id="usuario" type="text" autocomplete="username"
+                           autocapitalize="none" spellcheck="false" aria-describedby="usuario-error">
+                    <span class="campo__error oculto" id="usuario-error"></span>
+                </div>
+                <button class="boton boton-ancho" id="enviar-pedido" type="submit">Enviar enlace</button>
+            </form>
+
+            <form id="cambiar" class="oculto" novalidate>
+                <div class="campo" id="campo-clave">
+                    <label class="campo__etiqueta" for="clave">Contraseña nueva</label>
+                    <input class="campo__entrada" id="clave" type="password" autocomplete="new-password"
+                           aria-describedby="clave-ayuda clave-error">
+                    <span class="campo__ayuda" id="clave-ayuda">De 8 a 72 caracteres.</span>
+                    <span class="campo__error oculto" id="clave-error"></span>
+                </div>
+                <div class="campo" id="campo-repetir">
+                    <label class="campo__etiqueta" for="repetir">Repite la contraseña nueva</label>
+                    <input class="campo__entrada" id="repetir" type="password" autocomplete="new-password"
+                           aria-describedby="repetir-error">
+                    <span class="campo__error oculto" id="repetir-error"></span>
+                </div>
+                <button class="boton boton-ancho" id="enviar-cambio" type="submit">Guardar contraseña</button>
+            </form>
+
+            <a class="entrada__enlace" href="/login.html">Volver a entrar</a>
+        </div>
+    </main>
+</div>
+<script src="/js/api.js"></script>
+<script src="/js/recuperar.js"></script>
+</body>
+</html>

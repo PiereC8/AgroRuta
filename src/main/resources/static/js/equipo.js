@@ -34,7 +34,7 @@
     async function agregarOperador() {
         const creado = await window.Ui.panel({
             titulo: 'Agregar operador',
-            texto: 'El operador registra lotes, pedidos y envíos, pero no ve la ganancia ni los reportes.',
+            texto: 'El operador registra lotes, pedidos, envíos y cobros, pero no ve la ganancia, el flete ni los reportes.',
             textoEnviar: 'Agregar operador',
             campos: [
                 {id: 'nombreUsuario', etiqueta: 'Usuario', tipo: 'texto', requerido: true,
@@ -78,6 +78,27 @@
         }
     }
 
+    async function restablecerClave(m) {
+        const listo = await window.Ui.panel({
+            titulo: 'Contraseña de ' + m.nombreUsuario,
+            texto: 'Para cuando el operador olvidó su contraseña. También le quita el bloqueo por intentos fallidos. '
+                + 'Entrégasela en persona y pídele que la cambie con el botón «Contraseña».',
+            textoEnviar: 'Guardar contraseña',
+            campos: [
+                {id: 'claveNueva', etiqueta: 'Contraseña nueva', tipo: 'clave', requerido: true,
+                    validar: (v) => v.length >= 8 && v.length <= 72 ? null : 'La clave debe tener entre 8 y 72 caracteres.'},
+                {id: 'repetir', etiqueta: 'Repite la contraseña nueva', tipo: 'clave', requerido: true,
+                    validar: (v, todos) => v !== todos.claveNueva ? 'No coincide con la contraseña nueva.' : null}
+            ],
+            enviar: (v) => window.Api.pedir('/api/equipo/' + m.idUsuario + '/clave', {
+                metodo: 'PUT', cuerpo: {claveNueva: v.claveNueva}
+            }).then(() => true)
+        });
+        if (listo) {
+            window.Ui.aviso('Contraseña cambiada para ' + m.nombreUsuario);
+        }
+    }
+
     async function cambiarActivo(m) {
         const activar = !m.usuarioActivo;
         const acepto = await window.Ui.confirmar({
@@ -110,6 +131,9 @@
                 vacio: {titulo: 'Aún no hay personas'},
                 acciones: (m) => {
                     const botones = [window.Ui.boton('Correo', 'boton-secundario', () => cambiarCorreo(m))];
+                    if (m.rolUsuario === 'OPERADOR') {
+                        botones.push(window.Ui.boton('Clave', 'boton-secundario', () => restablecerClave(m)));
+                    }
                     if (m.nombreUsuario !== yo) {
                         botones.push(window.Ui.boton(m.usuarioActivo ? 'Desactivar' : 'Activar', 'boton-secundario',
                             () => cambiarActivo(m)));

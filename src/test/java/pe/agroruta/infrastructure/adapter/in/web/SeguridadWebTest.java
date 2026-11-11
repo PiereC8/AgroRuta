@@ -3,6 +3,8 @@ package pe.agroruta.infrastructure.adapter.in.web;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -113,6 +115,8 @@ class SeguridadWebTest {
     RegistrarEntregaUseCase registrarEntrega;
     @MockitoBean
     ConsultarLiquidacionesUseCase consultarLiquidaciones;
+    @MockitoBean
+    pe.agroruta.domain.port.in.RecuperarClaveUseCase recuperarClave;
 
     private static final String LOTE = """
             {"productoLote":"Palta Hass","cantidadKg":1250.5,"fechaCosecha":"2026-11-05","chacraOrigen":"Chacra Sur"}""";
@@ -173,7 +177,29 @@ class SeguridadWebTest {
         mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"identificadorNegocio\":\"chacra_demo\",\"nombreUsuario\":\"x\",\"clave\":\"y\"}"))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error").value("Credenciales inválidas"));
+                .andExpect(jsonPath("$.error").value(CredencialesInvalidasException.MENSAJE));
+    }
+
+    @Test
+    void pedir_el_enlace_es_publico_y_responde_lo_mismo_exista_o_no_la_cuenta() throws Exception {
+        mvc.perform(post("/api/auth/recuperar").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"identificadorNegocio\":\" chacra_demo \",\"nombreUsuario\":\"no.existe\"}"))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.mensaje").value(AuthController.SOLICITUD_RECIBIDA));
+        verify(recuperarClave).solicitar(eq("chacra_demo"), eq("no.existe"), any());
+    }
+
+    @Test
+    void usar_el_enlace_es_publico_y_un_enlace_vencido_responde_400() throws Exception {
+        String cuerpo = "{\"identificadorNegocio\":\"chacra_demo\",\"token\":\"abc\",\"claveNueva\":\"clave-nueva-1\"}";
+        mvc.perform(post("/api/auth/restablecer").contentType(MediaType.APPLICATION_JSON).content(cuerpo))
+                .andExpect(status().isNoContent());
+
+        doThrow(new DominioException("El enlace no es válido o ya venció. Pide uno nuevo."))
+                .when(recuperarClave).restablecer(any(), any(), any());
+        mvc.perform(post("/api/auth/restablecer").contentType(MediaType.APPLICATION_JSON).content(cuerpo))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("El enlace no es válido o ya venció. Pide uno nuevo."));
     }
 
     @Test
@@ -244,7 +270,7 @@ class SeguridadWebTest {
     }
 
     @Test
-    void el_operador_cotiza_un_lote_y_ve_la_mejor_opcion() throws Exception {
+    void el_operador_cotiza_un_lote_y_ve_la_mejor_opcion_sin_flete_ni_ganancia() throws Exception {
         Lote lote = new Lote(1L, "Palta Hass", new BigDecimal("1000"), LocalDate.of(2026, 11, 5), "Sur",
                 EstadoLote.REGISTRADO, "dueno.demo", Instant.now());
         var lima = new DestinoVenta(2L, "Mercado Lima", "Lima", false, true);
@@ -262,9 +288,18 @@ class SeguridadWebTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.mejorDestino").value("Mercado Lima"))
                 .andExpect(jsonPath("$.opciones[0].conviene").value(true))
-                .andExpect(jsonPath("$.opciones[0].gananciaNeta").value(4300.00))
+                .andExpect(jsonPath("$.opciones[0].precioEsperadoPorKg").value(5.50))
+                .andExpect(jsonPath("$.opciones[0].gananciaNeta").doesNotExist())
+                .andExpect(jsonPath("$.opciones[0].costoFletePorKg").doesNotExist())
+                .andExpect(jsonPath("$.opciones[0].costoFleteTotal").doesNotExist())
                 .andExpect(jsonPath("$.opciones[1].conviene").value(false))
                 .andExpect(jsonPath("$.destinosSinDatos[0].motivo").value("SIN_TARIFA"));
+
+        mvc.perform(get("/api/lotes/1/cotizacion")
+                        .header("Authorization", bearer("chacra_demo", "dueno.demo", Rol.DUENO)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.opciones[0].gananciaNeta").value(4300.00))
+                .andExpect(jsonPath("$.opciones[0].costoFletePorKg").value(1.20));
     }
 
     @Test
@@ -308,7 +343,7 @@ class SeguridadWebTest {
     }
 
     @Test
-    void el_operador_registra_la_entrega_y_recibe_la_liquidacion() throws Exception {
+    void el_operador_registra_la_entrega_y_recibe_la_liquidacion_sin_ganancia() throws Exception {
         var liquidacion = new Liquidacion(1L, 1L, 1L, 1L, new BigDecimal("1250.500"), new BigDecimal("1180.000"),
                 new BigDecimal("40.500"), new BigDecimal("30.000"), Dinero.de("5.40"), Dinero.de("1.20"),
                 Dinero.de("6372.00"), Dinero.de("1500.60"), Dinero.de("4871.40"), Dinero.de("5252.10"),
@@ -321,11 +356,24 @@ class SeguridadWebTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"cantidadRecibidaKg\":1180,\"mermaKg\":40.5,\"rechazoKg\":30}"))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.gananciaReal").value(4871.40))
-                .andExpect(jsonPath("$.perdidaPorMermaYRechazo").value(380.70));
+                .andExpect(jsonPath("$.ingresoReal").value(6372.00))
+                .andExpect(jsonPath("$.gananciaReal").doesNotExist())
+                .andExpect(jsonPath("$.gananciaEsperada").doesNotExist())
+                .andExpect(jsonPath("$.costoFleteTotal").doesNotExist())
+                .andExpect(jsonPath("$.perdidaPorMermaYRechazo").doesNotExist());
         mvc.perform(get("/api/lotes/1/liquidacion").header("Authorization", operador))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.ingresoReal").value(6372.00));
-        mvc.perform(get("/api/liquidaciones").header("Authorization", operador)).andExpect(status().isOk());
+                .andExpect(status().isOk()).andExpect(jsonPath("$.ingresoReal").value(6372.00))
+                .andExpect(jsonPath("$.gananciaReal").doesNotExist());
+        when(consultarLiquidaciones.listar(0, 50)).thenReturn(List.of(liquidacion));
+        mvc.perform(get("/api/liquidaciones").header("Authorization", operador)).andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].ingresoReal").value(6372.00))
+                .andExpect(jsonPath("$[0].gananciaReal").doesNotExist());
+        mvc.perform(get("/api/liquidaciones").header("Authorization", bearer("chacra_demo", "dueno.demo", Rol.DUENO)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].gananciaReal").value(4871.40))
+                .andExpect(jsonPath("$[0].gananciaEsperada").value(5252.10))
+                .andExpect(jsonPath("$[0].costoFleteTotal").value(1500.60))
+                .andExpect(jsonPath("$[0].perdidaPorMermaYRechazo").value(380.70));
         mvc.perform(get("/api/liquidaciones")).andExpect(status().isUnauthorized());
         mvc.perform(get("/api/liquidaciones").header("Authorization",
                 bearer(null, "admin", Rol.ADMINISTRADOR_PLATAFORMA))).andExpect(status().isForbidden());

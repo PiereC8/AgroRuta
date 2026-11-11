@@ -79,7 +79,8 @@
         } catch (error) {
             // Nunca se dice cuál de los datos falló: así no se ayuda a adivinar usuarios.
             mostrarAviso(error.estado === 401
-                ? 'El negocio, el usuario o la contraseña no son correctos. Revísalos e inténtalo otra vez.'
+                ? 'El negocio, el usuario o la contraseña no son correctos. Después de 5 intentos fallidos la cuenta '
+                    + 'se bloquea 15 minutos.'
                 : error.message);
         } finally {
             ocupado(false);

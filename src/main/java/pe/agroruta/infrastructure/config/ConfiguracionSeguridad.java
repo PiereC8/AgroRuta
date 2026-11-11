@@ -20,6 +20,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import pe.agroruta.domain.model.Rol;
 import pe.agroruta.domain.port.out.UsuarioRepositoryPort;
 import pe.agroruta.infrastructure.adapter.in.web.FiltroJwt;
+import pe.agroruta.infrastructure.adapter.in.web.LimiteIntentosFiltro;
 import pe.agroruta.infrastructure.adapter.in.web.VerificadorUsuarioActivo;
 import pe.agroruta.infrastructure.adapter.out.seguridad.ServicioJwt;
 
@@ -35,7 +36,9 @@ public class ConfiguracionSeguridad {
 
     @Bean
     SecurityFilterChain cadenaDeSeguridad(HttpSecurity http, ServicioJwt servicioJwt,
-                                          ObjectProvider<UsuarioRepositoryPort> usuarios, Clock reloj)
+                                          ObjectProvider<UsuarioRepositoryPort> usuarios, Clock reloj,
+                                          @Value("${agroruta.seguridad.intentos-auth-por-minuto:20}")
+                                          int intentosPorMinuto)
             throws Exception {
         // Sin repositorio de usuarios (pruebas de controladores) solo se valida la firma del token.
         UsuarioRepositoryPort repositorio = usuarios.getIfAvailable();
@@ -57,7 +60,8 @@ public class ConfiguracionSeguridad {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(a -> a
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
-                        .requestMatchers("/api/auth/login", "/actuator/health").permitAll()
+                        .requestMatchers("/api/auth/login", "/api/auth/recuperar", "/api/auth/restablecer",
+                                "/actuator/health").permitAll()
                         // Las páginas son públicas (los datos se piden a la API con el token), igual que sus recursos
                         // y el WebSocket (se autentica por token). Una página que no existe responde con la 404 propia.
                         .requestMatchers(HttpMethod.GET, "/", "/*.html").permitAll()
@@ -81,6 +85,8 @@ public class ConfiguracionSeguridad {
                         .requestMatchers("/api/transportistas/**", "/api/vehiculos/**").hasRole(Rol.DUENO.name())
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+                .addFilterBefore(new LimiteIntentosFiltro(intentosPorMinuto, reloj),
+                        UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(new FiltroJwt(servicioJwt, verificador), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

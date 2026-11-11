@@ -101,7 +101,7 @@ class PanelWebTest {
     @Test
     void el_operador_no_recibe_ningun_campo_de_ganancia() throws Exception {
         when(consultarPanel.consultar(Rol.OPERADOR)).thenReturn(new Panel(YearMonth.of(2026, 11), null, null,
-                new BigDecimal("40.500"), new BigDecimal("123.250"), Dinero.de("380.70"), List.of(),
+                new BigDecimal("40.500"), new BigDecimal("123.250"), null, List.of(),
                 new CobrosPendientes(Dinero.de("6372.00"), 1), null));
 
         mvc.perform(get("/api/panel/resumen").header("Authorization", bearer("empresa_demo", Rol.OPERADOR)))
@@ -110,6 +110,7 @@ class PanelWebTest {
                 .andExpect(jsonPath("$.gananciaMesAnterior").doesNotExist())
                 .andExpect(jsonPath("$.variacionPorcentual").doesNotExist())
                 .andExpect(jsonPath("$.gananciaUltimosMeses").doesNotExist())
+                .andExpect(jsonPath("$.perdidaMermaMes").doesNotExist())
                 .andExpect(jsonPath("$.mermaMesKg").value(40.5))
                 .andExpect(jsonPath("$.cobrosPendientes.cantidad").value(1));
     }

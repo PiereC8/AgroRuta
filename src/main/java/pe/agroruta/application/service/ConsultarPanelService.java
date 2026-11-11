@@ -51,7 +51,7 @@ public class ConsultarPanelService implements ConsultarPanelUseCase {
                 verGanancia ? panel.gananciaEntre(inicioDe(mes.minusMonths(1)), mismoMomentoMesPasado) : null,
                 panel.mermaKgEntre(inicio, fin),
                 panel.mermaKgEntre(Instant.EPOCH, fin),
-                panel.perdidaEntre(inicio, fin),
+                verGanancia ? panel.perdidaEntre(inicio, fin) : null,
                 panel.enviosEnCurso(LIMITE_DE_ENVIOS),
                 panel.cobrosPendientes(),
                 serie);

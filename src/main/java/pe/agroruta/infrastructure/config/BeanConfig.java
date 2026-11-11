@@ -229,6 +229,15 @@ public class BeanConfig {
     }
 
     @Bean
+    pe.agroruta.domain.port.in.RecuperarClaveUseCase recuperarClaveUseCase(
+            NegocioRepositoryPort negocios, pe.agroruta.domain.port.out.RecuperacionClavePort recuperaciones,
+            GeneradorTokenPort generador, HashClavePort hashes,
+            pe.agroruta.domain.port.out.EnvioCorreoPort correo, Clock reloj) {
+        return new pe.agroruta.application.service.RecuperarClaveService(negocios, recuperaciones, generador, hashes,
+                correo, reloj);
+    }
+
+    @Bean
     GenerarEnlacesEnvioUseCase generarEnlacesEnvioUseCase(EnvioRepositoryPort envios,
                                                           EnlaceEnvioRepositoryPort enlaces,
                                                           GeneradorTokenPort generador, Clock reloj) {

@@ -69,14 +69,21 @@
             bloque.appendChild(p);
         } else {
             const caja = el('div');
-            window.Ui.tabla(caja, [
+            // Para el Operador la API no manda flete ni ganancia: solo ve a dónde conviene enviarlo.
+            const conDinero = cotizacion.opciones[0].gananciaNeta !== undefined;
+            const columnas = [
                 {titulo: 'Destino', clase: 'largo', valor: (o) => o.nombreDestino},
-                {titulo: 'Precio/kg', valor: (o) => window.Ui.dinero(o.precioEsperadoPorKg)},
-                {titulo: 'Flete/kg', valor: (o) => window.Ui.dinero(o.costoFletePorKg)},
-                {titulo: 'Ganancia neta', valor: (o) => window.Ui.dinero(o.gananciaNeta)}
-            ], cotizacion.opciones, {filaDestacada: (o) => o.conviene});
+                {titulo: 'Precio/kg', valor: (o) => window.Ui.dinero(o.precioEsperadoPorKg)}
+            ];
+            if (conDinero) {
+                columnas.push({titulo: 'Flete/kg', valor: (o) => window.Ui.dinero(o.costoFletePorKg)},
+                    {titulo: 'Ganancia neta', valor: (o) => window.Ui.dinero(o.gananciaNeta)});
+            }
+            window.Ui.tabla(caja, columnas, cotizacion.opciones, {filaDestacada: (o) => o.conviene});
             bloque.appendChild(caja);
-            bloque.appendChild(el('p', 'suave', 'La fila en verde es la que más te deja después del flete.'));
+            bloque.appendChild(el('p', 'suave', conDinero
+                ? 'La fila en verde es la que más te deja después del flete.'
+                : 'La fila en verde es el destino que más conviene.'));
         }
         for (const omitido of cotizacion.destinosSinDatos || []) {
             bloque.appendChild(el('p', 'suave', omitido.nombreDestino + ': ' + (MOTIVOS[omitido.motivo] || omitido.motivo)));

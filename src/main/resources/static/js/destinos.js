@@ -66,12 +66,31 @@
         }
     }
 
-    function coordenada(maximo, nombre) {
+    // Rectángulo que contiene al Perú; el servidor rechaza puntos fuera de él (Coordenada.dentroDelPeru).
+    const PERU = {latMin: -18.40, latMax: 0.05, lonMin: -81.40, lonMax: -68.60};
+    const dentroDelPeru = (lat, lon) => lat >= PERU.latMin && lat <= PERU.latMax
+        && lon >= PERU.lonMin && lon <= PERU.lonMax;
+
+    function coordenada(minimo, maximo, nombre) {
         return (valor) => {
             const n = Number(valor.replace(',', '.'));
-            return Number.isFinite(n) && Math.abs(n) <= maximo
-                ? null : nombre + ' debe estar entre -' + maximo + ' y ' + maximo + '.';
+            return Number.isFinite(n) && n >= minimo && n <= maximo
+                ? null : nombre + ' debe estar dentro del Perú (entre ' + minimo + ' y ' + maximo + ').';
         };
+    }
+
+    const sinTildes = (texto) => texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+    /** Dirección del punto elegido (OpenStreetMap). Devuelve el texto o null si no se pudo obtener. */
+    async function direccionDe(lat, lon) {
+        const url = 'https://nominatim.openstreetmap.org/reverse?format=json&zoom=18&accept-language=es&lat='
+            + encodeURIComponent(lat) + '&lon=' + encodeURIComponent(lon);
+        try {
+            const respuesta = await fetch(url, {headers: {'Accept': 'application/json'}});
+            return respuesta.ok ? ((await respuesta.json()).display_name || null) : null;
+        } catch (e) {
+            return null;
+        }
     }
 
     /** Busca un lugar en OpenStreetMap (solo en Perú). Devuelve [{nombre, lat, lon}]. */
@@ -98,14 +117,40 @@
         busqueda.append(entrada, buscar);
         const resultados = el('ul', 'mapa-resultados');
         const mapa = el('div', 'mapa-elegir');
-        caja.append(busqueda, resultados, mapa,
-            el('p', 'suave', 'Haz clic en el mapa o arrastra el marcador hasta el lugar exacto.'));
+        const direccion = el('p', 'suave', 'Haz clic en el mapa o arrastra el marcador hasta el lugar exacto.');
+        caja.append(busqueda, resultados, mapa, direccion);
 
         let vista = null;
         let marcador = null;
+        let consulta = 0;
         const campo = (id) => document.getElementById('campo-' + id);
 
+        /** Muestra la dirección del punto y avisa si no parece estar en la ciudad del destino. */
+        async function mostrarDireccion(lat, lon) {
+            const numero = ++consulta;
+            direccion.className = 'suave';
+            direccion.textContent = 'Buscando la dirección del punto…';
+            const texto = await direccionDe(lat, lon);
+            if (numero !== consulta) {
+                return;
+            }
+            if (!texto) {
+                direccion.textContent = 'No se pudo obtener la dirección. Revisa que el punto sea el correcto.';
+                return;
+            }
+            direccion.textContent = 'Punto elegido: ' + texto;
+            if (!sinTildes(texto).includes(sinTildes(destino.ciudadDestino))) {
+                direccion.className = 'dato-perdida';
+                direccion.textContent += '. Ojo: no parece estar en ' + destino.ciudadDestino + '.';
+            }
+        }
+
         function poner(lat, lon, acercar) {
+            if (!dentroDelPeru(lat, lon)) {
+                direccion.className = 'dato-perdida';
+                direccion.textContent = 'Ese punto está fuera del Perú. Elige un lugar dentro del país.';
+                return;
+            }
             const punto = [Number(lat.toFixed(6)), Number(lon.toFixed(6))];
             if (marcador) {
                 marcador.setLatLng(punto);
@@ -123,6 +168,7 @@
             }
             campo('latitud').value = String(punto[0]);
             campo('longitud').value = String(punto[1]);
+            mostrarDireccion(punto[0], punto[1]);
         }
 
         async function ejecutarBusqueda(elegirPrimero) {
@@ -170,14 +216,16 @@
         });
 
         function iniciar() {
-            vista = L.map(mapa).setView([-16.4, -71.5], 6);
+            const limites = L.latLngBounds([PERU.latMin, PERU.lonMin], [PERU.latMax, PERU.lonMax]);
+            vista = L.map(mapa, {maxBounds: limites.pad(0.05), maxBoundsViscosity: 1.0, minZoom: 5})
+                .setView([-16.4, -71.5], 6);
             L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19,
                 attribution: '&copy; OpenStreetMap'}).addTo(vista);
             vista.on('click', (evento) => poner(evento.latlng.lat, evento.latlng.lng, false));
             const alEscribir = () => {
                 const lat = Number(campo('latitud').value.replace(',', '.'));
                 const lon = Number(campo('longitud').value.replace(',', '.'));
-                if (Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180
+                if (Number.isFinite(lat) && Number.isFinite(lon) && dentroDelPeru(lat, lon)
                     && campo('latitud').value && campo('longitud').value) {
                     poner(lat, lon, true);
                 }
@@ -201,9 +249,9 @@
             contenido: selector.caja,
             campos: [
                 {id: 'latitud', etiqueta: 'Latitud', tipo: 'texto', requerido: true, marcador: '-18.0105',
-                    validar: coordenada(90, 'La latitud'), ayuda: 'Se llena sola al marcar el punto en el mapa.'},
+                    validar: coordenada(PERU.latMin, PERU.latMax, 'La latitud'), ayuda: 'Se llena sola al marcar el punto en el mapa.'},
                 {id: 'longitud', etiqueta: 'Longitud', tipo: 'texto', requerido: true, marcador: '-70.2486',
-                    validar: coordenada(180, 'La longitud')}
+                    validar: coordenada(PERU.lonMin, PERU.lonMax, 'La longitud')}
             ],
             enviar: (v) => window.Api.pedir('/api/destinos/' + destino.idDestinoVenta + '/coordenadas', {
                 metodo: 'PUT',

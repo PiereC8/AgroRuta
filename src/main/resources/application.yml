@@ -25,6 +25,9 @@ agroruta:
     clave: ${DB_CLAVE}
     prefijo: agroruta_
     sufijo: ${BD_SUFIJO:_dev}
+  seguridad:
+    # Peticiones por minuto y por IP a /api/auth/** (entrar y recuperar la contraseña).
+    intentos-auth-por-minuto: ${INTENTOS_AUTH_POR_MINUTO:20}
   jwt:
     secreto: ${JWT_SECRETO}
     horas-validez: 8

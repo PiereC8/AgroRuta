@@ -57,6 +57,12 @@ class EquipoServiceTest {
         }
 
         @Override
+        public void restablecerClave(Long idUsuario, String hashClave) {
+            buscar(idUsuario).orElseThrow();
+            ultimoHash = hashClave;
+        }
+
+        @Override
         public void actualizarActivo(Long idUsuario, boolean activo) {
             MiembroEquipo m = buscar(idUsuario).orElseThrow();
             miembros.set(miembros.indexOf(m), new MiembroEquipo(m.idUsuario(), m.nombreUsuario(), m.rol(),
@@ -151,5 +157,27 @@ class EquipoServiceTest {
         servicio.cambiarActivo(operador.idUsuario(), false, "dueno.demo");
 
         assertThat(equipo.destinatarios(Set.of(Rol.OPERADOR))).isEmpty();
+    }
+
+    @Test
+    void el_dueno_restablece_la_clave_de_un_operador() {
+        MiembroEquipo operador = servicio.crearOperador("operador.uno", "clave-segura-1", null);
+
+        servicio.restablecerClave(operador.idUsuario(), "clave-nueva-22", "dueno.demo");
+
+        assertThat(equipo.ultimoHash).isEqualTo("hash:clave-nueva-22");
+    }
+
+    @Test
+    void no_se_restablece_la_propia_clave_ni_una_corta_ni_la_de_alguien_que_no_existe() {
+        MiembroEquipo operador = servicio.crearOperador("operador.uno", "clave-segura-1", null);
+
+        assertThatThrownBy(() -> servicio.restablecerClave(1L, "clave-nueva-22", "dueno.demo"))
+                .isInstanceOf(DominioException.class).hasMessageContaining("Contraseña");
+        assertThatThrownBy(() -> servicio.restablecerClave(operador.idUsuario(), "corta", "dueno.demo"))
+                .isInstanceOf(DominioException.class);
+        assertThatThrownBy(() -> servicio.restablecerClave(99L, "clave-nueva-22", "dueno.demo"))
+                .isInstanceOf(RecursoNoEncontradoException.class);
+        assertThat(equipo.ultimoHash).isEqualTo("hash:clave-segura-1");
     }
 }

@@ -85,6 +85,12 @@ public class EquipoJdbcAdapter implements EquipoRepositoryPort {
     }
 
     @Override
+    public void restablecerClave(Long idUsuario, String hashClave) {
+        jdbc.update("UPDATE usuario SET hash_clave = ?, intentos_fallidos_sesion = 0, fecha_bloqueo_hasta = NULL "
+                + "WHERE id_usuario = ?", hashClave, idUsuario);
+    }
+
+    @Override
     public List<MiembroEquipo> destinatarios(Set<Rol> roles) {
         if (roles.isEmpty()) {
             return List.of();

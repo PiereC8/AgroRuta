@@ -14,4 +14,10 @@ public interface AdministrarEquipoUseCase {
 
     /** Nadie puede desactivarse a sí mismo: el negocio se quedaría sin quien lo administre. */
     void cambiarActivo(Long idUsuario, boolean activo, String solicitante);
+
+    /**
+     * El Dueño le pone una clave nueva a un Operador que la olvidó; también le quita el bloqueo por intentos fallidos.
+     * La propia se cambia con la clave actual (CambiarClaveUseCase), no aquí.
+     */
+    void restablecerClave(Long idUsuario, String claveNueva, String solicitante);
 }

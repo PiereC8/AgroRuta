@@ -114,14 +114,20 @@
     function mostrarLiquidacion(l) {
         const contenido = el('div');
         const cifras = el('div', 'cifras-liquidacion');
-        cifras.append(cifra('Ingreso real', window.Ui.dinero(l.ingresoReal)),
-            cifra('Flete', window.Ui.dinero(l.costoFleteTotal)),
-            cifra('Ganancia real', window.Ui.dinero(l.gananciaReal)),
-            cifra('Ganancia esperada', window.Ui.dinero(l.gananciaEsperada)));
+        cifras.append(cifra('Ingreso real', window.Ui.dinero(l.ingresoReal)));
+        // Para el Operador la API no manda flete, ganancia ni pérdida.
+        if (l.gananciaReal !== undefined) {
+            cifras.append(cifra('Flete', window.Ui.dinero(l.costoFleteTotal)),
+                cifra('Ganancia real', window.Ui.dinero(l.gananciaReal)),
+                cifra('Ganancia esperada', window.Ui.dinero(l.gananciaEsperada)));
+        }
         contenido.appendChild(cifras);
-        const perdida = el('p', null, 'Pérdida por merma y rechazo: ');
-        perdida.appendChild(el('strong', 'dato-perdida', window.Ui.dinero(l.perdidaPorMermaYRechazo)));
-        contenido.append(perdida, el('p', 'suave', 'Despachado ' + window.Ui.kilos(l.cantidadDespachadaKg)
+        if (l.perdidaPorMermaYRechazo !== undefined) {
+            const perdida = el('p', null, 'Pérdida por merma y rechazo: ');
+            perdida.appendChild(el('strong', 'dato-perdida', window.Ui.dinero(l.perdidaPorMermaYRechazo)));
+            contenido.appendChild(perdida);
+        }
+        contenido.append(el('p', 'suave', 'Despachado ' + window.Ui.kilos(l.cantidadDespachadaKg)
             + ' · recibido ' + window.Ui.kilos(l.cantidadRecibidaKg) + ' · merma ' + window.Ui.kilos(l.mermaKg)
             + ' · rechazo ' + window.Ui.kilos(l.rechazoKg)));
         return window.Ui.detalle({titulo: 'Liquidación del envío ' + l.idEnvio, contenido});

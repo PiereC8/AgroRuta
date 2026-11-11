@@ -92,11 +92,11 @@ class IniciarSesionServiceTest {
     @Test
     void usuario_inexistente_clave_mala_y_negocio_inexistente_dan_el_mismo_error() {
         assertThatThrownBy(() -> servicio.iniciar(login("chacra_demo", "nadie", "clave-segura-1")))
-                .isInstanceOf(CredencialesInvalidasException.class).hasMessage("Credenciales inválidas");
+                .isInstanceOf(CredencialesInvalidasException.class).hasMessage(CredencialesInvalidasException.MENSAJE);
         assertThatThrownBy(() -> servicio.iniciar(login("chacra_demo", "dueno.demo", "mala")))
-                .isInstanceOf(CredencialesInvalidasException.class).hasMessage("Credenciales inválidas");
+                .isInstanceOf(CredencialesInvalidasException.class).hasMessage(CredencialesInvalidasException.MENSAJE);
         assertThatThrownBy(() -> servicio.iniciar(login("otro_negocio", "dueno.demo", "clave-segura-1")))
-                .isInstanceOf(CredencialesInvalidasException.class).hasMessage("Credenciales inválidas");
+                .isInstanceOf(CredencialesInvalidasException.class).hasMessage(CredencialesInvalidasException.MENSAJE);
     }
 
     @Test

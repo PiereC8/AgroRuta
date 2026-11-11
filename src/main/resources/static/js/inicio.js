@@ -71,14 +71,18 @@
         poner('merma', kilos(datos.mermaMesKg));
         const detalle = $('merma-detalle');
         detalle.replaceChildren();
-        const perdida = document.createElement('span');
-        perdida.className = 'dato-perdida';
-        perdida.textContent = soles.format(datos.perdidaMermaMes);
-        const lineaPerdida = document.createElement('div');
-        lineaPerdida.append(document.createTextNode('Pérdida con rechazo: '), perdida);
+        // Para el Operador la API no manda la pérdida en soles.
+        if (datos.perdidaMermaMes !== undefined) {
+            const perdida = document.createElement('span');
+            perdida.className = 'dato-perdida';
+            perdida.textContent = soles.format(datos.perdidaMermaMes);
+            const lineaPerdida = document.createElement('div');
+            lineaPerdida.append(document.createTextNode('Pérdida con rechazo: '), perdida);
+            detalle.appendChild(lineaPerdida);
+        }
         const lineaTotal = document.createElement('div');
         lineaTotal.textContent = 'Acumulada: ' + kilos(datos.mermaTotalKg);
-        detalle.append(lineaPerdida, lineaTotal);
+        detalle.appendChild(lineaTotal);
     }
 
     function pintarCobros(datos) {

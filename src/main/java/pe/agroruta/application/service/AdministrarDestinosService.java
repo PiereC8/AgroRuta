@@ -67,7 +67,11 @@ public class AdministrarDestinosService implements AdministrarDestinosUseCase {
     @Override
     public void fijarCoordenadas(Long idDestinoVenta, double latitud, double longitud) {
         obtener(idDestinoVenta);
-        ubicaciones.guardarCoordenada(idDestinoVenta, new Coordenada(latitud, longitud));
+        Coordenada coordenada = new Coordenada(latitud, longitud);
+        if (!coordenada.dentroDelPeru()) {
+            throw new DominioException("La ubicación del destino debe estar dentro del Perú");
+        }
+        ubicaciones.guardarCoordenada(idDestinoVenta, coordenada);
     }
 
     private DestinoVenta obtener(Long idDestinoVenta) {

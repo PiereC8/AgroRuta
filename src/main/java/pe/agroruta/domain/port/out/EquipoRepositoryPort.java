@@ -22,6 +22,9 @@ public interface EquipoRepositoryPort {
 
     void actualizarActivo(Long idUsuario, boolean activo);
 
+    /** Guarda la clave nueva y deja la cuenta sin intentos fallidos ni bloqueo. */
+    void restablecerClave(Long idUsuario, String hashClave);
+
     /** Quienes pueden recibir un aviso: activos, con avisos encendidos y con correo, de alguno de los roles. */
     List<MiembroEquipo> destinatarios(Set<Rol> roles);
 }
