@@ -3,5 +3,6 @@ package pe.agroruta.domain.model;
 public enum EstadoPedido {
     PENDIENTE,
     DESPACHADO,
-    ENTREGADO
+    ENTREGADO,
+    CANCELADO
 }

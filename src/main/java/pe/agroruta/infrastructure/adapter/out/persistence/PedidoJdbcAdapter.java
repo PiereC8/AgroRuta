@@ -57,7 +57,9 @@ public class PedidoJdbcAdapter implements PedidoRepositoryPort {
 
     @Override
     public boolean existeParaLote(Long idLote) {
-        Integer total = jdbc.queryForObject("SELECT COUNT(*) FROM pedido WHERE id_lote = ?", Integer.class, idLote);
+        // Un pedido cancelado ya no ocupa el lote.
+        Integer total = jdbc.queryForObject("SELECT COUNT(*) FROM pedido WHERE id_lote = ? "
+                + "AND estado_pedido <> 'CANCELADO'", Integer.class, idLote);
         return total != null && total > 0;
     }
 

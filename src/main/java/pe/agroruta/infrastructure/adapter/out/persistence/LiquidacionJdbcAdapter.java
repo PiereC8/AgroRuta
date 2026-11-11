@@ -63,6 +63,16 @@ public class LiquidacionJdbcAdapter implements LiquidacionRepositoryPort {
     }
 
     @Override
+    public void actualizar(Liquidacion l) {
+        jdbc.update("UPDATE liquidacion SET cantidad_recibida_kg = ?, merma_kg = ?, rechazo_kg = ?, "
+                        + "ingreso_real = ?, costo_flete_total = ?, ganancia_real = ?, ganancia_esperada = ?, "
+                        + "perdida_merma_rechazo = ?, usuario_entrega = ? WHERE id_liquidacion = ?",
+                l.cantidadRecibidaKg(), l.mermaKg(), l.rechazoKg(), l.ingresoReal().monto(),
+                l.costoFleteTotal().monto(), l.gananciaReal().monto(), l.gananciaEsperada().monto(),
+                l.perdidaPorMermaYRechazo().monto(), l.usuarioEntrega(), l.idLiquidacion());
+    }
+
+    @Override
     public Optional<Liquidacion> buscarPorLote(Long idLote) {
         return jdbc.query("SELECT " + COLUMNAS + " FROM liquidacion WHERE id_lote = ?", FILA, idLote)
                 .stream().findFirst();

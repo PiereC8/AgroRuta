@@ -5,5 +5,7 @@ public enum TipoEventoLote {
     RESERVA,
     DESPACHO,
     ENTREGA,
-    LIQUIDACION
+    LIQUIDACION,
+    CANCELACION,
+    CORRECCION
 }

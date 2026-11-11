@@ -4,7 +4,9 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -32,6 +34,14 @@ public class CompradorController {
     public CompradorRespuesta registrar(@Valid @RequestBody CompradorSolicitud solicitud) {
         return CompradorRespuesta.de(compradores.registrar(solicitud.nombreComprador(), solicitud.tipoComprador(),
                 solicitud.documentoComprador(), solicitud.telefonoComprador(), solicitud.ciudadComprador()));
+    }
+
+    @PutMapping("/{idComprador}")
+    public CompradorRespuesta actualizar(@PathVariable Long idComprador,
+                                         @Valid @RequestBody CompradorSolicitud solicitud) {
+        return CompradorRespuesta.de(compradores.actualizar(idComprador, solicitud.nombreComprador(),
+                solicitud.tipoComprador(), solicitud.documentoComprador(), solicitud.telefonoComprador(),
+                solicitud.ciudadComprador()));
     }
 
     @GetMapping

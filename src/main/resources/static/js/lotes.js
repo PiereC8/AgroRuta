@@ -11,7 +11,7 @@
         REGISTRADO: ['Disponible', ''], RESERVADO: ['Con pedido', 'espera'], DESPACHADO: ['En camino', 'espera'],
         ENTREGADO: ['Entregado', ''], LIQUIDADO: ['Liquidado', 'neutro']
     };
-    const EVENTOS = {REGISTRO: 'Registrado', RESERVA: 'Reservado por un pedido', DESPACHO: 'Despachado',
+    const EVENTOS = {CANCELACION: 'Cancelación', CORRECCION: 'Entrega corregida', REGISTRO: 'Registrado', RESERVA: 'Reservado por un pedido', DESPACHO: 'Despachado',
         ENTREGA: 'Entregado', LIQUIDACION: 'Liquidado'};
     const MOTIVOS = {SIN_PRECIO: 'falta el precio por kilo', SIN_TARIFA: 'falta el flete'};
 

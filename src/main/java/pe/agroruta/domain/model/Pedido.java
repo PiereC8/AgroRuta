@@ -51,6 +51,29 @@ public record Pedido(Long idPedido, Long idComprador, Long idLote, Long idDestin
                 EstadoPedido.ENTREGADO, usuarioRegistro, fechaPedido);
     }
 
+    /** Solo se cancela un pedido que todavía no tiene un envío en curso. */
+    public Pedido cancelar() {
+        if (estadoPedido != EstadoPedido.PENDIENTE) {
+            throw new ConflictoDominioException("El pedido " + idPedido + " está " + estadoPedido
+                    + ": cancela primero su envío");
+        }
+        return conEstado(EstadoPedido.CANCELADO);
+    }
+
+    /** Al cancelar su envío, el pedido vuelve a quedar pendiente de despacho. */
+    public Pedido volverAPendiente() {
+        if (estadoPedido != EstadoPedido.DESPACHADO) {
+            throw new ConflictoDominioException("El pedido " + idPedido + " está " + estadoPedido
+                    + " y solo vuelve a pendiente si estaba despachado");
+        }
+        return conEstado(EstadoPedido.PENDIENTE);
+    }
+
+    private Pedido conEstado(EstadoPedido nuevo) {
+        return new Pedido(idPedido, idComprador, idLote, idDestinoVenta, cantidadKg, precioAcordadoPorKg, nuevo,
+                usuarioRegistro, fechaPedido);
+    }
+
     public Pedido conId(Long nuevoIdPedido) {
         return new Pedido(nuevoIdPedido, idComprador, idLote, idDestinoVenta, cantidadKg, precioAcordadoPorKg,
                 estadoPedido, usuarioRegistro, fechaPedido);

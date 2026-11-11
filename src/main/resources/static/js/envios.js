@@ -7,8 +7,10 @@
 
     const $ = (id) => document.getElementById(id);
     const el = window.Ui.el;
-    const ESTADOS = {PROGRAMADO: ['Programado', 'espera'], EN_RUTA: ['En ruta', ''], ENTREGADO: ['Entregado', 'neutro']};
-    const FILTROS = [['', 'Todos'], ['PROGRAMADO', 'Programados'], ['EN_RUTA', 'En ruta'], ['ENTREGADO', 'Entregados']];
+    const ESTADOS = {PROGRAMADO: ['Programado', 'espera'], EN_RUTA: ['En ruta', ''], ENTREGADO: ['Entregado', 'neutro'],
+        CANCELADO: ['Cancelado', 'neutro']};
+    const FILTROS = [['', 'Todos'], ['PROGRAMADO', 'Programados'], ['EN_RUTA', 'En ruta'], ['ENTREGADO', 'Entregados'],
+        ['CANCELADO', 'Cancelados']];
     const ALERTAS = {GPS_DESACTIVADO: 'El conductor desactivó el GPS', DETENIDO: 'Lleva mucho tiempo detenido',
         LLEGADA: 'Llegó al destino'};
     const REFRESCO_MAPA_MS = 15000;
@@ -32,6 +34,10 @@
     }
 
     function novedad(e) {
+        if (e.estadoEnvio === 'CANCELADO') {
+            return e.fechaSalida ? 'Cancelado después de salir ' + window.Ui.fecha(e.fechaSalida)
+                : 'Cancelado antes de salir';
+        }
         if (e.estadoEnvio === 'ENTREGADO') {
             return 'Entregado ' + window.Ui.fecha(e.fechaEntrega);
         }
@@ -43,7 +49,8 @@
 
     async function despachar() {
         const libres = pedidos.filter((p) => p.estadoPedido === 'PENDIENTE');
-        const ocupados = new Set(envios.filter((e) => e.estadoEnvio !== 'ENTREGADO').map((e) => e.idVehiculo));
+        const ocupados = new Set(envios.filter((e) => e.estadoEnvio === 'PROGRAMADO' || e.estadoEnvio === 'EN_RUTA')
+            .map((e) => e.idVehiculo));
         const disponibles = vehiculos.filter((v) => !ocupados.has(v.idVehiculo));
         if (libres.length === 0) {
             return avisarFalta('No hay pedidos por despachar', 'Registra un pedido en la sección Pedidos.');
@@ -120,20 +127,28 @@
         return window.Ui.detalle({titulo: 'Liquidación del envío ' + l.idEnvio, contenido});
     }
 
-    async function registrarEntrega(envio) {
+    // Sin liquidación previa registra la entrega; con ella, la corrige (solo mientras no haya un pago).
+    async function registrarEntrega(envio, previa) {
+        const corregir = Boolean(previa);
         const pedido = pedidoDe(envio.idPedido);
         const despachado = pedido ? Number(pedido.cantidadKg) : 0;
         const suma = (v) => (v.cantidadRecibidaKg || 0) + (v.mermaKg || 0) + (v.rechazoKg || 0);
+        const p = previa || {};
         const liquidacion = await window.Ui.panel({
-            titulo: 'Registrar la entrega',
-            texto: 'Se despacharon ' + window.Ui.kilos(despachado) + '. Cuenta cuánto llegó bien, cuánto se perdió en el '
+            titulo: corregir ? 'Corregir la entrega' : 'Registrar la entrega',
+            texto: (corregir ? 'Corrige las cantidades si te equivocaste al registrarlas. La liquidación se vuelve a '
+                + 'calcular con el mismo flete y la misma fecha. Ya no se puede corregir si hay un pago aprobado o en '
+                + 'curso. ' : '')
+                + 'Se despacharon ' + window.Ui.kilos(despachado) + '. Cuenta cuánto llegó bien, cuánto se perdió en el '
                 + 'camino y cuánto rechazó el comprador. Entre los tres deben sumar lo despachado.',
-            textoEnviar: 'Registrar entrega',
+            textoEnviar: corregir ? 'Guardar corrección' : 'Registrar entrega',
             campos: [
-                {id: 'cantidadRecibidaKg', etiqueta: 'Llegó bien (kg)', tipo: 'numero', requerido: true, permiteCero: true},
-                {id: 'mermaKg', etiqueta: 'Merma en el camino (kg)', tipo: 'numero', requerido: true, permiteCero: true},
+                {id: 'cantidadRecibidaKg', etiqueta: 'Llegó bien (kg)', tipo: 'numero', requerido: true, permiteCero: true,
+                    valor: p.cantidadRecibidaKg},
+                {id: 'mermaKg', etiqueta: 'Merma en el camino (kg)', tipo: 'numero', requerido: true, permiteCero: true,
+                    valor: p.mermaKg},
                 {id: 'rechazoKg', etiqueta: 'Rechazado por el comprador (kg)', tipo: 'numero', requerido: true,
-                    permiteCero: true,
+                    permiteCero: true, valor: p.rechazoKg,
                     validar: (_, todos) => Math.abs(suma(todos) - despachado) > TOLERANCIA_KG
                         ? 'Entre lo que llegó, la merma y el rechazo deben sumar ' + window.Ui.kilos(despachado)
                         + ' (ahora suman ' + window.Ui.kilos(Math.round(suma(todos) * 1000) / 1000) + ').' : null}
@@ -149,12 +164,37 @@
                 return resto > 0 ? 'Faltan ' + window.Ui.kilos(resto) + ' por explicar.'
                     : 'Te pasas por ' + window.Ui.kilos(-resto) + '.';
             },
-            enviar: (v) => window.Api.pedir('/api/envios/' + envio.idEnvio + '/entrega', {metodo: 'POST', cuerpo: {
+            enviar: (v) => window.Api.pedir('/api/envios/' + envio.idEnvio + '/entrega', {metodo: corregir ? 'PUT' : 'POST', cuerpo: {
                 cantidadRecibidaKg: v.cantidadRecibidaKg || 0, mermaKg: v.mermaKg || 0, rechazoKg: v.rechazoKg || 0}})
         });
         if (liquidacion) {
             cargar();
             await mostrarLiquidacion(liquidacion);
+        }
+    }
+
+    async function corregirEntrega(envio) {
+        try {
+            const previa = await window.Api.pedir('/api/lotes/' + envio.idLote + '/liquidacion');
+            await registrarEntrega(envio, previa);
+        } catch (error) {
+            window.Ui.aviso(error.message, 'error');
+        }
+    }
+
+    async function cancelarEnvio(envio) {
+        const enRuta = envio.estadoEnvio === 'EN_RUTA';
+        const acepto = await window.Ui.confirmar({
+            titulo: 'Cancelar el envío ' + envio.idEnvio,
+            texto: (enRuta ? 'El vehículo ' + placaDe(envio.idVehiculo) + ' ya salió. ' : '')
+                + 'El envío queda cancelado, el vehículo queda libre y el pedido vuelve a «pendiente de despacho» para '
+                + 'mandarlo en otro vehículo. Los enlaces del conductor y del comprador dejan de funcionar.',
+            textoAceptar: 'Cancelar envío',
+            enviar: () => window.Api.pedir('/api/envios/' + envio.idEnvio + '/cancelar', {metodo: 'POST'})
+        });
+        if (acepto) {
+            window.Ui.aviso('Envío cancelado: el pedido puede despacharse de nuevo');
+            cargar();
         }
     }
 
@@ -298,8 +338,14 @@
         }
         if (e.estadoEnvio === 'ENTREGADO') {
             botones.push(window.Ui.boton('Ver liquidación', '', () => verLiquidacion(e)));
+            botones.push(window.Ui.boton('Corregir entrega', 'boton-secundario', () => corregirEntrega(e)));
         }
-        botones.push(window.Ui.boton('Enlaces', 'boton-secundario', () => verEnlaces(e)));
+        if (e.estadoEnvio !== 'CANCELADO') {
+            botones.push(window.Ui.boton('Enlaces', 'boton-secundario', () => verEnlaces(e)));
+        }
+        if (e.estadoEnvio === 'PROGRAMADO' || e.estadoEnvio === 'EN_RUTA') {
+            botones.push(window.Ui.boton('Cancelar envío', 'boton-secundario', () => cancelarEnvio(e)));
+        }
         return botones;
     }
 

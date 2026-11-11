@@ -52,6 +52,14 @@ public class CompradorJdbcAdapter implements CompradorRepositoryPort {
     }
 
     @Override
+    public void actualizar(Comprador comprador) {
+        jdbc.update("UPDATE comprador SET nombre_comprador = ?, tipo_comprador = ?, documento_comprador = ?, "
+                        + "telefono_comprador = ?, ciudad_comprador = ? WHERE id_comprador = ?",
+                comprador.nombreComprador(), comprador.tipoComprador().name(), comprador.documentoComprador(),
+                comprador.telefonoComprador(), comprador.ciudadComprador(), comprador.idComprador());
+    }
+
+    @Override
     public Optional<Comprador> buscarPorId(Long idComprador) {
         return jdbc.query("SELECT " + COLUMNAS + " FROM comprador WHERE id_comprador = ?", FILA, idComprador)
                 .stream().findFirst();

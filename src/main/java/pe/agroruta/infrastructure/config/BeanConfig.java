@@ -161,6 +161,23 @@ public class BeanConfig {
     }
 
     @Bean
+    pe.agroruta.domain.port.in.CancelarOperacionUseCase cancelarOperacionUseCase(
+            EnvioRepositoryPort envios, PedidoRepositoryPort pedidos, LoteRepositoryPort lotes,
+            EnlaceEnvioRepositoryPort enlaces, TransaccionPort transaccion, Clock reloj) {
+        return new pe.agroruta.application.service.CancelarOperacionService(envios, pedidos, lotes, enlaces,
+                transaccion, reloj);
+    }
+
+    @Bean
+    pe.agroruta.domain.port.in.CorregirEntregaUseCase corregirEntregaUseCase(
+            EnvioRepositoryPort envios, PedidoRepositoryPort pedidos, LoteRepositoryPort lotes,
+            LiquidacionRepositoryPort liquidaciones, PagoRepositoryPort pagos, TransaccionPort transaccion,
+            Clock reloj) {
+        return new pe.agroruta.application.service.CorregirEntregaService(envios, pedidos, lotes, liquidaciones,
+                pagos, transaccion, reloj);
+    }
+
+    @Bean
     RegistrarEntregaUseCase registrarEntregaUseCase(EnvioRepositoryPort envios, PedidoRepositoryPort pedidos,
                                                     LoteRepositoryPort lotes, DestinoRepositoryPort destinos,
                                                     TarifaPort tarifas, LiquidacionRepositoryPort liquidaciones,

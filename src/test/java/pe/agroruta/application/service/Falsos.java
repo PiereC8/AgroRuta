@@ -143,6 +143,11 @@ final class Falsos {
         }
 
         @Override
+        public void actualizar(Comprador comprador) {
+            compradores.replaceAll(c -> c.idComprador().equals(comprador.idComprador()) ? comprador : c);
+        }
+
+        @Override
         public Optional<Comprador> buscarPorId(Long idComprador) {
             return compradores.stream().filter(c -> c.idComprador().equals(idComprador)).findFirst();
         }
@@ -170,7 +175,7 @@ final class Falsos {
 
         @Override
         public boolean existeParaLote(Long idLote) {
-            return pedidos.stream().anyMatch(p -> p.idLote().equals(idLote));
+            return pedidos.stream().anyMatch(p -> p.idLote().equals(idLote) && p.estadoPedido() != EstadoPedido.CANCELADO);
         }
 
         @Override
@@ -266,7 +271,7 @@ final class Falsos {
         @Override
         public boolean existeActivoDeVehiculo(Long idVehiculo) {
             return envios.stream().anyMatch(e -> e.idVehiculo().equals(idVehiculo)
-                    && e.estadoEnvio() != EstadoEnvio.ENTREGADO);
+                    && (e.estadoEnvio() == EstadoEnvio.PROGRAMADO || e.estadoEnvio() == EstadoEnvio.EN_RUTA));
         }
     }
 
@@ -278,6 +283,11 @@ final class Falsos {
             Liquidacion guardada = liquidacion.conId((long) liquidaciones.size() + 1);
             liquidaciones.add(guardada);
             return guardada;
+        }
+
+        @Override
+        public void actualizar(Liquidacion liquidacion) {
+            liquidaciones.replaceAll(l -> l.idLiquidacion().equals(liquidacion.idLiquidacion()) ? liquidacion : l);
         }
 
         @Override

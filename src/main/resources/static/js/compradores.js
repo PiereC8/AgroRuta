@@ -24,21 +24,27 @@
         return (c.documentoComprador.length === 11 ? 'RUC ' : 'DNI ') + c.documentoComprador;
     }
 
-    async function registrar() {
+    // Sin comprador: registrar uno nuevo. Con comprador: corregir sus datos (por ejemplo, agregarle el DNI o RUC).
+    async function registrar(actual) {
+        const editar = Boolean(actual && actual.idComprador);
+        const c = editar ? actual : {};
         const creado = await window.Ui.panel({
-            titulo: 'Registrar comprador',
-            textoEnviar: 'Registrar comprador',
+            titulo: editar ? 'Editar comprador' : 'Registrar comprador',
+            textoEnviar: editar ? 'Guardar cambios' : 'Registrar comprador',
             campos: [
-                {id: 'nombreComprador', etiqueta: 'Nombre', tipo: 'texto', requerido: true},
+                {id: 'nombreComprador', etiqueta: 'Nombre', tipo: 'texto', requerido: true, valor: c.nombreComprador},
                 {id: 'tipoComprador', etiqueta: 'Tipo de comprador', tipo: 'select', requerido: true,
-                    opciones: Object.entries(TIPOS).map(([valor, texto]) => ({valor, texto}))},
+                    valor: c.tipoComprador, opciones: Object.entries(TIPOS).map(([valor, texto]) => ({valor, texto}))},
                 {id: 'documentoComprador', etiqueta: 'Documento', tipo: 'texto', validar: documentoValido,
-                    ayuda: 'DNI (8 dígitos) o RUC (11 dígitos). Con RUC se emite factura; sin documento, boleta.'},
-                {id: 'telefonoComprador', etiqueta: 'Teléfono', tipo: 'telefono', validar: telefonoValido},
-                {id: 'ciudadComprador', etiqueta: 'Ciudad', tipo: 'texto', requerido: true}
+                    valor: c.documentoComprador,
+                    ayuda: 'DNI (8 dígitos) o RUC (11 dígitos). Con RUC se emite factura; sin documento, boleta. '
+                        + 'Para cobrar S/ 700 o más hace falta el documento.'},
+                {id: 'telefonoComprador', etiqueta: 'Teléfono', tipo: 'telefono', validar: telefonoValido,
+                    valor: c.telefonoComprador},
+                {id: 'ciudadComprador', etiqueta: 'Ciudad', tipo: 'texto', requerido: true, valor: c.ciudadComprador}
             ],
-            enviar: (valores) => window.Api.pedir('/api/compradores', {
-                metodo: 'POST',
+            enviar: (valores) => window.Api.pedir('/api/compradores' + (editar ? '/' + c.idComprador : ''), {
+                metodo: editar ? 'PUT' : 'POST',
                 cuerpo: {
                     nombreComprador: valores.nombreComprador,
                     tipoComprador: valores.tipoComprador,
@@ -49,7 +55,7 @@
             })
         });
         if (creado) {
-            window.Ui.aviso('Comprador registrado');
+            window.Ui.aviso(editar ? 'Datos del comprador guardados' : 'Comprador registrado');
             cargar();
         }
     }
@@ -65,6 +71,7 @@
                 {titulo: 'Ciudad', clase: 'largo', valor: (c) => c.ciudadComprador},
                 {titulo: 'Teléfono', valor: (c) => c.telefonoComprador}
             ], compradores, {
+                acciones: (c) => [window.Ui.boton('Editar', 'boton-secundario', () => registrar(c))],
                 vacio: {titulo: 'Aún no hay compradores',
                     texto: 'Registra a quien le vendes para poder crear sus pedidos.'}
             });

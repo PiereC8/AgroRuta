@@ -26,9 +26,19 @@ public record Envio(Long idEnvio, Long idPedido, Long idLote, Long idVehiculo, L
                 fechaProgramada, fechaSalida, ahora, usuarioDespacho);
     }
 
+    /** Se cancela un envío programado o en ruta (por ejemplo, si el camión falla). */
+    public Envio cancelar() {
+        if (estadoEnvio != EstadoEnvio.PROGRAMADO && estadoEnvio != EstadoEnvio.EN_RUTA) {
+            throw new ConflictoDominioException("El envío " + idEnvio + " está " + estadoEnvio
+                    + " y solo se cancela si está programado o en ruta");
+        }
+        return new Envio(idEnvio, idPedido, idLote, idVehiculo, idTransportista, EstadoEnvio.CANCELADO,
+                fechaProgramada, fechaSalida, fechaEntrega, usuarioDespacho);
+    }
+
     /** Una posición solo vale si fue tomada mientras el envío estaba en ruta. */
     public boolean admitePosicionEn(Instant fecha) {
-        if (fechaSalida == null || fecha.isBefore(fechaSalida)) {
+        if (estadoEnvio == EstadoEnvio.CANCELADO || fechaSalida == null || fecha.isBefore(fechaSalida)) {
             return false;
         }
         return fechaEntrega == null || !fecha.isAfter(fechaEntrega);

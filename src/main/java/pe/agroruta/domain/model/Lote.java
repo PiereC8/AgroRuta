@@ -62,6 +62,16 @@ public record Lote(Long idLote, String productoLote, BigDecimal cantidadKg, Loca
         return conEstado(EstadoLote.ENTREGADO, EstadoLote.LIQUIDADO);
     }
 
+    /** Al cancelar el envío el lote vuelve a estar disponible, haya salido o no. */
+    public Lote liberar() {
+        if (estadoLote != EstadoLote.RESERVADO && estadoLote != EstadoLote.DESPACHADO) {
+            throw new ConflictoDominioException("El lote " + idLote + " está " + estadoLote
+                    + " y solo se libera si estaba reservado o en camino");
+        }
+        return new Lote(idLote, productoLote, cantidadKg, fechaCosecha, chacraOrigen, EstadoLote.REGISTRADO,
+                usuarioRegistro, fechaRegistro);
+    }
+
     private Lote conEstado(EstadoLote requerido, EstadoLote nuevo) {
         if (estadoLote != requerido) {
             throw new ConflictoDominioException(

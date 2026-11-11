@@ -7,7 +7,7 @@
 
     const $ = (id) => document.getElementById(id);
     const ESTADOS = {PENDIENTE: ['Pendiente de despacho', 'espera'], DESPACHADO: ['En camino', 'espera'],
-        ENTREGADO: ['Entregado', '']};
+        ENTREGADO: ['Entregado', ''], CANCELADO: ['Cancelado', 'neutro']};
     let compradores = [];
     let destinos = [];
     let lotes = [];
@@ -95,6 +95,22 @@
         }
     }
 
+    // Solo un pedido pendiente (sin envío en curso); el lote queda libre para otro pedido.
+    async function cancelar(pedido) {
+        const acepto = await window.Ui.confirmar({
+            titulo: 'Cancelar el pedido ' + pedido.idPedido,
+            texto: 'El pedido de ' + nombreComprador(pedido.idComprador) + ' queda cancelado y el lote '
+                + nombreLote(pedido.idLote) + ' vuelve a estar disponible para otro pedido. '
+                + 'Si ya tenía un envío, cancela primero el envío en la sección Envíos.',
+            textoAceptar: 'Cancelar pedido',
+            enviar: () => window.Api.pedir('/api/pedidos/' + pedido.idPedido + '/cancelar', {metodo: 'POST'})
+        });
+        if (acepto) {
+            window.Ui.aviso('Pedido cancelado: el lote quedó disponible');
+            cargar();
+        }
+    }
+
     const lista = window.Ui.listaPaginada({
         ruta: '/api/pedidos',
         mas: $('mas'),
@@ -109,6 +125,8 @@
             {titulo: 'Estado', valor: (p) => window.Ui.etiqueta((ESTADOS[p.estadoPedido] || [p.estadoPedido])[0],
                 (ESTADOS[p.estadoPedido] || [])[1])}
         ], pedidos, {
+            acciones: (p) => p.estadoPedido === 'PENDIENTE'
+                ? [window.Ui.boton('Cancelar pedido', 'boton-secundario', () => cancelar(p))] : [],
             vacio: {titulo: 'Aún no hay pedidos',
                 texto: 'Cuando un comprador te pida un lote, regístralo aquí para despacharlo.'}
         })

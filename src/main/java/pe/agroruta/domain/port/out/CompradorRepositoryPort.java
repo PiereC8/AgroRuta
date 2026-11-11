@@ -11,6 +11,8 @@ public interface CompradorRepositoryPort {
 
     Comprador guardar(Comprador comprador);
 
+    void actualizar(Comprador comprador);
+
     Optional<Comprador> buscarPorId(Long idComprador);
 
     List<Comprador> listarActivos();
