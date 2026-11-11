@@ -11,4 +11,6 @@ public interface UsuarioRepositoryPort {
     boolean existePorNombre(String identificadorNegocio, String nombreUsuario);
 
     Usuario guardar(String identificadorNegocio, Usuario usuario);
+
+    void cambiarClave(String identificadorNegocio, Long idUsuario, String hashClave);
 }

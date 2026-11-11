@@ -1381,7 +1381,13 @@ body.con-panel {
 
     .encabezado__sesion {
         width: 100%;
+        flex-wrap: wrap;
         justify-content: space-between;
+        gap: 8px;
+    }
+
+    .encabezado__usuario {
+        flex: 1 1 100%;
     }
 
     .encabezado__usuario {

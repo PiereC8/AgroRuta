@@ -66,8 +66,11 @@ public class BaseDeDatosConfig {
             pool.setJdbcUrl(nombres.urlDeIdentificador(identificadorNegocio));
             pool.setUsername(usuario);
             pool.setPassword(clave);
+            // Pocas conexiones por negocio y que se cierren al minuto sin uso: las tareas que recorren todos los
+            // negocios no dejan conexiones abiertas de más en MySQL.
             pool.setMaximumPoolSize(3);
             pool.setMinimumIdle(0);
+            pool.setIdleTimeout(60_000);
             pool.setPoolName("negocio-" + identificadorNegocio);
             return pool;
         });

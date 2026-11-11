@@ -101,6 +101,26 @@ window.Estructura = (function () {
         destino.append(marca, lista);
     }
 
+    async function cambiarClave() {
+        const listo = await window.Ui.panel({
+            titulo: 'Cambiar mi contraseña',
+            texto: 'Escribe la contraseña que usas ahora y la nueva (al menos 8 caracteres).',
+            textoEnviar: 'Cambiar contraseña',
+            campos: [
+                {id: 'claveActual', etiqueta: 'Contraseña actual', tipo: 'clave', requerido: true},
+                {id: 'claveNueva', etiqueta: 'Contraseña nueva', tipo: 'clave', requerido: true,
+                    validar: (v) => (v || '').length < 8 ? 'Usa al menos 8 caracteres.' : null},
+                {id: 'repetir', etiqueta: 'Repite la contraseña nueva', tipo: 'clave', requerido: true,
+                    validar: (v, todos) => v !== todos.claveNueva ? 'No coincide con la contraseña nueva.' : null}
+            ],
+            enviar: (v) => window.Api.pedir('/api/cuenta/clave', {metodo: 'PUT',
+                cuerpo: {claveActual: v.claveActual, claveNueva: v.claveNueva}})
+        });
+        if (listo) {
+            window.Ui.aviso('Contraseña cambiada. Úsala la próxima vez que entres.');
+        }
+    }
+
     function dibujarEncabezado(destino, titulo) {
         const datos = window.Api.usuario();
         destino.replaceChildren();
@@ -119,7 +139,11 @@ window.Estructura = (function () {
         const salir = elemento('button', 'boton boton-secundario', 'Cerrar sesión');
         salir.type = 'button';
         salir.addEventListener('click', window.Api.cerrarSesion);
-        sesion.append(usuario, salir);
+        const clave = elemento('button', 'boton boton-secundario', 'Contraseña');
+        clave.type = 'button';
+        clave.setAttribute('aria-label', 'Cambiar mi contraseña');
+        clave.addEventListener('click', cambiarClave);
+        sesion.append(usuario, clave, salir);
 
         destino.append(izquierda, sesion);
     }

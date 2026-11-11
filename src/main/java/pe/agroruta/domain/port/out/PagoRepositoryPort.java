@@ -21,5 +21,8 @@ public interface PagoRepositoryPort {
 
     Optional<Pago> ultimoDeLiquidacion(Long idLiquidacion);
 
+    /** Pagos que siguen pendientes y se crearon antes de esa fecha (los más antiguos primero). */
+    List<Pago> pendientesCreadosAntesDe(java.time.Instant fecha, int limite);
+
     List<Pago> listar(int pagina, int tamano);
 }

@@ -2,6 +2,7 @@ package pe.agroruta.application.service;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -42,9 +43,12 @@ public class ConsultarPanelService implements ConsultarPanelUseCase {
                 serie.add(new GananciaDelMes(m, panel.gananciaEntre(inicioDe(m), inicioDe(m.plusMonths(1)))));
             }
         }
+        // El mes anterior se compara hasta el mismo día y hora: el día 3 contra el 1 al 3 del mes pasado,
+        // no contra el mes completo (que haría parecer una caída del 90 %).
+        Instant mismoMomentoMesPasado = LocalDateTime.now(reloj.withZone(LIMA)).minusMonths(1).atZone(LIMA).toInstant();
         return new Panel(mes,
                 verGanancia ? panel.gananciaEntre(inicio, fin) : null,
-                verGanancia ? panel.gananciaEntre(inicioDe(mes.minusMonths(1)), inicio) : null,
+                verGanancia ? panel.gananciaEntre(inicioDe(mes.minusMonths(1)), mismoMomentoMesPasado) : null,
                 panel.mermaKgEntre(inicio, fin),
                 panel.mermaKgEntre(Instant.EPOCH, fin),
                 panel.perdidaEntre(inicio, fin),

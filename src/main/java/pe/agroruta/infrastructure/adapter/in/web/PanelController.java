@@ -53,13 +53,16 @@ public class PanelController {
                                     .map(m -> new MesRespuesta(m.mes().toString(), m.ganancia().monto())).toList());
         }
 
-        /** Cambio porcentual con un decimal; no existe si el mes anterior fue cero (no se divide entre cero). */
+        /**
+         * Cambio porcentual con un decimal; no existe si el mes anterior fue cero (no se divide entre cero). Se divide
+         * entre el valor absoluto: pasar de -100 a 50 es una mejora (+150 %), no una caída.
+         */
         private static BigDecimal variacion(BigDecimal actual, BigDecimal anterior) {
             if (actual == null || anterior == null || anterior.signum() == 0) {
                 return null;
             }
             return actual.subtract(anterior).multiply(BigDecimal.valueOf(100))
-                    .divide(anterior, 1, RoundingMode.HALF_UP);
+                    .divide(anterior.abs(), 1, RoundingMode.HALF_UP);
         }
     }
 

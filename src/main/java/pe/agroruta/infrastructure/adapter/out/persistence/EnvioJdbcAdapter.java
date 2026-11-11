@@ -6,10 +6,12 @@ import java.util.Optional;
 import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 
+import pe.agroruta.domain.model.ConflictoDominioException;
 import pe.agroruta.domain.model.Envio;
 import pe.agroruta.domain.model.EstadoEnvio;
 import pe.agroruta.domain.port.out.EnvioRepositoryPort;
@@ -40,13 +42,20 @@ public class EnvioJdbcAdapter implements EnvioRepositoryPort {
 
     @Override
     public Envio guardarNuevo(Envio envio) {
-        long id = Sql.insertar(jdbc, "INSERT INTO envio (id_pedido, id_lote, id_vehiculo, id_transportista, "
-                        + "estado_envio, fecha_programada, fecha_salida, fecha_entrega, usuario_despacho) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                envio.idPedido(), envio.idLote(), envio.idVehiculo(), envio.idTransportista(),
-                envio.estadoEnvio().name(), Sql.marca(envio.fechaProgramada()), Sql.marca(envio.fechaSalida()),
-                Sql.marca(envio.fechaEntrega()), envio.usuarioDespacho());
-        return envio.conId(id);
+        try {
+            long id = Sql.insertar(jdbc, "INSERT INTO envio (id_pedido, id_lote, id_vehiculo, id_transportista, "
+                            + "estado_envio, fecha_programada, fecha_salida, fecha_entrega, usuario_despacho) "
+                            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    envio.idPedido(), envio.idLote(), envio.idVehiculo(), envio.idTransportista(),
+                    envio.estadoEnvio().name(), Sql.marca(envio.fechaProgramada()), Sql.marca(envio.fechaSalida()),
+                    Sql.marca(envio.fechaEntrega()), envio.usuarioDespacho());
+            return envio.conId(id);
+        } catch (DuplicateKeyException e) {
+            // Dos despachos al mismo tiempo: la base no deja el mismo vehículo ni el mismo pedido en dos envíos activos.
+            String detalle = String.valueOf(e.getMostSpecificCause().getMessage());
+            throw new ConflictoDominioException(detalle.contains("vehiculo")
+                    ? "Ese vehículo ya tiene un envío en curso" : "Ese pedido ya tiene un envío en curso");
+        }
     }
 
     @Override

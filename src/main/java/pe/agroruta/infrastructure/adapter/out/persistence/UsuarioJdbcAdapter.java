@@ -88,6 +88,12 @@ public class UsuarioJdbcAdapter implements UsuarioRepositoryPort {
         return usuario.conId(llave.getKey().longValue());
     }
 
+    @Override
+    public void cambiarClave(String identificadorNegocio, Long idUsuario, String hashClave) {
+        en(identificadorNegocio, d -> d.jdbc().update("UPDATE " + d.tabla() + " SET hash_clave = ? WHERE id_usuario = ?",
+                hashClave, idUsuario));
+    }
+
     private Usuario actualizar(Destino d, Usuario usuario) {
         d.jdbc().update("UPDATE " + d.tabla() + " SET intentos_fallidos_sesion = ?, fecha_bloqueo_hasta = ?, "
                         + "usuario_activo = ? WHERE id_usuario = ?",

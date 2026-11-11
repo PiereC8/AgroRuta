@@ -48,7 +48,8 @@
             const marca = document.createElement('span');
             marca.className = sube ? 'tendencia--sube' : 'tendencia--baja';
             marca.textContent = (sube ? '▲ ' : '▼ ') + numero.format(Math.abs(datos.variacionPorcentual)) + ' %';
-            detalle.append(marca, document.createTextNode((sube ? ' más' : ' menos') + ' que el mes pasado'));
+            detalle.append(marca, document.createTextNode((sube ? ' más' : ' menos')
+                + ' que el mes pasado a la misma fecha'));
         } else if (Number(datos.gananciaMes) === 0) {
             detalle.textContent = 'Aún no hay entregas este mes.';
         } else {

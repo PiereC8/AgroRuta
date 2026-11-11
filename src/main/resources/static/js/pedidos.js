@@ -23,7 +23,8 @@
         [compradores, destinos, lotes] = await Promise.all([
             window.Api.pedir('/api/compradores'),
             window.Api.pedir('/api/destinos'),
-            window.Ui.cargarPagina('/api/lotes', {tamano: 200})
+            // Todos los lotes (página por página), no solo los primeros 200.
+            window.Ui.cargarTodo('/api/lotes')
         ]);
     }
 

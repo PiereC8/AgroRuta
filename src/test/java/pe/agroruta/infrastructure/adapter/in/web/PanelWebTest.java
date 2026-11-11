@@ -123,4 +123,14 @@ class PanelWebTest {
                 .andExpect(jsonPath("$.gananciaMesAnterior").value(0.0))
                 .andExpect(jsonPath("$.variacionPorcentual").doesNotExist());
     }
+
+    @Test
+    void con_un_mes_anterior_en_perdida_la_mejora_sale_positiva() throws Exception {
+        when(consultarPanel.consultar(any())).thenReturn(panelDelDueno("-1000.00"));
+
+        // De -1000 a 4871.40 es una mejora: +587.1 %, no un número negativo.
+        mvc.perform(get("/api/panel/resumen").header("Authorization", bearer("empresa_demo", Rol.DUENO)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.variacionPorcentual").value(587.1));
+    }
 }

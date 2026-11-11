@@ -178,6 +178,20 @@ public class BeanConfig {
     }
 
     @Bean
+    pe.agroruta.domain.port.in.ConciliarPagosUseCase conciliarPagosUseCase(
+            pe.agroruta.domain.port.out.PagoPort pasarela, PagoRepositoryPort pagos,
+            pe.agroruta.domain.port.in.EmitirComprobanteUseCase emitirComprobante, Clock reloj) {
+        return new pe.agroruta.application.service.ConciliarPagosService(pasarela, pagos, emitirComprobante, reloj);
+    }
+
+    @Bean
+    pe.agroruta.domain.port.in.CambiarClaveUseCase cambiarClaveUseCase(
+            pe.agroruta.domain.port.out.UsuarioRepositoryPort usuarios,
+            pe.agroruta.domain.port.out.HashClavePort hashes) {
+        return new pe.agroruta.application.service.CambiarClaveService(usuarios, hashes);
+    }
+
+    @Bean
     RegistrarEntregaUseCase registrarEntregaUseCase(EnvioRepositoryPort envios, PedidoRepositoryPort pedidos,
                                                     LoteRepositoryPort lotes, DestinoRepositoryPort destinos,
                                                     TarifaPort tarifas, LiquidacionRepositoryPort liquidaciones,

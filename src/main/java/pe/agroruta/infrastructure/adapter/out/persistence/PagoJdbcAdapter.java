@@ -66,6 +66,12 @@ public class PagoJdbcAdapter implements PagoRepositoryPort {
     }
 
     @Override
+    public List<Pago> pendientesCreadosAntesDe(java.time.Instant fecha, int limite) {
+        return jdbc.query("SELECT " + COLUMNAS + " FROM pago WHERE estado_pago = 'PENDIENTE' AND fecha_creacion < ? "
+                + "ORDER BY id_pago LIMIT ?", FILA, Sql.marca(fecha), limite);
+    }
+
+    @Override
     public void actualizar(Pago pago) {
         jdbc.update("UPDATE pago SET estado_pago = ?, id_cargo_pasarela = ?, codigo_respuesta = ?, "
                         + "mensaje_usuario = ?, marca_tarjeta = ?, ultimos_cuatro = ?, fecha_actualizacion = ? "

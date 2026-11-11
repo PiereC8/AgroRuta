@@ -125,6 +125,14 @@ final class Falsos {
             usuarios.put(llave(identificadorNegocio, usuario.nombreUsuario()), guardado);
             return guardado;
         }
+
+        @Override
+        public void cambiarClave(String identificadorNegocio, Long idUsuario, String hashClave) {
+            usuarios.replaceAll((k, u) -> k.startsWith(identificadorNegocio + "/") && u.idUsuario().equals(idUsuario)
+                    ? new Usuario(u.idUsuario(), u.nombreUsuario(), hashClave, u.rolUsuario(),
+                            u.intentosFallidosSesion(), u.fechaBloqueoHasta(), u.usuarioActivo())
+                    : u);
+        }
     }
 
     static class CompradoresEnMemoria implements CompradorRepositoryPort {
@@ -308,6 +316,12 @@ final class Falsos {
 
     static class PagosEnMemoria implements PagoRepositoryPort {
         final List<Pago> pagos = new ArrayList<>();
+
+        @Override
+        public List<Pago> pendientesCreadosAntesDe(Instant fecha, int limite) {
+            return pagos.stream().filter(p -> p.estadoPago() == EstadoPago.PENDIENTE && p.fechaCreacion().isBefore(fecha))
+                    .limit(limite).toList();
+        }
 
         @Override
         public Pago guardarNuevo(Pago pago) {

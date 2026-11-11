@@ -150,4 +150,15 @@ class PanelServiceTest {
                     assertThat(i[1]).isEqualTo(INICIO_DICIEMBRE);
                 });
     }
+
+    @Test
+    void el_mes_anterior_se_compara_hasta_el_mismo_dia_y_hora_y_no_completo() {
+        servicio.consultar(Rol.DUENO);
+
+        // Ahora es el 30 de noviembre a las 22:00 en Lima: el mes anterior va del 1 al 30 de octubre a las 22:00.
+        assertThat(repositorio.intervalosDeGanancia).anySatisfy(intervalo -> {
+            assertThat(intervalo[0]).isEqualTo(Instant.parse("2026-10-01T05:00:00Z"));
+            assertThat(intervalo[1]).isEqualTo(Instant.parse("2026-10-31T03:00:00Z"));
+        });
+    }
 }

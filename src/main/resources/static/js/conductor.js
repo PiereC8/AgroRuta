@@ -7,6 +7,8 @@
 
     const $ = (id) => document.getElementById(id);
     const token = new URLSearchParams(location.hash.slice(1)).get('t');
+    // Marca para separar la cola por enlace: los últimos caracteres del token bastan y no lo guardan entero.
+    const huellaEnlace = token ? token.slice(-16) : '';
 
     const estado = {
         compartiendo: false,
@@ -65,10 +67,16 @@
                 }
                 await transaccion(bd, 'readwrite', (s) => s.put(posicion));
             },
+            // Solo las posiciones de este enlace. Las que quedaron de otro envío en este celular se descartan: no
+            // deben mandarse al envío actual (el servidor las rechazaría y detendría al conductor).
             async todas() {
                 const bd = await obtenerBase();
                 const lista = bd ? await transaccion(bd, 'readonly', (s) => s.getAll()) : [...memoria.values()];
-                return lista.sort((a, b) => a.fechaMs - b.fechaMs);
+                const ajenas = lista.filter((p) => p.enlace !== huellaEnlace);
+                for (const p of ajenas) {
+                    await this.borrar(p.idLocal);
+                }
+                return lista.filter((p) => p.enlace === huellaEnlace).sort((a, b) => a.fechaMs - b.fechaMs);
             },
             async borrar(idLocal) {
                 const bd = await obtenerBase();
@@ -210,7 +218,8 @@
                     break;
                 }
                 const espera = esperarAcuse(posicion.idLocal);
-                estado.cliente.enviar('/app/posicion', posicion);
+                const {enlace, ...datos} = posicion; // la marca del enlace no viaja al servidor
+                estado.cliente.enviar('/app/posicion', datos);
                 let acuse;
                 try {
                     acuse = await espera;
@@ -271,6 +280,7 @@
             marcarGps(true);
             await cola.agregar({
                 idLocal: crypto.randomUUID(),
+                enlace: huellaEnlace,
                 latitud: lectura.coords.latitude,
                 longitud: lectura.coords.longitude,
                 precisionMetros: lectura.coords.accuracy,
