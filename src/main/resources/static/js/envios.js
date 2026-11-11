@@ -166,25 +166,46 @@
         }
     }
 
-    async function verEnlaces(envio) {
-        try {
-            const enlaces = await window.Api.pedir('/api/envios/' + envio.idEnvio + '/enlaces', {metodo: 'POST'});
-            const contenido = el('div');
-            if (enlaces.rutaConductor) {
-                const urlConductor = window.location.origin + enlaces.rutaConductor;
-                contenido.appendChild(window.Ui.campoCopiable('Enlace del conductor', urlConductor));
-                contenido.appendChild(window.Ui.codigoQr(urlConductor,
-                    'Pídele al conductor que escanee este código con la cámara de su celular'));
+    // Cada enlace se genera aparte y solo cuando se pide: abrir esta ventana no corta a nadie. AgroRuta no guarda los
+    // enlaces (solo su huella), así que solo se pueden mostrar al generarlos.
+    function seccionEnlace(envio, tipo, titulo, explicacion, descripcionQr) {
+        const caja = el('section', 'bloque');
+        caja.append(el('h3', null, titulo), el('p', 'suave', explicacion));
+        const resultado = el('div');
+        const boton = window.Ui.boton('Generar ' + titulo.toLowerCase(), 'boton-secundario', async () => {
+            boton.disabled = true;
+            try {
+                const r = await window.Api.pedir('/api/envios/' + envio.idEnvio + '/enlaces?tipo=' + tipo,
+                    {metodo: 'POST'});
+                const url = window.location.origin + (tipo === 'CONDUCTOR' ? r.rutaConductor : r.rutaComprador);
+                resultado.replaceChildren(window.Ui.campoCopiable('Enlace nuevo', url),
+                    window.Ui.codigoQr(url, descripcionQr),
+                    el('p', 'suave', 'Vence el ' + window.Ui.fecha(r.fechaExpiracion)),
+                    el('p', 'suave', 'Quien tenga el enlace puede verlo, sin contraseña: envíalo solo a quien corresponde.'));
+                boton.textContent = 'Generar otro (el de arriba dejará de funcionar)';
+            } catch (error) {
+                window.Ui.aviso(error.message, 'error');
+            } finally {
+                boton.disabled = false;
             }
-            const urlComprador = window.location.origin + enlaces.rutaComprador;
-            contenido.appendChild(window.Ui.campoCopiable('Enlace del comprador', urlComprador));
-            contenido.appendChild(window.Ui.codigoQr(urlComprador, 'Código para el comprador, si prefiere escanearlo'));
-            contenido.appendChild(el('p', 'suave', 'Quien tenga el enlace puede verlo, sin contraseña. Vence el '
-                + window.Ui.fecha(enlaces.fechaExpiracion) + '. Envíalo solo a quien corresponde.'));
-            await window.Ui.detalle({titulo: 'Enlaces del envío ' + envio.idEnvio, contenido, ancho: true});
-        } catch (error) {
-            window.Ui.aviso(error.message, 'error');
+        });
+        caja.append(boton, resultado);
+        return caja;
+    }
+
+    async function verEnlaces(envio) {
+        const contenido = el('div');
+        if (envio.estadoEnvio !== 'ENTREGADO') {
+            contenido.appendChild(seccionEnlace(envio, 'CONDUCTOR', 'Enlace del conductor',
+                'Para que el conductor comparta su ubicación. Si ya le diste uno, ese deja de funcionar y tendrá '
+                + 'que abrir el nuevo.',
+                'Pídele al conductor que escanee este código con la cámara de su celular'));
         }
+        contenido.appendChild(seccionEnlace(envio, 'COMPRADOR', 'Enlace del comprador',
+            'Para que el comprador siga su pedido en el mapa. Si ya le diste uno, ese deja de funcionar. '
+            + 'Generarlo no afecta al conductor.',
+            'Código para el comprador, si prefiere escanearlo'));
+        await window.Ui.detalle({titulo: 'Enlaces del envío ' + envio.idEnvio, contenido, ancho: true});
     }
 
     async function verMapa(envio) {

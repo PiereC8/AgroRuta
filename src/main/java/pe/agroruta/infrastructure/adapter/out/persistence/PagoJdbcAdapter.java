@@ -6,10 +6,12 @@ import java.util.Optional;
 import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 
+import pe.agroruta.domain.model.ConflictoDominioException;
 import pe.agroruta.domain.model.Dinero;
 import pe.agroruta.domain.model.EstadoPago;
 import pe.agroruta.domain.model.Pago;
@@ -46,15 +48,21 @@ public class PagoJdbcAdapter implements PagoRepositoryPort {
 
     @Override
     public Pago guardarNuevo(Pago pago) {
-        long id = Sql.insertar(jdbc, "INSERT INTO pago (id_liquidacion, id_pedido, monto, estado_pago, "
-                        + "clave_idempotencia, id_cargo_pasarela, codigo_respuesta, mensaje_usuario, marca_tarjeta, "
-                        + "ultimos_cuatro, email_pagador, fecha_creacion, fecha_actualizacion) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                pago.idLiquidacion(), pago.idPedido(), pago.monto().monto(), pago.estadoPago().name(),
-                pago.claveIdempotencia(), pago.idCargoPasarela(), pago.codigoRespuesta(), pago.mensajeUsuario(),
-                pago.marcaTarjeta(), pago.ultimosCuatro(), pago.emailPagador(), Sql.marca(pago.fechaCreacion()),
-                Sql.marca(pago.fechaActualizacion()));
-        return pago.conId(id);
+        try {
+            long id = Sql.insertar(jdbc, "INSERT INTO pago (id_liquidacion, id_pedido, monto, estado_pago, "
+                            + "clave_idempotencia, id_cargo_pasarela, codigo_respuesta, mensaje_usuario, marca_tarjeta, "
+                            + "ultimos_cuatro, email_pagador, fecha_creacion, fecha_actualizacion) "
+                            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    pago.idLiquidacion(), pago.idPedido(), pago.monto().monto(), pago.estadoPago().name(),
+                    pago.claveIdempotencia(), pago.idCargoPasarela(), pago.codigoRespuesta(), pago.mensajeUsuario(),
+                    pago.marcaTarjeta(), pago.ultimosCuatro(), pago.emailPagador(), Sql.marca(pago.fechaCreacion()),
+                    Sql.marca(pago.fechaActualizacion()));
+            return pago.conId(id);
+        } catch (DuplicateKeyException e) {
+            // Otro intento de pago del mismo pedido llegó al mismo tiempo y ganó: este no se cobra.
+            throw new ConflictoDominioException(
+                    "Ya hay un pago en curso para este pedido. Espera unos segundos y revisa si se aprobó");
+        }
     }
 
     @Override

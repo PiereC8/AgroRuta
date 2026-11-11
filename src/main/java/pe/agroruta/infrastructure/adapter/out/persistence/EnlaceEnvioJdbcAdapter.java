@@ -29,9 +29,10 @@ public class EnlaceEnvioJdbcAdapter implements EnlaceEnvioRepositoryPort {
     }
 
     @Override
-    public void desactivarDeEnvio(String identificadorNegocio, Long idEnvio) {
-        jdbc.update("UPDATE enlace_envio SET enlace_activo = FALSE WHERE identificador_negocio = ? AND id_envio = ?",
-                identificadorNegocio, idEnvio);
+    public void desactivarDeEnvio(String identificadorNegocio, Long idEnvio, TipoEnlace tipo) {
+        jdbc.update("UPDATE enlace_envio SET enlace_activo = FALSE "
+                        + "WHERE identificador_negocio = ? AND id_envio = ? AND tipo_enlace = ?",
+                identificadorNegocio, idEnvio, tipo.name());
     }
 
     @Override

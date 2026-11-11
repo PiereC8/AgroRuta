@@ -3,6 +3,7 @@ package pe.agroruta.infrastructure.adapter.in.web;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -94,12 +95,24 @@ class SeguimientoWebTest {
 
     @Test
     void el_operador_genera_los_enlaces_y_las_rutas_llevan_el_token_en_el_fragmento() throws Exception {
-        when(generarEnlaces.generar(eq("empresa_demo"), eq(7L))).thenReturn(
+        when(generarEnlaces.generar(eq("empresa_demo"), eq(7L), isNull())).thenReturn(
                 new GenerarEnlacesEnvioUseCase.EnlacesGenerados("tok-cond", "tok-comp", AHORA.plusSeconds(86400)));
 
         mvc.perform(post("/api/envios/7/enlaces").header("Authorization", bearer("empresa_demo", Rol.OPERADOR)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.rutaConductor").value("/conductor.html#t=tok-cond"))
+                .andExpect(jsonPath("$.rutaComprador").value("/seguimiento.html#t=tok-comp"));
+    }
+
+    @Test
+    void con_tipo_solo_se_genera_ese_enlace_y_el_otro_no_viene() throws Exception {
+        when(generarEnlaces.generar(eq("empresa_demo"), eq(7L), eq(TipoEnlace.COMPRADOR))).thenReturn(
+                new GenerarEnlacesEnvioUseCase.EnlacesGenerados(null, "tok-comp", AHORA.plusSeconds(86400)));
+
+        mvc.perform(post("/api/envios/7/enlaces?tipo=COMPRADOR")
+                        .header("Authorization", bearer("empresa_demo", Rol.OPERADOR)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.rutaConductor").doesNotExist())
                 .andExpect(jsonPath("$.rutaComprador").value("/seguimiento.html#t=tok-comp"));
     }
 

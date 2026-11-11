@@ -171,9 +171,9 @@
             try {
                 const r = await window.Api.pedir('/api/envios/' + liquidacion.idEnvio + '/enlace-pago/correo',
                     {metodo: 'POST', cuerpo: {correo}});
-                alCambiarEnlace(r.urlPago);
+                alCambiarEnlace(r.urlPago, r.fechaExpiracion);
                 nota.textContent = 'Listo: el correo sale en un minuto hacia ' + r.correo
-                    + '. El enlace de arriba se actualizó: es el mismo que recibirá el comprador.';
+                    + '. Abajo tienes el mismo enlace que recibirá el comprador.';
                 window.Ui.aviso('Enlace enviado a ' + r.correo);
             } catch (error) {
                 nota.textContent = error.message;
@@ -191,34 +191,44 @@
         return caja;
     }
 
+    // Abrir esta ventana no genera nada: el enlace del comprador solo se renueva al enviarlo o al pedirlo, y nunca se
+    // toca el del conductor.
     async function enlaceDePago(liquidacion) {
-        try {
-            const enlaces = await window.Api.pedir('/api/envios/' + liquidacion.idEnvio + '/enlaces', {metodo: 'POST'});
-            const url = window.location.origin + '/pago.html#t=' + enlaces.tokenComprador;
-            const contenido = el('div');
-            const botones = el('div', 'fila-acciones bloque');
+        const contenido = el('div');
+        const resultado = el('div', 'bloque');
+        const mostrar = (url, vence) => {
             const abrir = el('a', 'boton', 'Abrir la página de pago');
             abrir.href = url;
             abrir.target = '_blank';
             abrir.rel = 'noopener';
+            const botones = el('div', 'fila-acciones bloque');
             botones.appendChild(abrir);
-            const copiable = window.Ui.campoCopiable('O copia el enlace y envíaselo al comprador', url);
-            const cambiarEnlace = (nueva) => {
-                abrir.href = nueva;
-                copiable.querySelector('input').value = nueva;
-            };
-            contenido.append(botones, formularioCorreo(liquidacion, cambiarEnlace), copiable,
-                el('p', 'suave', 'Con este enlace el comprador paga con tarjeta, PayPal o PagoEfectivo, sin contraseña. '
-                    + 'Vence el ' + window.Ui.fecha(enlaces.fechaExpiracion) + '.'));
-            await window.Ui.detalle({titulo: 'Cobrar el pedido ' + liquidacion.idPedido, contenido, ancho: true});
-        } catch (error) {
-            window.Ui.aviso(error.message, 'error');
-        }
+            resultado.replaceChildren(botones, window.Ui.campoCopiable('Enlace de pago', url),
+                el('p', 'suave', 'Vence el ' + window.Ui.fecha(vence)));
+        };
+        const generar = window.Ui.boton('Solo generar el enlace para copiarlo', 'boton-secundario', async () => {
+            generar.disabled = true;
+            try {
+                const r = await window.Api.pedir('/api/envios/' + liquidacion.idEnvio + '/enlaces?tipo=COMPRADOR',
+                    {metodo: 'POST'});
+                mostrar(window.location.origin + '/pago.html#t=' + r.tokenComprador, r.fechaExpiracion);
+            } catch (error) {
+                window.Ui.aviso(error.message, 'error');
+            } finally {
+                generar.disabled = false;
+            }
+        });
+        contenido.append(
+            el('p', 'suave', 'Con el enlace el comprador paga con tarjeta, PayPal o PagoEfectivo, sin contraseña. '
+                + 'Cada enlace nuevo reemplaza al anterior del comprador.'),
+            formularioCorreo(liquidacion, mostrar), generar, resultado);
+        await window.Ui.detalle({titulo: 'Cobrar el pedido ' + liquidacion.idPedido, contenido, ancho: true});
     }
 
     function pintarPorCobrar(liquidaciones, pagos) {
         const aprobadas = new Set(pagos.filter((p) => p.estadoPago === 'APROBADO').map((p) => p.idLiquidacion));
-        const pendientes = liquidaciones.filter((l) => !aprobadas.has(l.idLiquidacion));
+        // Una entrega sin importe (todo fue merma o rechazo) no tiene nada que cobrar.
+        const pendientes = liquidaciones.filter((l) => !aprobadas.has(l.idLiquidacion) && Number(l.ingresoReal) > 0);
         const ultimoDe = (l) => pagos.find((p) => p.idLiquidacion === l.idLiquidacion);
         window.Ui.tabla($('por-cobrar'), [
             {titulo: 'Pedido', clase: 'largo', valor: (l) => l.idPedido},

@@ -26,6 +26,7 @@ import pe.agroruta.domain.port.out.PagoPort;
 import pe.agroruta.domain.port.out.PagoRepositoryPort;
 import pe.agroruta.domain.model.AlertaEnvio;
 import pe.agroruta.domain.model.EnlaceEnvio;
+import pe.agroruta.domain.model.TipoEnlace;
 import pe.agroruta.domain.model.Posicion;
 import pe.agroruta.domain.model.TipoAlerta;
 import pe.agroruta.domain.port.out.EnlaceEnvioRepositoryPort;
@@ -479,9 +480,10 @@ final class Falsos {
         }
 
         @Override
-        public void desactivarDeEnvio(String identificadorNegocio, Long idEnvio) {
+        public void desactivarDeEnvio(String identificadorNegocio, Long idEnvio, TipoEnlace tipo) {
             enlaces.stream().filter(e -> e.identificadorNegocio().equals(identificadorNegocio)
-                    && e.idEnvio().equals(idEnvio)).forEach(e -> desactivados.add(e.hashToken()));
+                    && e.idEnvio().equals(idEnvio) && e.tipoEnlace() == tipo)
+                    .forEach(e -> desactivados.add(e.hashToken()));
         }
 
         @Override

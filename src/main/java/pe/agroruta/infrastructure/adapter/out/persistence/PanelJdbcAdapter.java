@@ -61,8 +61,9 @@ public class PanelJdbcAdapter implements PanelRepositoryPort {
 
     @Override
     public CobrosPendientes cobrosPendientes() {
+        // Una entrega sin importe (todo fue merma o rechazo) no tiene nada que cobrar.
         return jdbc.queryForObject("SELECT COALESCE(SUM(l.ingreso_real), 0), COUNT(*) FROM liquidacion l "
-                        + "WHERE NOT EXISTS (SELECT 1 FROM pago p WHERE p.id_liquidacion = l.id_liquidacion "
+                        + "WHERE l.ingreso_real > 0 AND NOT EXISTS (SELECT 1 FROM pago p WHERE p.id_liquidacion = l.id_liquidacion "
                         + "AND p.estado_pago = 'APROBADO')",
                 (rs, fila) -> new CobrosPendientes(new Dinero(rs.getBigDecimal(1)), rs.getInt(2)));
     }

@@ -15,6 +15,7 @@ import pe.agroruta.domain.model.Liquidacion;
 import pe.agroruta.domain.model.Notificacion;
 import pe.agroruta.domain.model.RecursoNoEncontradoException;
 import pe.agroruta.domain.model.TipoAviso;
+import pe.agroruta.domain.model.TipoEnlace;
 import pe.agroruta.domain.port.in.EnviarEnlacePagoUseCase;
 import pe.agroruta.domain.port.in.GenerarEnlacesEnvioUseCase;
 import pe.agroruta.domain.port.out.EnvioRepositoryPort;
@@ -54,8 +55,12 @@ public class EnviarEnlacePagoService implements EnviarEnlacePagoUseCase {
         Liquidacion liquidacion = liquidaciones.buscarPorLote(envio.idLote())
                 .orElseThrow(() -> new ConflictoDominioException(
                         "El pedido todavía no fue entregado: no hay nada que cobrar"));
+        if (!liquidacion.ingresoReal().esPositivo()) {
+            throw new ConflictoDominioException("Esta entrega no tiene importe a cobrar (S/ 0.00)");
+        }
 
-        var generados = enlaces.generar(comando.identificadorNegocio(), envio.idEnvio());
+        // Solo se renueva el enlace del comprador; el del conductor no se toca.
+        var generados = enlaces.generar(comando.identificadorNegocio(), envio.idEnvio(), TipoEnlace.COMPRADOR);
         String url = comando.urlBase() + "/pago.html#t=" + generados.tokenComprador();
         String monto = String.format(Locale.US, "S/ %,.2f", liquidacion.ingresoReal().monto());
         String asunto = "Enlace para pagar tu pedido N.º " + envio.idPedido();

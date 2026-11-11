@@ -319,6 +319,29 @@ class SeguimientoServiceTest {
     }
 
     @Test
+    void renovar_el_enlace_del_comprador_no_corta_al_conductor_y_viceversa() {
+        var enlaces = new EnlacesEnMemoria();
+        var generador = new GeneradorTokenFalso();
+        var generar = new GenerarEnlacesEnvioService(envios, enlaces, generador, RELOJ);
+        var autenticar = new AutenticarEnlaceService(enlaces, generador, RELOJ);
+        var primeros = generar.generar("empresa_demo", 1L);
+
+        var comprador = generar.generar("empresa_demo", 1L, TipoEnlace.COMPRADOR);
+
+        assertThat(comprador.tokenConductor()).isNull();
+        assertThat(autenticar.resolver(primeros.tokenConductor())).isPresent();
+        assertThat(autenticar.resolver(primeros.tokenComprador())).isEmpty();
+        assertThat(autenticar.resolver(comprador.tokenComprador())).isPresent();
+
+        var conductor = generar.generar("empresa_demo", 1L, TipoEnlace.CONDUCTOR);
+
+        assertThat(conductor.tokenComprador()).isNull();
+        assertThat(autenticar.resolver(primeros.tokenConductor())).isEmpty();
+        assertThat(autenticar.resolver(conductor.tokenConductor())).isPresent();
+        assertThat(autenticar.resolver(comprador.tokenComprador())).isPresent();
+    }
+
+    @Test
     void no_genera_enlaces_de_envios_entregados_ni_inexistentes_y_no_acepta_tokens_raros() {
         var enlaces = new EnlacesEnMemoria();
         var generador = new GeneradorTokenFalso();

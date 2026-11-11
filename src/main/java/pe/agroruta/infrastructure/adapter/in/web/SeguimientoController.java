@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -19,6 +20,7 @@ import pe.agroruta.domain.model.AlertaEnvio;
 import pe.agroruta.domain.model.EstadoEnvio;
 import pe.agroruta.domain.model.Posicion;
 import pe.agroruta.domain.model.Seguimiento;
+import pe.agroruta.domain.model.TipoEnlace;
 import pe.agroruta.domain.model.TipoAlerta;
 import pe.agroruta.domain.port.in.ConsultarSeguimientoUseCase;
 import pe.agroruta.domain.port.in.EnviarEnlacePagoUseCase;
@@ -45,16 +47,21 @@ public class SeguimientoController {
         this.urlPublica = urlPublica.endsWith("/") ? urlPublica.substring(0, urlPublica.length() - 1) : urlPublica;
     }
 
-    /** Los tokens solo se muestran aquí, una vez. Si se pierden, se generan otros y los anteriores dejan de valer. */
+    /**
+     * Los tokens solo se muestran aquí, una vez. Con "tipo" se renueva solo ese enlace (CONDUCTOR o COMPRADOR); sin
+     * él, los dos. Solo deja de valer el enlace anterior del mismo tipo.
+     */
     @PostMapping("/enlaces")
     @ResponseStatus(HttpStatus.CREATED)
-    public EnlacesRespuesta generarEnlaces(@PathVariable Long idEnvio, @AuthenticationPrincipal DatosToken usuario) {
-        var enlaces = generarEnlaces.generar(usuario.identificadorNegocio(), idEnvio);
+    public EnlacesRespuesta generarEnlaces(@PathVariable Long idEnvio,
+                                           @RequestParam(name = "tipo", required = false) TipoEnlace tipo,
+                                           @AuthenticationPrincipal DatosToken usuario) {
+        var enlaces = generarEnlaces.generar(usuario.identificadorNegocio(), idEnvio, tipo);
         String rutaConductor = enlaces.tokenConductor() == null ? null
                 : "/conductor.html#t=" + enlaces.tokenConductor();
-        return new EnlacesRespuesta(
-                enlaces.tokenConductor(), rutaConductor,
-                enlaces.tokenComprador(), "/seguimiento.html#t=" + enlaces.tokenComprador(),
+        String rutaComprador = enlaces.tokenComprador() == null ? null
+                : "/seguimiento.html#t=" + enlaces.tokenComprador();
+        return new EnlacesRespuesta(enlaces.tokenConductor(), rutaConductor, enlaces.tokenComprador(), rutaComprador,
                 enlaces.fechaExpiracion());
     }
 

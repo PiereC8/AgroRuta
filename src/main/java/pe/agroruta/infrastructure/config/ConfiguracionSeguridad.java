@@ -4,6 +4,7 @@ import java.time.Clock;
 import jakarta.servlet.DispatcherType;
 import java.time.Duration;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,7 +18,9 @@ import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import pe.agroruta.domain.model.Rol;
+import pe.agroruta.domain.port.out.UsuarioRepositoryPort;
 import pe.agroruta.infrastructure.adapter.in.web.FiltroJwt;
+import pe.agroruta.infrastructure.adapter.in.web.VerificadorUsuarioActivo;
 import pe.agroruta.infrastructure.adapter.out.seguridad.ServicioJwt;
 
 @Configuration
@@ -31,7 +34,13 @@ public class ConfiguracionSeguridad {
     }
 
     @Bean
-    SecurityFilterChain cadenaDeSeguridad(HttpSecurity http, ServicioJwt servicioJwt) throws Exception {
+    SecurityFilterChain cadenaDeSeguridad(HttpSecurity http, ServicioJwt servicioJwt,
+                                          ObjectProvider<UsuarioRepositoryPort> usuarios, Clock reloj)
+            throws Exception {
+        // Sin repositorio de usuarios (pruebas de controladores) solo se valida la firma del token.
+        UsuarioRepositoryPort repositorio = usuarios.getIfAvailable();
+        VerificadorUsuarioActivo verificador = repositorio == null ? null
+                : new VerificadorUsuarioActivo(repositorio, reloj);
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .headers(cabeceras -> cabeceras.contentSecurityPolicy(politica -> politica.policyDirectives(
@@ -72,7 +81,7 @@ public class ConfiguracionSeguridad {
                         .requestMatchers("/api/transportistas/**", "/api/vehiculos/**").hasRole(Rol.DUENO.name())
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
-                .addFilterBefore(new FiltroJwt(servicioJwt), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(new FiltroJwt(servicioJwt, verificador), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 }

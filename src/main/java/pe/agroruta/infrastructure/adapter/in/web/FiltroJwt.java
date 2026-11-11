@@ -21,9 +21,16 @@ public class FiltroJwt extends OncePerRequestFilter {
     private static final String PREFIJO = "Bearer ";
 
     private final ServicioJwt servicioJwt;
+    /** Puede ser null (pruebas sin base de datos): entonces solo se valida la firma del token. */
+    private final VerificadorUsuarioActivo verificador;
 
     public FiltroJwt(ServicioJwt servicioJwt) {
+        this(servicioJwt, null);
+    }
+
+    public FiltroJwt(ServicioJwt servicioJwt, VerificadorUsuarioActivo verificador) {
         this.servicioJwt = servicioJwt;
+        this.verificador = verificador;
     }
 
     @Override
@@ -32,7 +39,10 @@ public class FiltroJwt extends OncePerRequestFilter {
         try {
             String encabezado = peticion.getHeader("Authorization");
             if (encabezado != null && encabezado.startsWith(PREFIJO)) {
-                servicioJwt.leer(encabezado.substring(PREFIJO.length())).ifPresent(datos -> {
+                servicioJwt.leer(encabezado.substring(PREFIJO.length()))
+                        .filter(datos -> verificador == null
+                                || verificador.estaActivo(datos.identificadorNegocio(), datos.nombreUsuario()))
+                        .ifPresent(datos -> {
                     var autenticacion = new UsernamePasswordAuthenticationToken(datos, null,
                             List.of(new SimpleGrantedAuthority("ROLE_" + datos.rolUsuario().name())));
                     SecurityContextHolder.getContext().setAuthentication(autenticacion);
