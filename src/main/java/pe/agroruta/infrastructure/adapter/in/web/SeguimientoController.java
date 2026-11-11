@@ -3,6 +3,7 @@ package pe.agroruta.infrastructure.adapter.in.web;
 import java.time.Instant;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,12 +33,16 @@ public class SeguimientoController {
     private final GenerarEnlacesEnvioUseCase generarEnlaces;
     private final ConsultarSeguimientoUseCase consultar;
     private final EnviarEnlacePagoUseCase enviarEnlacePago;
+    /** Dirección de las páginas cuando no las sirve este backend (por ejemplo, Vercel). Vacía: la del pedido. */
+    private final String urlPublica;
 
     public SeguimientoController(GenerarEnlacesEnvioUseCase generarEnlaces, ConsultarSeguimientoUseCase consultar,
-                                 EnviarEnlacePagoUseCase enviarEnlacePago) {
+                                 EnviarEnlacePagoUseCase enviarEnlacePago,
+                                 @Value("${agroruta.web.url-publica:}") String urlPublica) {
         this.generarEnlaces = generarEnlaces;
         this.consultar = consultar;
         this.enviarEnlacePago = enviarEnlacePago;
+        this.urlPublica = urlPublica.endsWith("/") ? urlPublica.substring(0, urlPublica.length() - 1) : urlPublica;
     }
 
     /** Los tokens solo se muestran aquí, una vez. Si se pierden, se generan otros y los anteriores dejan de valer. */
@@ -68,7 +73,8 @@ public class SeguimientoController {
     public EnvioEnlaceRespuesta enviarEnlacePago(@PathVariable Long idEnvio, @RequestBody CorreoSolicitud solicitud,
                                                  @AuthenticationPrincipal DatosToken usuario) {
         var resultado = enviarEnlacePago.enviar(new EnviarEnlacePagoUseCase.Comando(usuario.identificadorNegocio(),
-                idEnvio, solicitud.correo(), ServletUriComponentsBuilder.fromCurrentContextPath().toUriString()));
+                idEnvio, solicitud.correo(), urlPublica.isBlank()
+                ? ServletUriComponentsBuilder.fromCurrentContextPath().toUriString() : urlPublica));
         return new EnvioEnlaceRespuesta(resultado.correo(), resultado.urlPago(), resultado.fechaExpiracion());
     }
 

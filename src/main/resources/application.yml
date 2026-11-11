@@ -9,6 +9,11 @@ spring:
     enabled: false
 
 agroruta:
+  web:
+    # Dirección pública del sitio (la de las páginas), para los enlaces que salen por correo. Vacía: la del pedido.
+    url-publica: ${URL_PUBLICA:}
+    # Orígenes que pueden abrir el WebSocket cuando las páginas se sirven desde otro sitio (separados por coma).
+    origenes-websocket: ${ORIGENES_WEBSOCKET:}
   cache:
     tarifas-segundos: ${CACHE_TARIFAS_SEGUNDOS:300}
   resiliencia:
@@ -37,6 +42,9 @@ agroruta:
     usuario: ${CORREO_USUARIO:}
     clave: ${CORREO_CLAVE_APLICACION:}
     remitente: ${CORREO_REMITENTE:}
+    # Si hay clave de Brevo, los correos salen por su API web (HTTPS) en vez de SMTP.
+    brevo:
+      clave-api: ${BREVO_CLAVE_API:}
   avisos:
     merma-alta-porcentaje: ${AVISOS_MERMA_ALTA_PORCENTAJE:10}
     dias-cobro-vencido: ${AVISOS_DIAS_COBRO_VENCIDO:7}
@@ -58,6 +66,7 @@ agroruta:
       departamento: ${EMISOR_DEPARTAMENTO:TACNA}
 
 server:
+  port: ${PORT:8080}
   servlet:
     encoding:
       charset: UTF-8

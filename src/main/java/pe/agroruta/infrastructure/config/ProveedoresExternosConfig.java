@@ -20,6 +20,7 @@ import pe.agroruta.infrastructure.adapter.out.comprobante.ComprobantePdf;
 import pe.agroruta.infrastructure.adapter.out.comprobante.ComprobanteSimulado;
 import pe.agroruta.infrastructure.adapter.out.comprobante.DatosEmisor;
 import pe.agroruta.infrastructure.adapter.out.comprobante.FacturacionDirectaAdapter;
+import pe.agroruta.infrastructure.adapter.out.correo.CorreoBrevoAdapter;
 import pe.agroruta.infrastructure.adapter.out.correo.CorreoSimuladoAdapter;
 import pe.agroruta.infrastructure.adapter.out.correo.CorreoSmtpAdapter;
 import pe.agroruta.infrastructure.adapter.out.http.ClienteHttp;
@@ -124,7 +125,18 @@ public class ProveedoresExternosConfig {
                                     @Value("${agroruta.correo.puerto}") int puerto,
                                     @Value("${agroruta.correo.usuario}") String usuario,
                                     @Value("${agroruta.correo.clave}") String clave,
-                                    @Value("${agroruta.correo.remitente}") String remitente) {
+                                    @Value("${agroruta.correo.remitente}") String remitente,
+                                    @Value("${agroruta.correo.brevo.clave-api:}") String claveBrevo,
+                                    @Value("${agroruta.correo.brevo.url-base:https://api.brevo.com}") String urlBrevo,
+                                    ClienteHttp http) {
+        if (!claveBrevo.isBlank()) {
+            String desde = remitente.isBlank() ? usuario : remitente;
+            if (desde.isBlank()) {
+                throw new IllegalStateException("Con Brevo hay que indicar CORREO_REMITENTE (verificado en Brevo)");
+            }
+            REGISTRO.info("Correo: API de Brevo, remitente {}", desde);
+            return new CorreoBrevoAdapter(http, urlBrevo, claveBrevo, desde);
+        }
         if (usuario.isBlank() || clave.isBlank()) {
             REGISTRO.warn("Correo: SIMULADOR (no hay usuario y clave de aplicación del correo en el .env)");
             return new CorreoSimuladoAdapter();

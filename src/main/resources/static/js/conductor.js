@@ -146,8 +146,7 @@
     }
 
     async function conectar() {
-        const protocolo = location.protocol === 'https:' ? 'wss://' : 'ws://';
-        const cliente = new ClienteStomp(protocolo + location.host + '/ws', {token}, {
+        const cliente = new ClienteStomp(window.AgroRutaConfig.urlWebSocket, {token}, {
             alMensaje,
             alError: () => {
             },

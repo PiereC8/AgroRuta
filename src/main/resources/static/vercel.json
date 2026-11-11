@@ -1,0 +1,22 @@
+{
+  "redirects": [
+    { "source": "/", "destination": "/login.html", "permanent": false }
+  ],
+  "rewrites": [
+    { "source": "/api/:ruta*", "destination": "https://agroruta-api.onrender.com/api/:ruta*" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://sdk.mercadopago.com https://*.mlstatic.com; style-src 'self' https://cdnjs.cloudflare.com https://*.mlstatic.com; img-src 'self' data: https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://*.mlstatic.com https://*.mercadopago.com; connect-src 'self' wss://agroruta-api.onrender.com https://*.mercadopago.com https://*.mercadolibre.com https://nominatim.openstreetmap.org; frame-src https://*.mercadopago.com https://*.mercadolibre.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+        }
+      ]
+    }
+  ]
+}
