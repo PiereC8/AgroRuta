@@ -546,7 +546,16 @@ a {
         padding: 6px;
     }
 
-    .menu__texto,
+    /* Solo iconos en tableta, pero el nombre sigue disponible para lectores de pantalla. */
+    .menu__texto {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
+
     .menu__pronto {
         display: none;
     }
@@ -1245,3 +1254,268 @@ a {
     cursor: grab;
 }
 
+
+
+/* ---------- Tanda 3: celular, avisos, ventana y reportes ---------- */
+
+/* Avisos: se pueden cerrar con la × */
+.toast {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.toast__texto {
+    flex: 1;
+}
+
+.toast__cerrar {
+    flex: none;
+    min-width: 32px;
+    min-height: 32px;
+    margin: -6px -10px -6px 0;
+    border: 0;
+    border-radius: var(--radio-chico);
+    background: transparent;
+    color: inherit;
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.toast__cerrar:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* Con una ventana abierta, el fondo no se desplaza */
+body.con-panel {
+    overflow: hidden;
+}
+
+/* Campos compactos (filtros de reportes) con el mismo estilo que los formularios */
+.campo__entrada--compacta {
+    width: auto;
+    min-width: 160px;
+    min-height: 44px;
+    font-weight: 400;
+}
+
+/* Gráfico: líneas guía del eje Y y tabla alternativa */
+.grafico svg {
+    max-width: 100%;
+}
+
+.grafico .grafico__guia {
+    stroke: var(--borde);
+    stroke-width: 1;
+    stroke-dasharray: 3 4;
+}
+
+.grafico__tabla {
+    margin-top: 12px;
+}
+
+.grafico__tabla summary {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--verde);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* Los botones de las barras no se parten en dos líneas */
+.barra .boton,
+.fila-acciones .boton {
+    white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+    /* D1: menú con icono y nombre, deslizable, con objetivos táctiles grandes */
+    .menu {
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        gap: 8px;
+        padding: 8px;
+    }
+
+    .menu__marca {
+        display: none;
+    }
+
+    .menu__lista {
+        gap: 4px;
+    }
+
+    .menu__enlace {
+        flex-direction: column;
+        justify-content: center;
+        gap: 4px;
+        min-width: 72px;
+        min-height: 56px;
+        padding: 6px 8px;
+        font-size: 0.75rem;
+    }
+
+    .menu__texto {
+        position: static;
+        width: auto;
+        height: auto;
+        overflow: visible;
+        clip: auto;
+        white-space: nowrap;
+    }
+
+    /* D2: encabezado en dos filas: título arriba, usuario y salida abajo */
+    .encabezado {
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .encabezado h1 {
+        font-size: 1.5rem;
+        white-space: nowrap;
+    }
+
+    .encabezado__sesion {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .encabezado__usuario {
+        text-align: left;
+    }
+
+    .encabezado__sesion .boton {
+        white-space: nowrap;
+    }
+
+    .barra {
+        flex-wrap: wrap;
+    }
+
+    /* D3: cada fila de una tabla se vuelve una tarjeta con sus etiquetas */
+    .tabla-envoltorio {
+        overflow-x: visible;
+    }
+
+    .tabla thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+    }
+
+    .tabla,
+    .tabla tbody,
+    .tabla tr,
+    .tabla td {
+        display: block;
+        width: 100%;
+    }
+
+    .tabla tr {
+        margin-bottom: 12px;
+        padding: 6px 14px;
+        border: 1.5px solid var(--borde);
+        border-radius: var(--radio-chico);
+        background: var(--tarjeta);
+    }
+
+    .tabla td,
+    .tabla td.largo {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 16px;
+        min-width: 0;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--borde);
+        white-space: normal;
+        text-align: right;
+    }
+
+    .tabla td::before {
+        content: attr(data-etiqueta);
+        flex: none;
+        max-width: 45%;
+        color: var(--texto-suave);
+        font-size: 0.8125rem;
+        font-weight: 600;
+        text-align: left;
+    }
+
+    .tabla tr td:last-child {
+        border-bottom: 0;
+    }
+
+    .tabla td.celda-acciones {
+        display: block;
+        padding-top: 12px;
+    }
+
+    .tabla td.celda-acciones::before {
+        content: none;
+    }
+
+    .tabla .fila-acciones {
+        flex-wrap: wrap;
+    }
+
+    .tabla .fila-acciones .boton {
+        flex: 1 1 auto;
+    }
+
+    /* D7: filtros de reportes a todo el ancho */
+    .filtros-detalle label,
+    .campo__entrada--compacta {
+        width: 100%;
+    }
+
+    /* D8: login con la marca arriba, compacta */
+    .entrada {
+        grid-template-rows: auto 1fr;
+    }
+
+    .entrada__lado {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 14px;
+        padding: 16px;
+    }
+
+    .entrada__lado img {
+        width: 56px;
+        height: 56px;
+        padding: 6px;
+        border-radius: var(--radio-chico);
+    }
+
+    .entrada__lado h1 {
+        max-width: none;
+        font-size: 1.25rem;
+    }
+
+    .entrada__lado p {
+        display: none;
+    }
+
+    .entrada__formulario {
+        align-items: flex-start;
+        padding: 24px 16px;
+    }
+
+    .avisos {
+        right: 12px;
+        left: 12px;
+        bottom: 12px;
+    }
+
+    .toast {
+        max-width: none;
+    }
+}

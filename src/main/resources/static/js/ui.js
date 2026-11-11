@@ -76,6 +76,13 @@ window.Ui = (function () {
         }
         const envoltorio = el('div', 'tabla-envoltorio');
         const t = el('table', 'tabla');
+        // Nombre para lectores de pantalla: el que se pase o el título de la sección donde está la tabla.
+        const seccion = destino.closest('section');
+        const tituloSeccion = seccion && seccion.querySelector('h2');
+        const nombre = o.titulo || (tituloSeccion && tituloSeccion.textContent) || document.title.split(' - ')[0];
+        if (nombre) {
+            t.setAttribute('aria-label', nombre);
+        }
         const cabecera = el('tr');
         for (const columna of columnas) {
             const th = el('th', columna.clase, columna.titulo);
@@ -94,6 +101,7 @@ window.Ui = (function () {
             const tr = el('tr', o.filaDestacada && o.filaDestacada(fila) ? 'fila--destacada' : '');
             for (const columna of columnas) {
                 const td = el('td', columna.clase);
+                td.dataset.etiqueta = columna.titulo;
                 const valor = columna.valor(fila);
                 if (valor instanceof Node) {
                     td.appendChild(valor);
@@ -103,7 +111,8 @@ window.Ui = (function () {
                 tr.appendChild(td);
             }
             if (o.acciones) {
-                const td = el('td');
+                const td = el('td', 'celda-acciones');
+                td.dataset.etiqueta = 'Acciones';
                 const caja = el('div', 'fila-acciones');
                 caja.append(...o.acciones(fila));
                 td.appendChild(caja);
@@ -125,9 +134,20 @@ window.Ui = (function () {
             caja.setAttribute('aria-live', 'polite');
             document.body.appendChild(caja);
         }
-        const nuevo = el('div', 'toast' + (tipo === 'error' ? ' toast--error' : ''), texto);
+        const esError = tipo === 'error';
+        const nuevo = el('div', 'toast' + (esError ? ' toast--error' : ''));
+        nuevo.appendChild(el('span', 'toast__texto', texto));
+        const cerrar = el('button', 'toast__cerrar', '×');
+        cerrar.type = 'button';
+        cerrar.setAttribute('aria-label', 'Cerrar aviso');
+        cerrar.addEventListener('click', () => nuevo.remove());
+        nuevo.appendChild(cerrar);
+        if (esError) {
+            nuevo.setAttribute('role', 'alert');
+        }
         caja.appendChild(nuevo);
-        setTimeout(() => nuevo.remove(), 5000);
+        // Los errores se quedan más tiempo para poder leerlos (y se pueden cerrar antes con la ×).
+        setTimeout(() => nuevo.remove(), esError ? 15000 : 5000);
     }
 
     function pestanas(destino, items) {
@@ -360,6 +380,12 @@ window.Ui = (function () {
             function terminar(resultado) {
                 document.removeEventListener('keydown', alTeclado, true);
                 fondo.remove();
+                for (const elemento of bloqueados) {
+                    elemento.inert = false;
+                }
+                if (!document.querySelector('.fondo-panel')) {
+                    document.body.classList.remove('con-panel');
+                }
                 if (quienAbrio && quienAbrio.focus) {
                     quienAbrio.focus();
                 }
@@ -427,6 +453,12 @@ window.Ui = (function () {
             });
 
             document.body.appendChild(fondo);
+            const bloqueados = [...document.body.children].filter((h) => h !== fondo && h.id !== 'avisos'
+                && !h.inert && h.tagName !== 'SCRIPT');
+            for (const elemento of bloqueados) {
+                elemento.inert = true;
+            }
+            document.body.classList.add('con-panel');
             document.addEventListener('keydown', alTeclado, true);
             actualizarNota();
             const primerCampo = entradas.size > 0 ? [...entradas.values()][0].entrada : (soloLectura ? cerrar : enviar);

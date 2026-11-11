@@ -13,7 +13,6 @@
     const el = window.Ui.el;
     const NS = 'http://www.w3.org/2000/svg';
     const numero = new Intl.NumberFormat('es-PE', {maximumFractionDigits: 1});
-    const solesRedondos = new Intl.NumberFormat('es-PE', {style: 'currency', currency: 'PEN', maximumFractionDigits: 0});
 
     const PERIODOS = [
         {id: 'hoy', texto: 'Hoy'},
@@ -218,46 +217,97 @@
         ], r.comparaciones, {vacio: {titulo: 'Sin datos para comparar'}});
     }
 
+    // Montos cortos para el eje: S/ 1.2 mil, S/ 15 mil.
+    function solesCortos(v) {
+        const abs = Math.abs(v);
+        const texto = abs >= 1000 ? numero.format(Math.round(abs / 100) / 10) + ' mil' : numero.format(Math.round(abs));
+        return (v < 0 ? '−' : '') + 'S/ ' + texto;
+    }
+
+    // El gráfico se dibuja al ancho real de su caja (no se encoge): así el texto mantiene su tamaño en el celular.
+    let ultimaSerie = null;
+
     function pintarGrafico(serie) {
+        ultimaSerie = serie;
         const destino = $('grafico');
         if (!serie.some((p) => Number(p.ganancia) !== 0 || Number(p.ingreso) !== 0)) {
             destino.replaceChildren(el('p', 'suave', 'No hay entregas en este período.'));
             return;
         }
-        const ancho = 900;
-        const alto = 260;
-        const margenSup = 24;
-        const margenInf = 34;
+        const ancho = Math.max(300, Math.round(destino.clientWidth || 900));
+        const alto = ancho < 500 ? 220 : 260;
         const valores = serie.map((p) => Number(p.ganancia));
         const maximo = Math.max(0, ...valores);
         const minimo = Math.min(0, ...valores);
+        // El margen izquierdo se ajusta al texto más largo del eje (unos 7.5 px por carácter a 13 px).
+        const margenIzq = Math.ceil(Math.max(solesCortos(maximo).length, solesCortos(minimo).length) * 7.5) + 14;
+        const margenDer = 8;
+        const margenSup = 22;
+        const margenInf = 30;
         const rango = (maximo - minimo) || 1;
         const util = alto - margenSup - margenInf;
-        const cero = margenSup + (maximo / rango) * util;
-        const paso = ancho / serie.length;
+        const yDe = (v) => margenSup + ((maximo - v) / rango) * util;
+        const cero = yDe(0);
+        const anchoUtil = ancho - margenIzq - margenDer;
+        const paso = anchoUtil / serie.length;
         const barra = Math.max(3, Math.min(paso * 0.7, 48));
-        const cada = Math.ceil(serie.length / 14);
-        const lienzo = svg('svg', {viewBox: '0 0 ' + ancho + ' ' + alto, role: 'img',
-            'aria-label': 'Ganancia por tramo del período'});
+        // Una etiqueta cada ~64 px para que no se encimen; los valores solo si cada barra tiene espacio.
+        const cada = Math.max(1, Math.ceil(64 / paso));
+        const conValores = paso >= 46;
+        const lienzo = svg('svg', {viewBox: '0 0 ' + ancho + ' ' + alto, width: ancho, height: alto, role: 'img',
+            'aria-label': 'Ganancia por tramo del período. Detalle en «Ver como tabla».'});
+
+        // Eje Y: máximo, cero y mínimo, con líneas guía.
+        const marcas = [...new Set([maximo, 0, minimo])];
+        for (const m of marcas) {
+            const y = yDe(m);
+            lienzo.appendChild(svg('line', {x1: margenIzq, x2: ancho - margenDer, y1: y, y2: y,
+                'class': m === 0 ? 'grafico__eje' : 'grafico__guia'}));
+            lienzo.appendChild(svg('text', {x: margenIzq - 8, y: y + 4, 'text-anchor': 'end'}, solesCortos(m)));
+        }
+
         serie.forEach((p, i) => {
             const v = Number(p.ganancia);
             const altura = Math.abs(v) / rango * util;
-            const x = i * paso + (paso - barra) / 2;
-            const rect = svg('rect', {x, y: v < 0 ? cero : cero - altura, width: barra, height: Math.max(altura, 1),
-                rx: 4, 'class': 'barra' + (v < 0 ? ' barra--perdida' : '')});
+            const centro = margenIzq + i * paso + paso / 2;
+            const rect = svg('rect', {x: centro - barra / 2, y: v < 0 ? cero : cero - altura, width: barra,
+                height: Math.max(altura, 1), rx: 4, 'class': 'barra' + (v < 0 ? ' barra--perdida' : '')});
             rect.appendChild(svg('title', {}, p.etiqueta + ': ' + soles(v)));
             lienzo.appendChild(rect);
             if (i % cada === 0) {
-                lienzo.appendChild(svg('text', {x: x + barra / 2, y: alto - 10, 'text-anchor': 'middle'}, p.etiqueta));
+                // La primera y la última se alinean hacia adentro para que no se corten en los bordes.
+                const ancla = i === 0 ? 'start' : i + cada >= serie.length ? 'end' : 'middle';
+                const x = ancla === 'start' ? centro - barra / 2 : ancla === 'end' ? centro + barra / 2 : centro;
+                lienzo.appendChild(svg('text', {x, y: alto - 8, 'text-anchor': ancla}, p.etiqueta));
             }
-            if (serie.length <= 14 && v !== 0) {
-                lienzo.appendChild(svg('text', {x: x + barra / 2, y: v < 0 ? cero + altura + 14 : cero - altura - 6,
-                    'text-anchor': 'middle', 'class': 'grafico__valor'}, solesRedondos.format(v)));
+            if (conValores && v !== 0) {
+                lienzo.appendChild(svg('text', {x: centro, y: v < 0 ? cero + altura + 14 : cero - altura - 6,
+                    'text-anchor': 'middle', 'class': 'grafico__valor'}, solesCortos(v)));
             }
         });
-        lienzo.appendChild(svg('line', {x1: 0, x2: ancho, y1: cero, y2: cero, 'class': 'grafico__eje'}));
-        destino.replaceChildren(lienzo);
+
+        // Alternativa en tabla: todos los valores exactos, también para lectores de pantalla.
+        const detalle = el('details', 'grafico__tabla');
+        detalle.appendChild(el('summary', null, 'Ver como tabla'));
+        const caja = el('div');
+        detalle.appendChild(caja);
+        window.Ui.tabla(caja, [
+            {titulo: 'Tramo', valor: (p) => p.etiqueta},
+            {titulo: 'Ganancia', clase: 'numero', valor: (p) => soles(p.ganancia)},
+            {titulo: 'Ingreso', clase: 'numero', valor: (p) => soles(p.ingreso)}
+        ], serie, {titulo: 'Ganancia por tramo'});
+        destino.replaceChildren(lienzo, detalle);
     }
+
+    let esperaRedibujo = null;
+    window.addEventListener('resize', () => {
+        clearTimeout(esperaRedibujo);
+        esperaRedibujo = setTimeout(() => {
+            if (ultimaSerie) {
+                pintarGrafico(ultimaSerie);
+            }
+        }, 200);
+    });
 
     function pintarRanking(id, filas, titulo) {
         window.Ui.tabla($(id), [
@@ -303,6 +353,8 @@
         } catch (e) {
             if (turno === cargando) {
                 window.Ui.errorDePagina(e.message);
+                $('veredicto').replaceChildren(el('p', 'suave', 'No se pudo calcular el reporte. Usa «Volver a cargar».'));
+                $('grafico').replaceChildren();
             }
         }
     }

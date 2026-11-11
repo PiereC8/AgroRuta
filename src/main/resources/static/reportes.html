@@ -33,35 +33,35 @@
             <div class="filtros" id="periodos" role="group" aria-label="Período"></div>
             <div class="filtros-detalle">
                 <div id="dia-elegido" class="filtros-detalle__rango oculto">
-                    <label>Día <input type="date" id="dia"></label>
+                    <label>Día <input class="campo__entrada campo__entrada--compacta" type="date" id="dia"></label>
                 </div>
                 <div id="rango" class="filtros-detalle__rango oculto">
-                    <label>Desde <input type="date" id="desde"></label>
-                    <label>Hasta <input type="date" id="hasta"></label>
+                    <label>Desde <input class="campo__entrada campo__entrada--compacta" type="date" id="desde"></label>
+                    <label>Hasta <input class="campo__entrada campo__entrada--compacta" type="date" id="hasta"></label>
                     <button class="boton boton-secundario" id="aplicar-rango" type="button">Aplicar</button>
                 </div>
                 <label>Producto
-                    <select id="producto"><option value="">Todos</option></select>
+                    <select class="campo__entrada campo__entrada--compacta" id="producto"><option value="">Todos</option></select>
                 </label>
                 <label>Destino
-                    <select id="destino"><option value="">Todos</option></select>
+                    <select class="campo__entrada campo__entrada--compacta" id="destino"><option value="">Todos</option></select>
                 </label>
             </div>
             <p class="suave" id="periodo-texto"></p>
         </section>
 
-        <section id="veredicto" class="veredicto bloque" aria-live="polite"></section>
+        <section id="veredicto" class="veredicto bloque" aria-live="polite">
+            <p class="suave">Calculando el reporte…</p>
+        </section>
 
         <div class="rejilla-cifras bloque" id="cifras"></div>
 
         <section class="tarjeta bloque"><h2>Qué cambió</h2><div id="causas"></div></section>
         <section class="tarjeta bloque"><h2>Contra el período anterior</h2><div id="comparacion"></div></section>
-        <section class="tarjeta bloque"><h2>Ganancia en el tiempo</h2><div class="grafico" id="grafico"></div></section>
+        <section class="tarjeta bloque"><h2>Ganancia en el tiempo</h2><div class="grafico" id="grafico"><p class="suave">Cargando…</p></div></section>
 
-        <div class="rejilla-principal">
-            <section class="tarjeta bloque"><h2>Por destino</h2><div id="rank-destino"></div></section>
-            <section class="tarjeta bloque"><h2>Por producto</h2><div id="rank-producto"></div></section>
-        </div>
+        <section class="tarjeta bloque"><h2>Por destino</h2><div id="rank-destino"></div></section>
+        <section class="tarjeta bloque"><h2>Por producto</h2><div id="rank-producto"></div></section>
         <section class="tarjeta bloque"><h2>Por comprador</h2><div id="rank-comprador"></div></section>
     </main>
 </div>
