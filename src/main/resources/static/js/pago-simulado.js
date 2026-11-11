@@ -94,6 +94,10 @@ window.PagoSimulado = (function () {
         preparado = true;
         $('sim-medio').addEventListener('change', cambiarMedio);
         $('sim-numero').addEventListener('input', mostrarMarca);
+        $('sim-vence').addEventListener('input', function () {
+            const d = soloDigitos(this.value).slice(0, 4);
+            this.value = d.length > 2 ? d.slice(0, 2) + '/' + d.slice(2) : d;
+        });
     }
 
     function tokenizar() {
