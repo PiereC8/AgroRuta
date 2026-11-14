@@ -22,6 +22,7 @@ import jakarta.validation.constraints.NotNull;
 import pe.agroruta.domain.model.EstadoLote;
 import pe.agroruta.domain.model.EventoLote;
 import pe.agroruta.domain.model.Lote;
+import pe.agroruta.domain.model.LoteConStock;
 import pe.agroruta.domain.model.TipoEventoLote;
 import pe.agroruta.domain.port.in.ConsultarLotesUseCase;
 import pe.agroruta.domain.port.in.RegistrarLoteUseCase;
@@ -70,10 +71,17 @@ public class LoteController {
 
     public record LoteRespuesta(Long idLote, String productoLote, BigDecimal cantidadKg, LocalDate fechaCosecha,
                                 String chacraOrigen, EstadoLote estadoLote, String usuarioRegistro,
-                                Instant fechaRegistro) {
+                                Instant fechaRegistro, BigDecimal kgComprometidos, BigDecimal kgDisponibles) {
+        /** Un lote recién registrado no tiene pedidos: todo está disponible. */
         static LoteRespuesta de(Lote lote) {
+            return de(new LoteConStock(lote, BigDecimal.ZERO.setScale(3)));
+        }
+
+        static LoteRespuesta de(LoteConStock conStock) {
+            Lote lote = conStock.lote();
             return new LoteRespuesta(lote.idLote(), lote.productoLote(), lote.cantidadKg(), lote.fechaCosecha(),
-                    lote.chacraOrigen(), lote.estadoLote(), lote.usuarioRegistro(), lote.fechaRegistro());
+                    lote.chacraOrigen(), lote.estadoLote(), lote.usuarioRegistro(), lote.fechaRegistro(),
+                    conStock.kgComprometidos(), conStock.kgDisponibles());
         }
     }
 

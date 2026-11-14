@@ -11,7 +11,7 @@ public interface LiquidacionRepositoryPort {
 
     void actualizar(Liquidacion liquidacion);
 
-    Optional<Liquidacion> buscarPorLote(Long idLote);
+    Optional<Liquidacion> buscarPorEnvio(Long idEnvio);
 
     Optional<Liquidacion> buscarPorId(Long idLiquidacion);
 

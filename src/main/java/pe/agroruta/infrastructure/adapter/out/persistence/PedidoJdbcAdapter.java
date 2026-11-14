@@ -1,5 +1,9 @@
 package pe.agroruta.infrastructure.adapter.out.persistence;
 
+import java.math.BigDecimal;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 import java.util.Optional;
 
@@ -56,11 +60,25 @@ public class PedidoJdbcAdapter implements PedidoRepositoryPort {
     }
 
     @Override
-    public boolean existeParaLote(Long idLote) {
-        // Un pedido cancelado ya no ocupa el lote.
-        Integer total = jdbc.queryForObject("SELECT COUNT(*) FROM pedido WHERE id_lote = ? "
-                + "AND estado_pedido <> 'CANCELADO'", Integer.class, idLote);
-        return total != null && total > 0;
+    public List<Pedido> vigentesDeLote(Long idLote) {
+        // Un pedido cancelado ya no ocupa kg del lote.
+        return jdbc.query("SELECT " + COLUMNAS + " FROM pedido WHERE id_lote = ? AND estado_pedido <> 'CANCELADO' "
+                + "ORDER BY id_pedido", FILA, idLote);
+    }
+
+    @Override
+    public Map<Long, BigDecimal> kgComprometidosPorLote(Collection<Long> idsLote) {
+        if (idsLote.isEmpty()) {
+            return Map.of();
+        }
+        String marcas = String.join(", ", java.util.Collections.nCopies(idsLote.size(), "?"));
+        Map<Long, BigDecimal> resultado = new HashMap<>();
+        jdbc.query("SELECT id_lote, SUM(cantidad_kg) AS kg FROM pedido WHERE id_lote IN (" + marcas
+                        + ") AND estado_pedido <> 'CANCELADO' GROUP BY id_lote",
+                rs -> {
+                    resultado.put(rs.getLong("id_lote"), rs.getBigDecimal("kg"));
+                }, idsLote.toArray());
+        return resultado;
     }
 
     @Override

@@ -31,10 +31,10 @@ public class ConsultarPagosService implements ConsultarPagosUseCase {
     }
 
     @Override
-    public Pago pagoDeLote(Long idLote) {
-        return liquidaciones.buscarPorLote(idLote)
+    public Pago pagoDeEnvio(Long idEnvio) {
+        return liquidaciones.buscarPorEnvio(idEnvio)
                 .flatMap(liquidacion -> pagos.ultimoDeLiquidacion(liquidacion.idLiquidacion()))
-                .orElseThrow(() -> new RecursoNoEncontradoException("El lote " + idLote + " todavía no tiene pagos"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("El envío " + idEnvio + " todavía no tiene pagos"));
     }
 
     @Override

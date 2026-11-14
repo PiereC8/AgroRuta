@@ -30,7 +30,7 @@ class CotizadorDestinosTest {
         var lima = destino(2, "Mercado Lima", false);
         var arequipa = destino(3, "Mercado Arequipa", false);
 
-        Cotizacion cotizacion = CotizadorDestinos.cotizar(LOTE, List.of(tacna, lima, arequipa),
+        Cotizacion cotizacion = CotizadorDestinos.cotizar(LOTE, LOTE.cantidadKg(), List.of(tacna, lima, arequipa),
                 Map.of(1L, soles("3.00"), 2L, soles("5.50"), 3L, soles("4.20")),
                 Map.of(2L, soles("1.20"), 3L, soles("0.40")));
 
@@ -46,7 +46,7 @@ class CotizadorDestinosTest {
     void un_destino_local_no_paga_flete_aunque_exista_una_tarifa() {
         var tacna = destino(1, "Mercado Tacna", true);
 
-        Cotizacion cotizacion = CotizadorDestinos.cotizar(LOTE, List.of(tacna),
+        Cotizacion cotizacion = CotizadorDestinos.cotizar(LOTE, LOTE.cantidadKg(), List.of(tacna),
                 Map.of(1L, soles("3.00")), Map.of(1L, soles("9.99")));
 
         var opcion = cotizacion.opciones().get(0);
@@ -60,7 +60,7 @@ class CotizadorDestinosTest {
         var sinTarifa = destino(2, "Sin tarifa", false);
         var completo = destino(3, "Completo", false);
 
-        Cotizacion cotizacion = CotizadorDestinos.cotizar(LOTE, List.of(sinPrecio, sinTarifa, completo),
+        Cotizacion cotizacion = CotizadorDestinos.cotizar(LOTE, LOTE.cantidadKg(), List.of(sinPrecio, sinTarifa, completo),
                 Map.of(2L, soles("5.00"), 3L, soles("5.00")), Map.of(3L, soles("1.00")));
 
         assertThat(cotizacion.opciones()).hasSize(1);
@@ -73,7 +73,7 @@ class CotizadorDestinosTest {
         var lejano = destino(1, "Lejano", false);
         var cercano = destino(2, "Cercano", false);
 
-        Cotizacion cotizacion = CotizadorDestinos.cotizar(LOTE, List.of(lejano, cercano),
+        Cotizacion cotizacion = CotizadorDestinos.cotizar(LOTE, LOTE.cantidadKg(), List.of(lejano, cercano),
                 Map.of(1L, soles("2.00"), 2L, soles("2.00")), Map.of(1L, soles("2.50"), 2L, soles("2.10")));
 
         assertThat(cotizacion.opciones().get(0).destino().nombreDestino()).isEqualTo("Cercano");
@@ -87,7 +87,7 @@ class CotizadorDestinosTest {
                 Instant.parse("2026-11-06T15:00:00Z"), LocalDate.of(2026, 11, 6)).conId(2L);
         var destino = destino(1, "Mercado", false);
 
-        Cotizacion cotizacion = CotizadorDestinos.cotizar(lote, List.of(destino),
+        Cotizacion cotizacion = CotizadorDestinos.cotizar(lote, lote.cantidadKg(), List.of(destino),
                 Map.of(1L, soles("3.50")), Map.of(1L, soles("0.33")));
 
         var opcion = cotizacion.opciones().get(0);
@@ -98,7 +98,7 @@ class CotizadorDestinosTest {
 
     @Test
     void sin_destinos_no_hay_mejor_opcion() {
-        Cotizacion cotizacion = CotizadorDestinos.cotizar(LOTE, List.of(), Map.of(), Map.of());
+        Cotizacion cotizacion = CotizadorDestinos.cotizar(LOTE, LOTE.cantidadKg(), List.of(), Map.of(), Map.of());
 
         assertThat(cotizacion.mejorOpcion()).isEmpty();
     }

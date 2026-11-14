@@ -4,12 +4,12 @@ import java.time.Clock;
 import java.time.Instant;
 
 import pe.agroruta.domain.model.EstadoEnvio;
-import pe.agroruta.domain.model.EstadoLote;
 import pe.agroruta.domain.model.EstadoPedido;
 import pe.agroruta.domain.model.Envio;
 import pe.agroruta.domain.model.EventoLote;
 import pe.agroruta.domain.model.Lote;
 import pe.agroruta.domain.model.LoteNoEncontradoException;
+import pe.agroruta.domain.model.ReglasLote;
 import pe.agroruta.domain.model.Pedido;
 import pe.agroruta.domain.model.RecursoNoEncontradoException;
 import pe.agroruta.domain.model.TipoEnlace;
@@ -41,8 +41,8 @@ public class CancelarOperacionService implements CancelarOperacionUseCase {
     }
 
     /**
-     * El envío queda cancelado, el pedido vuelve a pendiente (se puede despachar en otro vehículo), el lote vuelve a
-     * estar disponible y los enlaces del conductor y del comprador dejan de valer.
+     * El envío queda cancelado, el pedido vuelve a pendiente (se puede despachar en otro vehículo) y conserva sus kg
+     * reservados en el lote, y los enlaces del conductor y del comprador dejan de valer.
      */
     @Override
     public Envio cancelarEnvio(String identificadorNegocio, Long idEnvio, String usuario) {
@@ -53,7 +53,6 @@ public class CancelarOperacionService implements CancelarOperacionUseCase {
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe el pedido " + envio.idPedido()));
         pedido.volverAPendiente();
         Lote lote = lotes.buscarPorId(envio.idLote()).orElseThrow(() -> new LoteNoEncontradoException(envio.idLote()));
-        lote.liberar();
         Instant ahora = reloj.instant();
         String etapa = envio.estadoEnvio() == EstadoEnvio.EN_RUTA ? "en ruta" : "programado";
         EventoLote evento = new EventoLote(TipoEventoLote.CANCELACION, "Se canceló el envío " + idEnvio + " ("
@@ -61,7 +60,8 @@ public class CancelarOperacionService implements CancelarOperacionUseCase {
         transaccion.ejecutar(() -> {
             envios.actualizar(cancelado);
             pedidos.actualizarEstado(pedido.idPedido(), EstadoPedido.PENDIENTE);
-            lotes.actualizarEstado(lote.idLote(), EstadoLote.REGISTRADO, evento);
+            lotes.actualizarEstado(lote.idLote(), ReglasLote.estadoSegun(lote, pedidos.vigentesDeLote(lote.idLote()),
+                    envios.existeEnRutaDeLote(lote.idLote())), evento);
             return cancelado;
         });
         enlaces.desactivarDeEnvio(identificadorNegocio, idEnvio, TipoEnlace.CONDUCTOR);
@@ -69,18 +69,20 @@ public class CancelarOperacionService implements CancelarOperacionUseCase {
         return cancelado;
     }
 
-    /** Solo un pedido sin envío en curso; el lote queda libre para otro pedido. */
+    /** Solo un pedido sin envío en curso; sus kg vuelven a quedar disponibles en el lote. */
     @Override
     public Pedido cancelarPedido(Long idPedido, String usuario) {
         Pedido pedido = pedidos.buscarPorId(idPedido)
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe el pedido " + idPedido));
         Pedido cancelado = pedido.cancelar();
         Lote lote = lotes.buscarPorId(pedido.idLote()).orElseThrow(() -> new LoteNoEncontradoException(pedido.idLote()));
-        EventoLote evento = new EventoLote(TipoEventoLote.CANCELACION, "Se canceló el pedido " + idPedido
-                + "; el lote queda disponible para otro pedido", usuario, reloj.instant());
+        EventoLote evento = new EventoLote(TipoEventoLote.CANCELACION, "Se canceló el pedido " + idPedido + "; sus "
+                + pedido.cantidadKg().toPlainString() + " kg vuelven a estar disponibles en el lote", usuario,
+                reloj.instant());
         transaccion.ejecutar(() -> {
             pedidos.actualizarEstado(idPedido, EstadoPedido.CANCELADO);
-            lotes.actualizarEstado(lote.idLote(), lote.estadoLote(), evento);
+            lotes.actualizarEstado(lote.idLote(), ReglasLote.estadoSegun(lote, pedidos.vigentesDeLote(lote.idLote()),
+                    envios.existeEnRutaDeLote(lote.idLote())), evento);
             return cancelado;
         });
         return cancelado;

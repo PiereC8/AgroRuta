@@ -78,6 +78,13 @@ public class EnvioJdbcAdapter implements EnvioRepositoryPort {
     }
 
     @Override
+    public boolean existeEnRutaDeLote(Long idLote) {
+        Integer total = jdbc.queryForObject("SELECT COUNT(*) FROM envio WHERE id_lote = ? "
+                + "AND estado_envio = 'EN_RUTA'", Integer.class, idLote);
+        return total != null && total > 0;
+    }
+
+    @Override
     public boolean existeActivoDeVehiculo(Long idVehiculo) {
         Integer total = jdbc.queryForObject("SELECT COUNT(*) FROM envio WHERE id_vehiculo = ? "
                 + "AND estado_envio IN ('PROGRAMADO', 'EN_RUTA')", Integer.class, idVehiculo);

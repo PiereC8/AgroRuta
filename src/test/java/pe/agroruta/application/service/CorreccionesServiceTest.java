@@ -75,8 +75,8 @@ class CorreccionesServiceTest {
         lotes.guardarNuevo(Lote.nuevo("Palta Hass", new BigDecimal("1000"), LocalDate.of(2026, 11, 5), "Sur",
                         "dueno.demo", Instant.parse("2026-11-05T15:00:00Z"), LocalDate.of(2026, 11, 6)),
                 new EventoLote(TipoEventoLote.REGISTRO, "registro", "dueno.demo", AHORA));
-        gestionPedidos = new GestionarPedidosService(pedidos, compradores, lotes, destinos, RELOJ);
-        gestionPedidos.registrar(new Comando(1L, 1L, 1L, new BigDecimal("5.00"), "operador.demo"));
+        gestionPedidos = new GestionarPedidosService(pedidos, compradores, lotes, destinos, envios, transaccion, RELOJ);
+        gestionPedidos.registrar(new Comando(1L, 1L, 1L, null, new BigDecimal("5.00"), "operador.demo"));
         despacho = new DespacharEnvioService(pedidos, lotes, transporte, envios, transaccion, RELOJ);
         cancelar = new CancelarOperacionService(envios, pedidos, lotes, enlaces, transaccion, RELOJ);
         corregir = new CorregirEntregaService(envios, pedidos, lotes, liquidaciones, pagos, transaccion, RELOJ);
@@ -93,7 +93,7 @@ class CorreccionesServiceTest {
     // ---------- F6: cancelar envío ----------
 
     @Test
-    void cancelar_un_envio_en_ruta_libera_el_lote_y_el_vehiculo_y_corta_los_enlaces() {
+    void cancelar_un_envio_en_ruta_libera_el_vehiculo_corta_los_enlaces_y_conserva_los_kg_del_pedido() {
         despacho.despachar(1L, 1L, "operador.demo");
         despacho.iniciarRuta(1L, "operador.demo");
         enlaces.guardar(new EnlaceEnvio("sol", 1L, TipoEnlace.CONDUCTOR, "hash:c", AHORA.plusSeconds(3600)));
@@ -103,7 +103,9 @@ class CorreccionesServiceTest {
 
         assertThat(cancelado.estadoEnvio()).isEqualTo(EstadoEnvio.CANCELADO);
         assertThat(pedidos.buscarPorId(1L).orElseThrow().estadoPedido()).isEqualTo(EstadoPedido.PENDIENTE);
-        assertThat(lotes.buscarPorId(1L).orElseThrow().estadoLote()).isEqualTo(EstadoLote.REGISTRADO);
+        // La mercadería no se vende dos veces: el pedido sigue pendiente y conserva sus kg reservados en el lote.
+        assertThat(lotes.buscarPorId(1L).orElseThrow().estadoLote()).isEqualTo(EstadoLote.RESERVADO);
+        assertThat(new ConsultarLotesService(lotes, pedidos).obtener(1L).kgDisponibles()).isEqualByComparingTo("0");
         assertThat(lotes.eventos).extracting(EventoLote::tipoEvento).contains(TipoEventoLote.CANCELACION);
         assertThat(enlaces.buscarVigentePorHash("hash:c", AHORA)).isEmpty();
         assertThat(enlaces.buscarVigentePorHash("hash:b", AHORA)).isEmpty();
@@ -148,7 +150,7 @@ class CorreccionesServiceTest {
     void cancelado_el_pedido_el_lote_admite_otro_pedido() {
         cancelar.cancelarPedido(1L, "dueno.demo");
 
-        var otro = gestionPedidos.registrar(new Comando(1L, 1L, 1L, new BigDecimal("5.50"), "operador.demo"));
+        var otro = gestionPedidos.registrar(new Comando(1L, 1L, 1L, null, new BigDecimal("5.50"), "operador.demo"));
 
         assertThat(otro.estadoPedido()).isEqualTo(EstadoPedido.PENDIENTE);
         assertThat(otro.idLote()).isEqualTo(1L);
@@ -159,7 +161,7 @@ class CorreccionesServiceTest {
     @Test
     void corregir_la_entrega_recalcula_la_liquidacion_y_conserva_flete_y_fecha() {
         entregar("1000", "0", "0");
-        var original = liquidaciones.buscarPorLote(1L).orElseThrow();
+        var original = liquidaciones.buscarPorEnvio(1L).orElseThrow();
 
         var corregida = corregir.corregir(new CorregirEntregaUseCase.Comando(1L, new BigDecimal("900"),
                 new BigDecimal("60"), new BigDecimal("40"), "dueno.demo"));
@@ -168,7 +170,7 @@ class CorreccionesServiceTest {
         assertThat(corregida.ingresoReal().monto()).isEqualByComparingTo("4500.00");
         assertThat(corregida.costoFletePorKg()).isEqualTo(original.costoFletePorKg());
         assertThat(corregida.fechaEntrega()).isEqualTo(original.fechaEntrega());
-        assertThat(liquidaciones.buscarPorLote(1L).orElseThrow().cantidadRecibidaKg()).isEqualByComparingTo("900");
+        assertThat(liquidaciones.buscarPorEnvio(1L).orElseThrow().cantidadRecibidaKg()).isEqualByComparingTo("900");
         assertThat(lotes.eventos).extracting(EventoLote::tipoEvento).contains(TipoEventoLote.CORRECCION);
     }
 
@@ -183,7 +185,7 @@ class CorreccionesServiceTest {
     @Test
     void con_un_pago_en_curso_o_aprobado_ya_no_se_corrige() {
         entregar("1000", "0", "0");
-        pagos.guardarNuevo(Pago.nuevo(liquidaciones.buscarPorLote(1L).orElseThrow(), "a@b.pe", "clave-pago-0001",
+        pagos.guardarNuevo(Pago.nuevo(liquidaciones.buscarPorEnvio(1L).orElseThrow(), "a@b.pe", "clave-pago-0001",
                 AHORA));
 
         assertThatThrownBy(() -> corregir.corregir(new CorregirEntregaUseCase.Comando(1L, new BigDecimal("900"),

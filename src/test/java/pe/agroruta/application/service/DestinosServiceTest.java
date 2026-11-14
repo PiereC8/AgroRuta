@@ -101,6 +101,11 @@ class DestinosServiceTest {
         }
 
         @Override
+        public Optional<Lote> buscarParaActualizar(Long idLote) {
+            return buscarPorId(idLote);
+        }
+
+        @Override
         public Lote guardarNuevo(Lote lote, EventoLote primerEvento) {
             throw new UnsupportedOperationException();
         }
@@ -219,7 +224,8 @@ class DestinosServiceTest {
             return resultado;
         };
 
-        var cotizacion = new CotizarFleteService(new LotesFijos(lote(EstadoLote.REGISTRADO)), destinos, destinos, tarifas)
+        var cotizacion = new CotizarFleteService(new LotesFijos(lote(EstadoLote.REGISTRADO)), destinos, destinos, tarifas,
+                new Falsos.PedidosEnMemoria())
                 .cotizar(1L);
 
         assertThat(pedidos).hasSize(1);
@@ -229,12 +235,35 @@ class DestinosServiceTest {
     }
 
     @Test
-    void no_cotiza_lotes_inexistentes_ni_ya_despachados() {
+    void no_cotiza_lotes_inexistentes_ni_lotes_con_todo_comprometido() {
         TarifaPort sinTarifas = ids -> Map.of();
+        var pedidos = new Falsos.PedidosEnMemoria();
+        pedidos.guardarNuevo(new pe.agroruta.domain.model.Pedido(null, 1L, 1L, 1L, new BigDecimal("1000.000"),
+                Dinero.de("5"), pe.agroruta.domain.model.EstadoPedido.PENDIENTE, "x1x",
+                Instant.parse("2026-11-06T15:00:00Z")));
 
-        assertThatThrownBy(() -> new CotizarFleteService(new LotesFijos(null), destinos, destinos, sinTarifas).cotizar(1L))
-                .isInstanceOf(LoteNoEncontradoException.class);
-        assertThatThrownBy(() -> new CotizarFleteService(new LotesFijos(lote(EstadoLote.DESPACHADO)), destinos, destinos,
-                sinTarifas).cotizar(1L)).isInstanceOf(DominioException.class);
+        assertThatThrownBy(() -> new CotizarFleteService(new LotesFijos(null), destinos, destinos, sinTarifas,
+                new Falsos.PedidosEnMemoria()).cotizar(1L)).isInstanceOf(LoteNoEncontradoException.class);
+        assertThatThrownBy(() -> new CotizarFleteService(new LotesFijos(lote(EstadoLote.RESERVADO)), destinos, destinos,
+                sinTarifas, pedidos).cotizar(1L)).isInstanceOf(DominioException.class)
+                .hasMessageContaining("no tiene kg disponibles");
+    }
+
+    @Test
+    void cotiza_solo_los_kg_que_quedan_disponibles_del_lote() {
+        administrar.registrarDestino("Mercado Lima", "Lima", false);
+        administrar.fijarPrecioEsperado(1L, "Palta Hass", Dinero.de("6"));
+        TarifaPort tarifas = ids -> Map.of(1L, Dinero.de("1"));
+        var pedidos = new Falsos.PedidosEnMemoria();
+        pedidos.guardarNuevo(new pe.agroruta.domain.model.Pedido(null, 1L, 1L, 1L, new BigDecimal("400.000"),
+                Dinero.de("5"), pe.agroruta.domain.model.EstadoPedido.DESPACHADO, "x1x",
+                Instant.parse("2026-11-06T15:00:00Z")));
+
+        var cotizacion = new CotizarFleteService(new LotesFijos(lote(EstadoLote.RESERVADO)), destinos, destinos, tarifas,
+                pedidos).cotizar(1L);
+
+        assertThat(cotizacion.cantidadKg()).isEqualByComparingTo("600");
+        // (6 - 1) x 600 kg = 3000, no (6 - 1) x 1000.
+        assertThat(cotizacion.mejorOpcion().orElseThrow().gananciaNeta().monto()).isEqualByComparingTo("3000");
     }
 }

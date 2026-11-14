@@ -65,8 +65,8 @@ class EntregaServiceTest {
         lotes.guardarNuevo(Lote.nuevo("Palta Hass", new BigDecimal("1250.5"), LocalDate.of(2026, 11, 5), "Sur",
                         "dueno.demo", Instant.parse("2026-11-05T15:00:00Z"), LocalDate.of(2026, 11, 6)),
                 new EventoLote(TipoEventoLote.REGISTRO, "registro", "dueno.demo", Instant.now()));
-        new GestionarPedidosService(pedidos, compradores, lotes, destinos, RELOJ)
-                .registrar(new Comando(1L, 1L, idDestino, new BigDecimal("5.40"), "operador.demo"));
+        new GestionarPedidosService(pedidos, compradores, lotes, destinos, envios, transaccion, RELOJ)
+                .registrar(new Comando(1L, 1L, idDestino, null, new BigDecimal("5.40"), "operador.demo"));
         despacho = new DespacharEnvioService(pedidos, lotes, transporte, envios, transaccion, RELOJ);
         despacho.despachar(1L, 1L, "operador.demo");
         despacho.iniciarRuta(1L, "operador.demo");
@@ -96,7 +96,7 @@ class EntregaServiceTest {
         assertThat(envios.buscarPorId(1L).orElseThrow().estadoEnvio()).isEqualTo(EstadoEnvio.ENTREGADO);
         assertThat(pedidos.buscarPorId(1L).orElseThrow().estadoPedido()).isEqualTo(EstadoPedido.ENTREGADO);
         assertThat(lotes.buscarPorId(1L).orElseThrow().estadoLote()).isEqualTo(EstadoLote.LIQUIDADO);
-        assertThat(liquidaciones.buscarPorLote(1L)).isPresent();
+        assertThat(liquidaciones.buscarPorEnvio(1L)).isPresent();
         var tipos = lotes.eventos.stream().map(EventoLote::tipoEvento).toList();
         assertThat(tipos.subList(tipos.size() - 2, tipos.size()))
                 .containsExactly(TipoEventoLote.ENTREGA, TipoEventoLote.LIQUIDACION);
@@ -162,7 +162,7 @@ class EntregaServiceTest {
     void un_envio_inexistente_da_no_encontrado_y_la_consulta_de_liquidacion_tambien() {
         assertThatThrownBy(() -> entrega.registrar(comando("1", "0", "0")))
                 .isInstanceOf(RecursoNoEncontradoException.class);
-        assertThatThrownBy(() -> new ConsultarLiquidacionesService(liquidaciones).obtenerPorLote(1L))
+        assertThatThrownBy(() -> new ConsultarLiquidacionesService(liquidaciones).obtenerPorEnvio(1L))
                 .isInstanceOf(RecursoNoEncontradoException.class);
         assertThatThrownBy(() -> new ConsultarLiquidacionesService(liquidaciones).listar(0, 0))
                 .isInstanceOf(DominioException.class);
@@ -173,8 +173,74 @@ class EntregaServiceTest {
         enRutaHacia(1L);
         entrega.registrar(comando("1250.5", "0", "0"));
 
-        var consultada = new ConsultarLiquidacionesService(liquidaciones).obtenerPorLote(1L);
+        var consultada = new ConsultarLiquidacionesService(liquidaciones).obtenerPorEnvio(1L);
 
         assertThat(consultada.gananciaReal().monto().toPlainString()).isEqualTo("5252.10");
+    }
+
+    @Test
+    void dos_pedidos_del_mismo_lote_se_entregan_y_liquidan_cada_uno_con_su_cantidad() {
+        enRutaHacia(1L);
+        // El pedido 1 tomó los 1250.5 kg del lote; se rehace con dos pedidos de 800 y 450.5 kg.
+        pedidos.pedidos.clear();
+        envios.envios.clear();
+        lotes.guardarNuevo(Lote.nuevo("Palta Hass", new BigDecimal("1000"), LocalDate.of(2026, 11, 5), "Sur",
+                        "dueno.demo", Instant.parse("2026-11-05T15:00:00Z"), LocalDate.of(2026, 11, 6)),
+                new EventoLote(TipoEventoLote.REGISTRO, "registro", "dueno.demo", Instant.now()));
+        var compradores = new CompradoresEnMemoria();
+        new AdministrarCompradoresService(compradores).registrar("Mercado Central", TipoComprador.MERCADO, null, null,
+                "Lima");
+        var gestion = new GestionarPedidosService(pedidos, compradores, lotes, destinos, envios, transaccion, RELOJ);
+        gestion.registrar(new Comando(1L, 2L, 1L, new BigDecimal("600"), new BigDecimal("5.00"), "operador.demo"));
+        gestion.registrar(new Comando(1L, 2L, 1L, new BigDecimal("400"), new BigDecimal("6.00"), "operador.demo"));
+        new AdministrarTransporteService(transporte).registrarVehiculo(1L, "XYZ-987", new BigDecimal("2000"));
+        despacho.despachar(1L, 1L, "operador.demo");
+        despacho.despachar(2L, 2L, "operador.demo");
+        despacho.iniciarRuta(1L, "operador.demo");
+        despacho.iniciarRuta(2L, "operador.demo");
+
+        var primera = entrega.registrar(new RegistrarEntregaUseCase.Comando(1L, new BigDecimal("590"),
+                new BigDecimal("10"), BigDecimal.ZERO, "operador.demo"));
+
+        // Con el segundo envío todavía en ruta, el lote sigue en camino y no está liquidado.
+        assertThat(lotes.buscarPorId(2L).orElseThrow().estadoLote()).isEqualTo(EstadoLote.DESPACHADO);
+        assertThat(primera.cantidadDespachadaKg()).isEqualByComparingTo("600");
+        // 5.00 x 590 kg - flete 1.20 x 600 kg
+        assertThat(primera.gananciaReal().monto().toPlainString()).isEqualTo("2230.00");
+
+        var segunda = entrega.registrar(new RegistrarEntregaUseCase.Comando(2L, new BigDecimal("400"),
+                BigDecimal.ZERO, BigDecimal.ZERO, "operador.demo"));
+
+        assertThat(segunda.cantidadDespachadaKg()).isEqualByComparingTo("400");
+        // 6.00 x 400 kg - flete 1.20 x 400 kg
+        assertThat(segunda.gananciaReal().monto().toPlainString()).isEqualTo("1920.00");
+        assertThat(liquidaciones.buscarPorEnvio(1L).orElseThrow().idEnvio()).isEqualTo(1L);
+        assertThat(liquidaciones.buscarPorEnvio(2L).orElseThrow().idEnvio()).isEqualTo(2L);
+        assertThat(liquidaciones.liquidaciones).hasSize(2);
+        assertThat(lotes.buscarPorId(2L).orElseThrow().estadoLote()).isEqualTo(EstadoLote.LIQUIDADO);
+    }
+
+    @Test
+    void si_queda_stock_sin_vender_el_lote_vuelve_a_estar_disponible_al_entregar_su_unico_pedido() {
+        enRutaHacia(1L);
+        pedidos.pedidos.clear();
+        envios.envios.clear();
+        lotes.guardarNuevo(Lote.nuevo("Palta Hass", new BigDecimal("1000"), LocalDate.of(2026, 11, 5), "Sur",
+                        "dueno.demo", Instant.parse("2026-11-05T15:00:00Z"), LocalDate.of(2026, 11, 6)),
+                new EventoLote(TipoEventoLote.REGISTRO, "registro", "dueno.demo", Instant.now()));
+        var compradores = new CompradoresEnMemoria();
+        new AdministrarCompradoresService(compradores).registrar("Mercado Central", TipoComprador.MERCADO, null, null,
+                "Lima");
+        new GestionarPedidosService(pedidos, compradores, lotes, destinos, envios, transaccion, RELOJ)
+                .registrar(new Comando(1L, 2L, 1L, new BigDecimal("300"), new BigDecimal("5.00"), "operador.demo"));
+        despacho.despachar(1L, 1L, "operador.demo");
+        despacho.iniciarRuta(1L, "operador.demo");
+
+        entrega.registrar(new RegistrarEntregaUseCase.Comando(1L, new BigDecimal("300"), BigDecimal.ZERO,
+                BigDecimal.ZERO, "operador.demo"));
+
+        // Se vendieron 300 de 1000 kg: quedan 700 por vender y el lote no está liquidado.
+        assertThat(lotes.buscarPorId(2L).orElseThrow().estadoLote()).isEqualTo(EstadoLote.REGISTRADO);
+        assertThat(new ConsultarLotesService(lotes, pedidos).obtener(2L).kgDisponibles()).isEqualByComparingTo("700");
     }
 }

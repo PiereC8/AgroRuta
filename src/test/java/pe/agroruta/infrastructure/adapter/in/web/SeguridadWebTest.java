@@ -276,7 +276,7 @@ class SeguridadWebTest {
         var lima = new DestinoVenta(2L, "Mercado Lima", "Lima", false, true);
         var tacna = new DestinoVenta(1L, "Mercado Tacna", "Tacna", true, true);
         var cusco = new DestinoVenta(3L, "Mercado Cusco", "Cusco", false, true);
-        when(cotizarFlete.cotizar(1L)).thenReturn(new Cotizacion(lote, List.of(
+        when(cotizarFlete.cotizar(1L)).thenReturn(new Cotizacion(lote, lote.cantidadKg(), List.of(
                 new Cotizacion.Opcion(lima, Dinero.de("5.50"), Dinero.de("1.20"), Dinero.de("5500"),
                         Dinero.de("1200"), Dinero.de("4300")),
                 new Cotizacion.Opcion(tacna, Dinero.de("3.00"), Dinero.CERO, Dinero.de("3000"), Dinero.CERO,
@@ -349,7 +349,7 @@ class SeguridadWebTest {
                 Dinero.de("6372.00"), Dinero.de("1500.60"), Dinero.de("4871.40"), Dinero.de("5252.10"),
                 Dinero.de("380.70"), "operador.demo", Instant.now());
         when(registrarEntrega.registrar(any())).thenReturn(liquidacion);
-        when(consultarLiquidaciones.obtenerPorLote(1L)).thenReturn(liquidacion);
+        when(consultarLiquidaciones.obtenerPorEnvio(1L)).thenReturn(liquidacion);
         String operador = bearer("chacra_demo", "operador.demo", Rol.OPERADOR);
 
         mvc.perform(post("/api/envios/1/entrega").header("Authorization", operador)
@@ -361,7 +361,7 @@ class SeguridadWebTest {
                 .andExpect(jsonPath("$.gananciaEsperada").doesNotExist())
                 .andExpect(jsonPath("$.costoFleteTotal").doesNotExist())
                 .andExpect(jsonPath("$.perdidaPorMermaYRechazo").doesNotExist());
-        mvc.perform(get("/api/lotes/1/liquidacion").header("Authorization", operador))
+        mvc.perform(get("/api/envios/1/liquidacion").header("Authorization", operador))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.ingresoReal").value(6372.00))
                 .andExpect(jsonPath("$.gananciaReal").doesNotExist());
         when(consultarLiquidaciones.listar(0, 50)).thenReturn(List.of(liquidacion));

@@ -4,10 +4,12 @@ import java.time.Clock;
 
 import pe.agroruta.domain.model.ConflictoDominioException;
 import pe.agroruta.domain.model.EstadoEnvio;
-import pe.agroruta.domain.model.EstadoLote;
 import pe.agroruta.domain.model.Envio;
 import pe.agroruta.domain.model.EventoLote;
 import pe.agroruta.domain.model.Liquidacion;
+import pe.agroruta.domain.model.Lote;
+import pe.agroruta.domain.model.LoteNoEncontradoException;
+import pe.agroruta.domain.model.ReglasLote;
 import pe.agroruta.domain.model.Pedido;
 import pe.agroruta.domain.model.RecursoNoEncontradoException;
 import pe.agroruta.domain.model.TipoEventoLote;
@@ -52,7 +54,7 @@ public class CorregirEntregaService implements CorregirEntregaUseCase {
         if (envio.estadoEnvio() != EstadoEnvio.ENTREGADO) {
             throw new ConflictoDominioException("El envío " + envio.idEnvio() + " todavía no se entregó");
         }
-        Liquidacion actual = liquidaciones.buscarPorLote(envio.idLote())
+        Liquidacion actual = liquidaciones.buscarPorEnvio(envio.idEnvio())
                 .orElseThrow(() -> new RecursoNoEncontradoException("El envío " + envio.idEnvio() + " no tiene liquidación"));
         if (pagos.existeAprobadoDe(actual.idLiquidacion()) || pagos.existePendienteDe(actual.idLiquidacion())) {
             throw new ConflictoDominioException(
@@ -71,7 +73,10 @@ public class CorregirEntregaService implements CorregirEntregaUseCase {
                 + corregida.gananciaReal().monto().toPlainString(), comando.usuario(), reloj.instant());
         return transaccion.ejecutar(() -> {
             liquidaciones.actualizar(corregida);
-            lotes.actualizarEstado(envio.idLote(), EstadoLote.LIQUIDADO, evento);
+            Lote lote = lotes.buscarPorId(envio.idLote())
+                    .orElseThrow(() -> new LoteNoEncontradoException(envio.idLote()));
+            lotes.actualizarEstado(lote.idLote(), ReglasLote.estadoSegun(lote, pedidos.vigentesDeLote(lote.idLote()),
+                    envios.existeEnRutaDeLote(lote.idLote())), evento);
             return corregida;
         });
     }

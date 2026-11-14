@@ -6,7 +6,7 @@
     }
 
     const $ = (id) => document.getElementById(id);
-    const ESTADOS = {PENDIENTE: ['Pendiente de despacho', 'espera'], DESPACHADO: ['En camino', 'espera'],
+    const ESTADOS = {PENDIENTE: ['Pendiente de despacho', 'espera'], DESPACHADO: ['Despachado', 'espera'],
         ENTREGADO: ['Entregado', ''], CANCELADO: ['Cancelado', 'neutro']};
     let compradores = [];
     let destinos = [];
@@ -34,7 +34,7 @@
 
     async function registrar() {
         await cargarAuxiliares();
-        const disponibles = lotes.filter((l) => l.estadoLote === 'REGISTRADO');
+        const disponibles = lotes.filter((l) => Number(l.kgDisponibles) > 0);
         if (compradores.length === 0) {
             return avisarFalta('Primero registra un comprador', 'Un pedido necesita saber quién compra.');
         }
@@ -42,11 +42,24 @@
             return avisarFalta('Primero registra un destino', 'Un pedido necesita saber a dónde va.');
         }
         if (disponibles.length === 0) {
-            return avisarFalta('No hay lotes disponibles',
-                'Todos tus lotes ya tienen pedido. Registra una nueva cosecha para crear otro pedido.');
+            return avisarFalta('No hay lotes con kilos disponibles',
+                'Todos los kilos de tus lotes ya están en pedidos. Registra una nueva cosecha o cancela un pedido '
+                + 'pendiente para liberar kilos.');
         }
         const cotizaciones = new Map();
         let precioSugerido = null;
+        let cantidadSugerida = null;
+
+        // Al elegir un lote, el pedido propone todos los kilos que le quedan (se pueden bajar).
+        function sugerirCantidad(valores, entradas) {
+            const lote = disponibles.find((l) => String(l.idLote) === valores.idLote);
+            const campo = entradas.get('cantidadKg').entrada;
+            if (lote && (campo.value.trim() === '' || campo.value === cantidadSugerida)) {
+                cantidadSugerida = String(Number(lote.kgDisponibles));
+                campo.value = cantidadSugerida;
+                campo.dispatchEvent(new Event('input', {bubbles: true}));
+            }
+        }
 
         async function sugerirPrecio(valores, entradas) {
             if (!valores.idLote || !valores.idDestinoVenta) {
@@ -74,21 +87,37 @@
                     opciones: compradores.map((c) => ({valor: c.idComprador, texto: c.nombreComprador}))},
                 {id: 'idLote', etiqueta: 'Lote', tipo: 'select', requerido: true,
                     opciones: disponibles.map((l) => ({valor: l.idLote,
-                        texto: l.productoLote + ' · ' + window.Ui.kilos(l.cantidadKg) + ' · ' + l.chacraOrigen}))},
+                        texto: l.productoLote + ' · quedan ' + window.Ui.kilos(l.kgDisponibles) + ' de '
+                            + window.Ui.kilos(l.cantidadKg) + ' · ' + l.chacraOrigen}))},
+                {id: 'cantidadKg', etiqueta: 'Cantidad del pedido (kg)', tipo: 'numero', requerido: true,
+                    ayuda: 'Puede ser una parte del lote: el resto sigue disponible para otro comprador.'},
                 {id: 'idDestinoVenta', etiqueta: 'Destino', tipo: 'select', requerido: true,
                     opciones: destinos.map((d) => ({valor: d.idDestinoVenta, texto: d.nombreDestino + ' (' + d.ciudadDestino + ')'}))},
                 {id: 'precioAcordadoPorKg', etiqueta: 'Precio acordado por kilo (S/)', tipo: 'numero', requerido: true,
                     ayuda: 'Si el destino tiene precio cargado, lo sugerimos aquí. Puedes cambiarlo.'}
             ],
-            alCambiar: sugerirPrecio,
+            alCambiar: async (valores, entradas) => {
+                sugerirCantidad(valores, entradas);
+                await sugerirPrecio(valores, entradas);
+            },
             nota: (v) => {
                 const lote = disponibles.find((l) => String(l.idLote) === v.idLote);
-                return lote && v.precioAcordadoPorKg
-                    ? 'Ingreso acordado: ' + window.Ui.dinero(lote.cantidadKg * v.precioAcordadoPorKg) : '';
+                if (!lote) {
+                    return '';
+                }
+                const kg = Number(v.cantidadKg);
+                if (!kg || kg <= 0) {
+                    return '';
+                }
+                const resto = Number(lote.kgDisponibles) - kg;
+                const sobrante = resto < 0 ? ' · Pides más de lo que queda del lote.'
+                    : ' · Quedarían ' + window.Ui.kilos(resto) + ' disponibles.';
+                return (v.precioAcordadoPorKg ? 'Ingreso acordado: ' + window.Ui.dinero(kg * v.precioAcordadoPorKg) : '')
+                    + sobrante;
             },
             enviar: (v) => window.Api.pedir('/api/pedidos', {metodo: 'POST', cuerpo: {
                 idComprador: Number(v.idComprador), idLote: Number(v.idLote), idDestinoVenta: Number(v.idDestinoVenta),
-                precioAcordadoPorKg: v.precioAcordadoPorKg}})
+                cantidadKg: v.cantidadKg.replace(',', '.'), precioAcordadoPorKg: v.precioAcordadoPorKg}})
         });
         if (creado) {
             window.Ui.aviso('Pedido registrado');
@@ -96,18 +125,18 @@
         }
     }
 
-    // Solo un pedido pendiente (sin envío en curso); el lote queda libre para otro pedido.
+    // Solo un pedido pendiente (sin envío en curso); sus kilos vuelven a quedar disponibles en el lote.
     async function cancelar(pedido) {
         const acepto = await window.Ui.confirmar({
             titulo: 'Cancelar el pedido ' + pedido.idPedido,
-            texto: 'El pedido de ' + nombreComprador(pedido.idComprador) + ' queda cancelado y el lote '
-                + nombreLote(pedido.idLote) + ' vuelve a estar disponible para otro pedido. '
-                + 'Si ya tenía un envío, cancela primero el envío en la sección Envíos.',
+            texto: 'El pedido de ' + nombreComprador(pedido.idComprador) + ' queda cancelado y sus '
+                + window.Ui.kilos(pedido.cantidadKg) + ' vuelven a estar disponibles en el lote '
+                + nombreLote(pedido.idLote) + '. Si ya tenía un envío, cancela primero el envío en la sección Envíos.',
             textoAceptar: 'Cancelar pedido',
             enviar: () => window.Api.pedir('/api/pedidos/' + pedido.idPedido + '/cancelar', {metodo: 'POST'})
         });
         if (acepto) {
-            window.Ui.aviso('Pedido cancelado: el lote quedó disponible');
+            window.Ui.aviso('Pedido cancelado: sus kilos quedaron disponibles');
             cargar();
         }
     }

@@ -37,7 +37,7 @@ public record Vehiculo(Long idVehiculo, Long idTransportista, String placaVehicu
 
     public void verificarCapacidad(BigDecimal cargaKg) {
         if (cargaKg.compareTo(capacidadKg) > 0) {
-            throw new DominioException("El lote pesa " + cargaKg.toPlainString() + " kg y el vehículo "
+            throw new DominioException("El pedido pesa " + cargaKg.toPlainString() + " kg y el vehículo "
                     + placaVehiculo + " carga hasta " + capacidadKg.toPlainString() + " kg");
         }
     }

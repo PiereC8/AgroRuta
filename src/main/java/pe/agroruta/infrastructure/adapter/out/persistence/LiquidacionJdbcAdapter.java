@@ -73,8 +73,8 @@ public class LiquidacionJdbcAdapter implements LiquidacionRepositoryPort {
     }
 
     @Override
-    public Optional<Liquidacion> buscarPorLote(Long idLote) {
-        return jdbc.query("SELECT " + COLUMNAS + " FROM liquidacion WHERE id_lote = ?", FILA, idLote)
+    public Optional<Liquidacion> buscarPorEnvio(Long idEnvio) {
+        return jdbc.query("SELECT " + COLUMNAS + " FROM liquidacion WHERE id_envio = ?", FILA, idEnvio)
                 .stream().findFirst();
     }
 

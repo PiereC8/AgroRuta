@@ -66,7 +66,7 @@ public class DescargarComprobanteService implements DescargarComprobanteUseCase 
         }
         Envio envio = envios.buscarPorId(sesion.idEnvio())
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe el envío " + sesion.idEnvio()));
-        Liquidacion liquidacion = liquidaciones.buscarPorLote(envio.idLote())
+        Liquidacion liquidacion = liquidaciones.buscarPorEnvio(envio.idEnvio())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Este pedido todavía no tiene comprobante"));
         Pago pago = pagos.ultimoDeLiquidacion(liquidacion.idLiquidacion())
                 .filter(p -> p.estadoPago() == EstadoPago.APROBADO)

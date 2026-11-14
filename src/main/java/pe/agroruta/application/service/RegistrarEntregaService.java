@@ -15,6 +15,7 @@ import pe.agroruta.domain.model.EventoLote;
 import pe.agroruta.domain.model.Liquidacion;
 import pe.agroruta.domain.model.Lote;
 import pe.agroruta.domain.model.LoteNoEncontradoException;
+import pe.agroruta.domain.model.ReglasLote;
 import pe.agroruta.domain.model.Pedido;
 import pe.agroruta.domain.model.RecursoNoEncontradoException;
 import pe.agroruta.domain.model.TipoEventoLote;
@@ -63,7 +64,6 @@ public class RegistrarEntregaService implements RegistrarEntregaUseCase {
         pedido.entregado();
         Lote lote = lotes.buscarPorId(envio.idLote())
                 .orElseThrow(() -> new LoteNoEncontradoException(envio.idLote()));
-        lote.entregar().liquidar();
 
         Dinero fletePorKg = costoFletePorKg(pedido);
         Liquidacion liquidacion = Liquidacion.calcular(pedido, envio, comando.cantidadRecibidaKg(),
@@ -82,8 +82,10 @@ public class RegistrarEntregaService implements RegistrarEntregaUseCase {
         return transaccion.ejecutar(() -> {
             envios.actualizar(entregado);
             pedidos.actualizarEstado(pedido.idPedido(), EstadoPedido.ENTREGADO);
-            lotes.actualizarEstado(lote.idLote(), EstadoLote.ENTREGADO, eventoEntrega);
-            lotes.actualizarEstado(lote.idLote(), EstadoLote.LIQUIDADO, eventoLiquidacion);
+            EstadoLote estadoDelLote = ReglasLote.estadoSegun(lote, pedidos.vigentesDeLote(lote.idLote()),
+                    envios.existeEnRutaDeLote(lote.idLote()));
+            lotes.actualizarEstado(lote.idLote(), estadoDelLote, eventoEntrega);
+            lotes.actualizarEstado(lote.idLote(), estadoDelLote, eventoLiquidacion);
             return liquidaciones.guardarNueva(liquidacion);
         });
     }

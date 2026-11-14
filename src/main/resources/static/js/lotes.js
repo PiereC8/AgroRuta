@@ -8,7 +8,7 @@
     const $ = (id) => document.getElementById(id);
     const el = window.Ui.el;
     const ESTADOS = {
-        REGISTRADO: ['Disponible', ''], RESERVADO: ['Con pedido', 'espera'], DESPACHADO: ['En camino', 'espera'],
+        REGISTRADO: ['Disponible', ''], RESERVADO: ['Reservado', 'espera'], DESPACHADO: ['En camino', 'espera'],
         ENTREGADO: ['Entregado', ''], LIQUIDADO: ['Liquidado', 'neutro']
     };
     const EVENTOS = {CANCELACION: 'Cancelación', CORRECCION: 'Entrega corregida', REGISTRO: 'Registrado', RESERVA: 'Reservado por un pedido', DESPACHO: 'Despachado',
@@ -94,7 +94,8 @@
     async function verDetalle(lote) {
         const contenido = el('div');
         contenido.appendChild(el('p', 'suave', 'Cargando…'));
-        const abierto = window.Ui.detalle({titulo: lote.productoLote + ' · ' + window.Ui.kilos(lote.cantidadKg),
+        const abierto = window.Ui.detalle({titulo: lote.productoLote + ' · ' + window.Ui.kilos(lote.cantidadKg)
+                + ' · quedan ' + window.Ui.kilos(lote.kgDisponibles),
             contenido, ancho: true});
         try {
             const [eventos, cotizacion] = await Promise.all([
@@ -133,6 +134,7 @@
         window.Ui.tabla($('lista'), [
             {titulo: 'Producto', clase: 'largo', valor: (l) => l.productoLote},
             {titulo: 'Cantidad', clase: 'numero', valor: (l) => window.Ui.kilos(l.cantidadKg)},
+            {titulo: 'Disponible', clase: 'numero', valor: (l) => window.Ui.kilos(l.kgDisponibles)},
             {titulo: 'Cosecha', valor: (l) => window.Ui.dia(l.fechaCosecha)},
             {titulo: 'Chacra', clase: 'largo', valor: (l) => l.chacraOrigen},
             {titulo: 'Estado', valor: (l) => window.Ui.etiqueta((ESTADOS[l.estadoLote] || [l.estadoLote])[0],

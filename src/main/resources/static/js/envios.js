@@ -181,7 +181,7 @@
 
     async function corregirEntrega(envio) {
         try {
-            const previa = await window.Api.pedir('/api/lotes/' + envio.idLote + '/liquidacion');
+            const previa = await window.Api.pedir('/api/envios/' + envio.idEnvio + '/liquidacion');
             await registrarEntrega(envio, previa);
         } catch (error) {
             window.Ui.aviso(error.message, 'error');
@@ -194,7 +194,8 @@
             titulo: 'Cancelar el envío ' + envio.idEnvio,
             texto: (enRuta ? 'El vehículo ' + placaDe(envio.idVehiculo) + ' ya salió. ' : '')
                 + 'El envío queda cancelado, el vehículo queda libre y el pedido vuelve a «pendiente de despacho» para '
-                + 'mandarlo en otro vehículo. Los enlaces del conductor y del comprador dejan de funcionar.',
+                + 'mandarlo en otro vehículo; sus kilos siguen reservados para ese pedido. Los enlaces del conductor y del '
+                + 'comprador dejan de funcionar.',
             textoAceptar: 'Cancelar envío',
             enviar: () => window.Api.pedir('/api/envios/' + envio.idEnvio + '/cancelar', {metodo: 'POST'})
         });
@@ -206,7 +207,7 @@
 
     async function verLiquidacion(envio) {
         try {
-            await mostrarLiquidacion(await window.Api.pedir('/api/lotes/' + envio.idLote + '/liquidacion'));
+            await mostrarLiquidacion(await window.Api.pedir('/api/envios/' + envio.idEnvio + '/liquidacion'));
         } catch (error) {
             window.Ui.aviso(error.message, 'error');
         }

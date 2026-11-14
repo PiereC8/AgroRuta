@@ -121,14 +121,15 @@ public class BeanConfig {
     }
 
     @Bean
-    ConsultarLotesUseCase consultarLotesUseCase(LoteRepositoryPort lotes) {
-        return new ConsultarLotesService(lotes);
+    ConsultarLotesUseCase consultarLotesUseCase(LoteRepositoryPort lotes, PedidoRepositoryPort pedidos) {
+        return new ConsultarLotesService(lotes, pedidos);
     }
 
     @Bean
     CotizarFleteUseCase cotizarFleteUseCase(LoteRepositoryPort lotes, DestinoRepositoryPort destinos,
-                                            PreciosDestinoPort precios, TarifaPort tarifas) {
-        return new CotizarFleteService(lotes, destinos, precios, tarifas);
+                                            PreciosDestinoPort precios, TarifaPort tarifas,
+                                            PedidoRepositoryPort pedidos) {
+        return new CotizarFleteService(lotes, destinos, precios, tarifas, pedidos);
     }
 
     @Bean
@@ -151,8 +152,9 @@ public class BeanConfig {
     @Bean
     GestionarPedidosUseCase gestionarPedidosUseCase(PedidoRepositoryPort pedidos, CompradorRepositoryPort compradores,
                                                     LoteRepositoryPort lotes, DestinoRepositoryPort destinos,
+                                                    EnvioRepositoryPort envios, TransaccionPort transaccion,
                                                     Clock reloj) {
-        return new GestionarPedidosService(pedidos, compradores, lotes, destinos, reloj);
+        return new GestionarPedidosService(pedidos, compradores, lotes, destinos, envios, transaccion, reloj);
     }
 
     @Bean

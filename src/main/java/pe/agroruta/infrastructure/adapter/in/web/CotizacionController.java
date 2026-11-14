@@ -38,7 +38,7 @@ public class CotizacionController {
                     .map(opcion -> OpcionRespuesta.de(opcion, opcion == cotizacion.opciones().get(0), dueno))
                     .toList();
             return new CotizacionRespuesta(cotizacion.lote().idLote(), cotizacion.lote().productoLote(),
-                    cotizacion.lote().cantidadKg(),
+                    cotizacion.cantidadKg(),
                     cotizacion.mejorOpcion().map(o -> o.destino().nombreDestino()).orElse(null),
                     opciones,
                     cotizacion.omitidos().stream().map(OmitidoRespuesta::de).toList());

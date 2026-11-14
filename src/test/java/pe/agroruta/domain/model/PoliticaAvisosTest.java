@@ -105,4 +105,16 @@ class PoliticaAvisosTest {
         assertThat(detenido.clave()).isEqualTo("alerta-envio:11");
         assertThat(detenido.cuerpo()).contains("envío 6").contains("Mercado Lima");
     }
+
+    @Test
+    void el_retraso_del_envio_avisa_al_operador_y_al_dueno_con_su_propio_tipo_y_titulo() {
+        Aviso retraso = politica.avisosDe(new AlertaDeEnvio(14L, 6L, TipoAlerta.RETRASO, "Mercado Lima",
+                "El envío lleva un retraso de unos 55 minutos respecto de lo previsto")).get(0);
+
+        assertThat(retraso.tipo()).isEqualTo(TipoAviso.ENVIO_RETRASADO);
+        assertThat(retraso.tipo().destinatarios()).isEqualTo(Set.of(Rol.OPERADOR, Rol.DUENO));
+        assertThat(retraso.clave()).isEqualTo("alerta-envio:14");
+        assertThat(retraso.asunto()).contains("Envío con retraso").contains("envío 6");
+        assertThat(retraso.cuerpo()).contains("Mercado Lima").contains("55 minutos");
+    }
 }

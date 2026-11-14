@@ -15,6 +15,9 @@ public interface EnvioRepositoryPort {
 
     List<Envio> listar(int pagina, int tamano);
 
+    /** ¿Algún envío de ese lote va en ruta? Con eso se calcula el estado del lote. */
+    boolean existeEnRutaDeLote(Long idLote);
+
     /** Un vehículo está ocupado mientras tenga un envío programado o en ruta. */
     boolean existeActivoDeVehiculo(Long idVehiculo);
 }

@@ -100,6 +100,12 @@ public class LoteJdbcAdapter implements LoteRepositoryPort {
     }
 
     @Override
+    public Optional<Lote> buscarParaActualizar(Long idLote) {
+        return jdbc.query("SELECT " + COLUMNAS_LOTE + " FROM lote WHERE id_lote = ? FOR UPDATE", FILA_LOTE, idLote)
+                .stream().findFirst();
+    }
+
+    @Override
     public List<Lote> listar(int pagina, int tamano) {
         return jdbc.query("SELECT " + COLUMNAS_LOTE + " FROM lote ORDER BY fecha_cosecha DESC, id_lote DESC LIMIT ? OFFSET ?",
                 FILA_LOTE, tamano, (long) pagina * tamano);

@@ -37,7 +37,7 @@ public class PedidoController {
     public PedidoRespuesta registrar(@Valid @RequestBody PedidoSolicitud solicitud,
                                      @AuthenticationPrincipal DatosToken usuario) {
         return PedidoRespuesta.de(pedidos.registrar(new GestionarPedidosUseCase.Comando(
-                solicitud.idComprador(), solicitud.idLote(), solicitud.idDestinoVenta(),
+                solicitud.idComprador(), solicitud.idLote(), solicitud.idDestinoVenta(), solicitud.cantidadKg(),
                 solicitud.precioAcordadoPorKg(), usuario.nombreUsuario())));
     }
 
@@ -52,8 +52,9 @@ public class PedidoController {
         return PedidoRespuesta.de(pedidos.obtener(idPedido));
     }
 
+    /** cantidadKg vacío: el pedido toma todo lo que quede disponible del lote. */
     public record PedidoSolicitud(@NotNull Long idComprador, @NotNull Long idLote, @NotNull Long idDestinoVenta,
-                                  @NotNull BigDecimal precioAcordadoPorKg) {
+                                  BigDecimal cantidadKg, @NotNull BigDecimal precioAcordadoPorKg) {
     }
 
     public record PedidoRespuesta(Long idPedido, Long idComprador, Long idLote, Long idDestinoVenta,

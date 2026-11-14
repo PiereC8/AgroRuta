@@ -52,7 +52,7 @@ public class EnviarEnlacePagoService implements EnviarEnlacePagoUseCase {
         }
         Envio envio = envios.buscarPorId(comando.idEnvio())
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe el envío " + comando.idEnvio()));
-        Liquidacion liquidacion = liquidaciones.buscarPorLote(envio.idLote())
+        Liquidacion liquidacion = liquidaciones.buscarPorEnvio(envio.idEnvio())
                 .orElseThrow(() -> new ConflictoDominioException(
                         "El pedido todavía no fue entregado: no hay nada que cobrar"));
         if (!liquidacion.ingresoReal().esPositivo()) {

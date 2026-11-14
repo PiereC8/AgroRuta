@@ -159,7 +159,7 @@ public class PagarPedidoService implements PagarPedidoUseCase {
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe el envío " + sesion.idEnvio()));
         Pedido pedido = pedidos.buscarPorId(envio.idPedido())
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe el pedido " + envio.idPedido()));
-        Liquidacion liquidacion = liquidaciones.buscarPorLote(envio.idLote())
+        Liquidacion liquidacion = liquidaciones.buscarPorEnvio(envio.idEnvio())
                 .orElseThrow(() -> new ConflictoDominioException("El pedido todavía no tiene liquidación"));
         Comprador comprador = compradores.buscarPorId(pedido.idComprador()).orElseThrow(
                 () -> new RecursoNoEncontradoException("No existe el comprador " + pedido.idComprador()));

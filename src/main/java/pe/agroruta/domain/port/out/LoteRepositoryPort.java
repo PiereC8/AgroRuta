@@ -16,6 +16,11 @@ public interface LoteRepositoryPort {
 
     Optional<Lote> buscarPorId(Long idLote);
 
+    /**
+     * Igual que buscarPorId, pero bloquea la fila del lote hasta que termine la transacción actual. Sirve para que dos pedidos a la vez no reserven los mismos kg.
+     */
+    Optional<Lote> buscarParaActualizar(Long idLote);
+
     List<Lote> listar(int pagina, int tamano);
 
     List<EventoLote> historial(Long idLote);

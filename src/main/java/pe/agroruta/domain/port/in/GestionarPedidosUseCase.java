@@ -13,7 +13,8 @@ public interface GestionarPedidosUseCase {
 
     Pedido obtener(Long idPedido);
 
-    record Comando(Long idComprador, Long idLote, Long idDestinoVenta, BigDecimal precioAcordadoPorKg,
-                   String usuarioRegistro) {
+    /** cantidadKg vacío = todo lo que quede disponible del lote. */
+    record Comando(Long idComprador, Long idLote, Long idDestinoVenta, BigDecimal cantidadKg,
+                   BigDecimal precioAcordadoPorKg, String usuarioRegistro) {
     }
 }

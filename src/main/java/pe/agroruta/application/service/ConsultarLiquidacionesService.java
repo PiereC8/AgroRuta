@@ -17,9 +17,9 @@ public class ConsultarLiquidacionesService implements ConsultarLiquidacionesUseC
     }
 
     @Override
-    public Liquidacion obtenerPorLote(Long idLote) {
-        return liquidaciones.buscarPorLote(idLote)
-                .orElseThrow(() -> new RecursoNoEncontradoException("El lote " + idLote + " todavía no tiene liquidación"));
+    public Liquidacion obtenerPorEnvio(Long idEnvio) {
+        return liquidaciones.buscarPorEnvio(idEnvio)
+                .orElseThrow(() -> new RecursoNoEncontradoException("El envío " + idEnvio + " todavía no tiene liquidación"));
     }
 
     @Override

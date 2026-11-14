@@ -184,8 +184,21 @@ final class Falsos {
         }
 
         @Override
-        public boolean existeParaLote(Long idLote) {
-            return pedidos.stream().anyMatch(p -> p.idLote().equals(idLote) && p.estadoPedido() != EstadoPedido.CANCELADO);
+        public List<Pedido> vigentesDeLote(Long idLote) {
+            return pedidos.stream().filter(p -> p.idLote().equals(idLote) && p.estadoPedido() != EstadoPedido.CANCELADO)
+                    .toList();
+        }
+
+        @Override
+        public java.util.Map<Long, java.math.BigDecimal> kgComprometidosPorLote(java.util.Collection<Long> idsLote) {
+            java.util.Map<Long, java.math.BigDecimal> resultado = new java.util.HashMap<>();
+            for (Long id : idsLote) {
+                var vigentes = vigentesDeLote(id);
+                if (!vigentes.isEmpty()) {
+                    resultado.put(id, pe.agroruta.domain.model.ReglasLote.kgComprometidos(vigentes));
+                }
+            }
+            return resultado;
         }
 
         @Override
@@ -279,6 +292,11 @@ final class Falsos {
         }
 
         @Override
+        public boolean existeEnRutaDeLote(Long idLote) {
+            return envios.stream().anyMatch(e -> e.idLote().equals(idLote) && e.estadoEnvio() == EstadoEnvio.EN_RUTA);
+        }
+
+        @Override
         public boolean existeActivoDeVehiculo(Long idVehiculo) {
             return envios.stream().anyMatch(e -> e.idVehiculo().equals(idVehiculo)
                     && (e.estadoEnvio() == EstadoEnvio.PROGRAMADO || e.estadoEnvio() == EstadoEnvio.EN_RUTA));
@@ -301,8 +319,8 @@ final class Falsos {
         }
 
         @Override
-        public Optional<Liquidacion> buscarPorLote(Long idLote) {
-            return liquidaciones.stream().filter(l -> l.idLote().equals(idLote)).findFirst();
+        public Optional<Liquidacion> buscarPorEnvio(Long idEnvio) {
+            return liquidaciones.stream().filter(l -> l.idEnvio().equals(idEnvio)).findFirst();
         }
 
         @Override

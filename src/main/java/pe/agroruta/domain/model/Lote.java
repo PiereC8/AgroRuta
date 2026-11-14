@@ -46,41 +46,6 @@ public record Lote(Long idLote, String productoLote, BigDecimal cantidadKg, Loca
                 usuarioRegistro, ahora);
     }
 
-    public Lote reservar() {
-        return conEstado(EstadoLote.REGISTRADO, EstadoLote.RESERVADO);
-    }
-
-    public Lote despachar() {
-        return conEstado(EstadoLote.RESERVADO, EstadoLote.DESPACHADO);
-    }
-
-    public Lote entregar() {
-        return conEstado(EstadoLote.DESPACHADO, EstadoLote.ENTREGADO);
-    }
-
-    public Lote liquidar() {
-        return conEstado(EstadoLote.ENTREGADO, EstadoLote.LIQUIDADO);
-    }
-
-    /** Al cancelar el envío el lote vuelve a estar disponible, haya salido o no. */
-    public Lote liberar() {
-        if (estadoLote != EstadoLote.RESERVADO && estadoLote != EstadoLote.DESPACHADO) {
-            throw new ConflictoDominioException("El lote " + idLote + " está " + estadoLote
-                    + " y solo se libera si estaba reservado o en camino");
-        }
-        return new Lote(idLote, productoLote, cantidadKg, fechaCosecha, chacraOrigen, EstadoLote.REGISTRADO,
-                usuarioRegistro, fechaRegistro);
-    }
-
-    private Lote conEstado(EstadoLote requerido, EstadoLote nuevo) {
-        if (estadoLote != requerido) {
-            throw new ConflictoDominioException(
-                    "El lote " + idLote + " está " + estadoLote + " y debe estar " + requerido);
-        }
-        return new Lote(idLote, productoLote, cantidadKg, fechaCosecha, chacraOrigen, nuevo, usuarioRegistro,
-                fechaRegistro);
-    }
-
     public Lote conId(Long nuevoIdLote) {
         return new Lote(nuevoIdLote, productoLote, cantidadKg, fechaCosecha, chacraOrigen, estadoLote,
                 usuarioRegistro, fechaRegistro);

@@ -1,9 +1,10 @@
 package pe.agroruta.domain.model;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 
-/** Un pedido cubre todo un lote: lo que pide el comprador es lo que pesa el lote. */
+/** Un pedido toma una parte de un lote, o todo el lote, según lo que pide el comprador. */
 public record Pedido(Long idPedido, Long idComprador, Long idLote, Long idDestinoVenta, BigDecimal cantidadKg,
                      Dinero precioAcordadoPorKg, EstadoPedido estadoPedido, String usuarioRegistro,
                      Instant fechaPedido) {
@@ -21,13 +22,38 @@ public record Pedido(Long idPedido, Long idComprador, Long idLote, Long idDestin
         }
     }
 
+    /**
+     * @param kgDisponibles lo que queda del lote sin comprometer en otros pedidos (ver {@link ReglasLote})
+     */
+    public static Pedido nuevo(Long idComprador, Lote lote, BigDecimal kgDisponibles, Long idDestinoVenta,
+                               BigDecimal cantidadKg, Dinero precioAcordadoPorKg, String usuarioRegistro,
+                               Instant ahora) {
+        if (kgDisponibles.signum() <= 0) {
+            throw new ConflictoDominioException("El lote " + lote.idLote() + " no tiene kg disponibles");
+        }
+        if (cantidadKg == null || cantidadKg.signum() <= 0) {
+            throw new DominioException("La cantidad del pedido debe ser mayor que cero");
+        }
+        if (cantidadKg.stripTrailingZeros().scale() > 3) {
+            throw new DominioException("La cantidad del pedido admite hasta 3 decimales");
+        }
+        BigDecimal cantidad = cantidadKg.setScale(3, RoundingMode.UNNECESSARY);
+        if (cantidad.compareTo(kgDisponibles) > 0) {
+            throw new ConflictoDominioException("El lote " + lote.idLote() + " solo tiene "
+                    + kgDisponibles.toPlainString() + " kg disponibles y el pedido pide " + cantidad.toPlainString());
+        }
+        return new Pedido(null, idComprador, lote.idLote(), idDestinoVenta, cantidad, precioAcordadoPorKg,
+                EstadoPedido.PENDIENTE, usuarioRegistro, ahora);
+    }
+
+    /** Atajo para un pedido que toma todo el lote; solo vale si el lote no tiene ningún otro pedido. */
     public static Pedido nuevo(Long idComprador, Lote lote, Long idDestinoVenta, Dinero precioAcordadoPorKg,
                                String usuarioRegistro, Instant ahora) {
         if (lote.estadoLote() != EstadoLote.REGISTRADO) {
             throw new ConflictoDominioException("El lote " + lote.idLote() + " ya está " + lote.estadoLote());
         }
-        return new Pedido(null, idComprador, lote.idLote(), idDestinoVenta, lote.cantidadKg(),
-                precioAcordadoPorKg, EstadoPedido.PENDIENTE, usuarioRegistro, ahora);
+        return nuevo(idComprador, lote, lote.cantidadKg(), idDestinoVenta, lote.cantidadKg(), precioAcordadoPorKg,
+                usuarioRegistro, ahora);
     }
 
     public Dinero ingresoAcordado() {

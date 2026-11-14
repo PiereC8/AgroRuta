@@ -9,7 +9,7 @@ public interface ConsultarPagosUseCase {
 
     List<Pago> listar(int pagina, int tamano);
 
-    Pago pagoDeLote(Long idLote);
+    Pago pagoDeEnvio(Long idEnvio);
 
     Comprobante comprobanteDePago(Long idPago);
 }

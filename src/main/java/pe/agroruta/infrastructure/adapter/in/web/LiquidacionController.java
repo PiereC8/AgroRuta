@@ -46,10 +46,11 @@ public class LiquidacionController {
                 usuario.nombreUsuario())), usuario);
     }
 
-    @GetMapping("/api/lotes/{idLote}/liquidacion")
-    public LiquidacionRespuesta obtenerPorLote(@PathVariable Long idLote,
-                                               @AuthenticationPrincipal DatosToken usuario) {
-        return LiquidacionRespuesta.de(consultarLiquidaciones.obtenerPorLote(idLote), usuario);
+    /** Cada envío tiene su liquidación; un lote con varios pedidos tiene varias. */
+    @GetMapping("/api/envios/{idEnvio}/liquidacion")
+    public LiquidacionRespuesta obtenerPorEnvio(@PathVariable Long idEnvio,
+                                                @AuthenticationPrincipal DatosToken usuario) {
+        return LiquidacionRespuesta.de(consultarLiquidaciones.obtenerPorEnvio(idEnvio), usuario);
     }
 
     @GetMapping("/api/liquidaciones")

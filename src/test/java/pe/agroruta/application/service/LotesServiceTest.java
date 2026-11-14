@@ -53,6 +53,11 @@ class LotesServiceTest {
         }
 
         @Override
+        public Optional<Lote> buscarParaActualizar(Long idLote) {
+            return buscarPorId(idLote);
+        }
+
+        @Override
         public Optional<Lote> buscarPorId(Long idLote) {
             return lotes.stream().filter(l -> l.idLote().equals(idLote)).findFirst();
         }
@@ -70,7 +75,7 @@ class LotesServiceTest {
 
     private final LotesEnMemoria repositorio = new LotesEnMemoria();
     private final RegistrarLoteService registrar = new RegistrarLoteService(repositorio, RELOJ);
-    private final ConsultarLotesService consultar = new ConsultarLotesService(repositorio);
+    private final ConsultarLotesService consultar = new ConsultarLotesService(repositorio, new Falsos.PedidosEnMemoria());
 
     private Comando comando(LocalDate cosecha) {
         return new Comando("Palta Hass", new BigDecimal("1250.5"), cosecha, "Chacra Sur", "operador.demo");

@@ -6,11 +6,11 @@ import java.util.List;
 
 import pe.agroruta.domain.model.ConflictoDominioException;
 import pe.agroruta.domain.model.Envio;
-import pe.agroruta.domain.model.EstadoLote;
 import pe.agroruta.domain.model.EstadoPedido;
 import pe.agroruta.domain.model.EventoLote;
 import pe.agroruta.domain.model.Lote;
 import pe.agroruta.domain.model.LoteNoEncontradoException;
+import pe.agroruta.domain.model.ReglasLote;
 import pe.agroruta.domain.model.Paginacion;
 import pe.agroruta.domain.model.Pedido;
 import pe.agroruta.domain.model.RecursoNoEncontradoException;
@@ -50,11 +50,10 @@ public class DespacharEnvioService implements DespacharEnvioUseCase {
         Pedido despachado = pedido.despachado();
         Lote lote = lotes.buscarPorId(pedido.idLote())
                 .orElseThrow(() -> new LoteNoEncontradoException(pedido.idLote()));
-        lote.reservar();
         Vehiculo vehiculo = transporte.buscarVehiculo(idVehiculo)
                 .filter(Vehiculo::vehiculoActivo)
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe el vehículo " + idVehiculo));
-        vehiculo.verificarCapacidad(lote.cantidadKg());
+        vehiculo.verificarCapacidad(pedido.cantidadKg());
         if (envios.existeActivoDeVehiculo(vehiculo.idVehiculo())) {
             throw new ConflictoDominioException("El vehículo " + vehiculo.placaVehiculo() + " ya tiene un envío en curso");
         }
@@ -62,12 +61,13 @@ public class DespacharEnvioService implements DespacharEnvioUseCase {
         Instant ahora = reloj.instant();
         Envio envio = Envio.programar(pedido, vehiculo, usuario, ahora);
         EventoLote evento = new EventoLote(TipoEventoLote.RESERVA,
-                "Lote reservado para el pedido " + pedido.idPedido() + " en el vehículo " + vehiculo.placaVehiculo(),
-                usuario, ahora);
+                "Pedido " + pedido.idPedido() + " (" + pedido.cantidadKg().toPlainString() + " kg) despachado en el "
+                        + "vehículo " + vehiculo.placaVehiculo(), usuario, ahora);
         return transaccion.ejecutar(() -> {
             Envio guardado = envios.guardarNuevo(envio);
             pedidos.actualizarEstado(despachado.idPedido(), EstadoPedido.DESPACHADO);
-            lotes.actualizarEstado(lote.idLote(), EstadoLote.RESERVADO, evento);
+            lotes.actualizarEstado(lote.idLote(), ReglasLote.estadoSegun(lote, pedidos.vigentesDeLote(lote.idLote()),
+                    envios.existeEnRutaDeLote(lote.idLote())), evento);
             return guardado;
         });
     }
@@ -79,12 +79,12 @@ public class DespacharEnvioService implements DespacharEnvioUseCase {
         Envio enRuta = envio.iniciarRuta(ahora);
         Lote lote = lotes.buscarPorId(envio.idLote())
                 .orElseThrow(() -> new LoteNoEncontradoException(envio.idLote()));
-        lote.despachar();
         EventoLote evento = new EventoLote(TipoEventoLote.DESPACHO,
                 "El envío " + envio.idEnvio() + " salió en ruta", usuario, ahora);
         transaccion.ejecutar(() -> {
             envios.actualizar(enRuta);
-            lotes.actualizarEstado(lote.idLote(), EstadoLote.DESPACHADO, evento);
+            lotes.actualizarEstado(lote.idLote(), ReglasLote.estadoSegun(lote, pedidos.vigentesDeLote(lote.idLote()),
+                    envios.existeEnRutaDeLote(lote.idLote())), evento);
             return enRuta;
         });
         return enRuta;

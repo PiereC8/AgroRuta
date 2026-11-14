@@ -41,7 +41,7 @@ public class SimularPagoEfectivoService implements SimularPagoEfectivoUseCase {
         }
         Envio envio = envios.buscarPorId(sesion.idEnvio())
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe el envío " + sesion.idEnvio()));
-        Liquidacion liquidacion = liquidaciones.buscarPorLote(envio.idLote())
+        Liquidacion liquidacion = liquidaciones.buscarPorEnvio(envio.idEnvio())
                 .orElseThrow(() -> new ConflictoDominioException("El pedido todavía no tiene liquidación"));
         Pago pago = pagos.ultimoDeLiquidacion(liquidacion.idLiquidacion())
                 .filter(p -> p.estadoPago() == EstadoPago.PENDIENTE

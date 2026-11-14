@@ -330,7 +330,7 @@ class PagoWebTest {
     @Test
     void el_operador_consulta_pagos_y_comprobantes_y_puede_reintentar_un_comprobante() throws Exception {
         when(consultarPagos.listar(0, 50)).thenReturn(List.of(pago(EstadoPago.APROBADO)));
-        when(consultarPagos.pagoDeLote(1L)).thenReturn(pago(EstadoPago.APROBADO));
+        when(consultarPagos.pagoDeEnvio(1L)).thenReturn(pago(EstadoPago.APROBADO));
         when(consultarPagos.comprobanteDePago(5L)).thenReturn(comprobante());
         when(comprobantes.reintentar(2L)).thenReturn(comprobante());
         when(comprobantes.consultar(2L)).thenReturn(comprobante());
@@ -338,7 +338,7 @@ class PagoWebTest {
 
         mvc.perform(get("/api/pagos").header("Authorization", operador))
                 .andExpect(status().isOk()).andExpect(jsonPath("$[0].ultimosCuatro").value("4242"));
-        mvc.perform(get("/api/lotes/1/pago").header("Authorization", operador)).andExpect(status().isOk());
+        mvc.perform(get("/api/envios/1/pago").header("Authorization", operador)).andExpect(status().isOk());
         mvc.perform(get("/api/pagos/5/comprobante").header("Authorization", operador))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.numero").value("F001-1"));
         mvc.perform(post("/api/comprobantes/2/reintentar").header("Authorization", operador))
@@ -356,9 +356,9 @@ class PagoWebTest {
 
     @Test
     void un_pago_inexistente_responde_404() throws Exception {
-        when(consultarPagos.pagoDeLote(9L)).thenThrow(new RecursoNoEncontradoException("sin pagos"));
+        when(consultarPagos.pagoDeEnvio(9L)).thenThrow(new RecursoNoEncontradoException("sin pagos"));
 
-        mvc.perform(get("/api/lotes/9/pago").header("Authorization", bearer("empresa_demo", Rol.DUENO)))
+        mvc.perform(get("/api/envios/9/pago").header("Authorization", bearer("empresa_demo", Rol.DUENO)))
                 .andExpect(status().isNotFound());
     }
 

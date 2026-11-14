@@ -42,7 +42,7 @@ public class ConsultarEstadoPagoService implements ConsultarEstadoPagoUseCase {
         Envio envio = envios.buscarPorId(sesion.idEnvio())
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe el envío " + sesion.idEnvio()));
         String descripcion = "Pedido " + envio.idPedido();
-        Optional<Liquidacion> liquidacion = liquidaciones.buscarPorLote(envio.idLote());
+        Optional<Liquidacion> liquidacion = liquidaciones.buscarPorEnvio(envio.idEnvio());
         if (liquidacion.isEmpty()) {
             return new EstadoPagoPublico(envio.estadoEnvio(), false, Dinero.CERO, descripcion, null, null);
         }

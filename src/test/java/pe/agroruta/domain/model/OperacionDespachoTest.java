@@ -28,19 +28,15 @@ class OperacionDespachoTest {
         return Vehiculo.nuevo(1L, "abc-123", new BigDecimal("2000")).conId(1L);
     }
 
-    @Test
-    void el_lote_solo_avanza_en_orden_registrado_reservado_despachado() {
-        Lote reservado = lote().reservar();
-        assertThat(reservado.estadoLote()).isEqualTo(EstadoLote.RESERVADO);
-        assertThat(reservado.despachar().estadoLote()).isEqualTo(EstadoLote.DESPACHADO);
-
-        assertThatThrownBy(() -> lote().despachar()).isInstanceOf(ConflictoDominioException.class);
-        assertThatThrownBy(reservado::reservar).isInstanceOf(ConflictoDominioException.class);
+    private static Lote reservado() {
+        Lote l = lote();
+        return new Lote(l.idLote(), l.productoLote(), l.cantidadKg(), l.fechaCosecha(), l.chacraOrigen(),
+                EstadoLote.RESERVADO, l.usuarioRegistro(), l.fechaRegistro());
     }
 
     @Test
-    void no_se_crea_un_pedido_de_un_lote_que_ya_no_esta_registrado() {
-        Lote reservado = lote().reservar();
+    void el_atajo_de_pedido_por_todo_el_lote_solo_vale_si_el_lote_no_tiene_otros_pedidos() {
+        Lote reservado = reservado();
 
         assertThatThrownBy(() -> Pedido.nuevo(1L, reservado, 1L, Dinero.de("5"), "x1x", AHORA))
                 .isInstanceOf(ConflictoDominioException.class);

@@ -40,9 +40,9 @@ public class PagoController {
         return consultarPagos.listar(pagina, tamano).stream().map(PagoRespuesta::de).toList();
     }
 
-    @GetMapping("/api/lotes/{idLote}/pago")
-    public PagoRespuesta deLote(@PathVariable Long idLote) {
-        return PagoRespuesta.de(consultarPagos.pagoDeLote(idLote));
+    @GetMapping("/api/envios/{idEnvio}/pago")
+    public PagoRespuesta deEnvio(@PathVariable Long idEnvio) {
+        return PagoRespuesta.de(consultarPagos.pagoDeEnvio(idEnvio));
     }
 
     @GetMapping("/api/pagos/{idPago}/comprobante")
