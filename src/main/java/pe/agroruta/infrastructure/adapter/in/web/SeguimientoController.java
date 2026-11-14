@@ -21,6 +21,7 @@ import pe.agroruta.domain.model.EstadoEnvio;
 import pe.agroruta.domain.model.Posicion;
 import pe.agroruta.domain.model.Seguimiento;
 import pe.agroruta.domain.model.TipoEnlace;
+import pe.agroruta.domain.model.Trayecto;
 import pe.agroruta.domain.model.TipoAlerta;
 import pe.agroruta.domain.port.in.ConsultarSeguimientoUseCase;
 import pe.agroruta.domain.port.in.EnviarEnlacePagoUseCase;
@@ -107,6 +108,16 @@ public class SeguimientoController {
         }
     }
 
+    /** Puntos como [latitud, longitud]. La pantalla los usa para dibujar el camino y estimar el avance. */
+    public record RutaRespuesta(List<double[]> puntos, double distanciaMetros, long duracionSegundos,
+                                boolean porCarretera, Instant fechaCalculo) {
+        public static RutaRespuesta de(Trayecto t) {
+            return t == null ? null : new RutaRespuesta(t.puntos().stream()
+                    .map(c -> new double[]{c.latitud(), c.longitud()}).toList(), t.distanciaMetros(),
+                    t.duracionSegundos(), t.porCarretera(), t.fechaCalculo());
+        }
+    }
+
     public record AlertaRespuesta(TipoAlerta tipoAlerta, String descripcionAlerta, Instant fechaAlerta) {
         static AlertaRespuesta de(AlertaEnvio alerta) {
             return new AlertaRespuesta(alerta.tipoAlerta(), alerta.descripcionAlerta(), alerta.fechaAlerta());
@@ -117,7 +128,8 @@ public class SeguimientoController {
                                        Instant fechaEntrega, String nombreDestino, String ciudadDestino,
                                        Double latitudDestino, Double longitudDestino,
                                        PosicionRespuesta ultimaPosicion, Long etaMinutos, Instant ahora,
-                                       String canal, List<PosicionRespuesta> trazoReciente) {
+                                       String canal, List<PosicionRespuesta> trazoReciente,
+                                       RutaRespuesta ruta, Double velocidadKmh) {
         static SeguimientoRespuesta de(Seguimiento s, String identificadorNegocio) {
             return new SeguimientoRespuesta(s.envio().idEnvio(), s.envio().estadoEnvio(), s.envio().fechaSalida(),
                     s.envio().fechaEntrega(), s.nombreDestino(), s.ciudadDestino(),
@@ -125,7 +137,8 @@ public class SeguimientoController {
                     s.coordenadaDestino() == null ? null : s.coordenadaDestino().longitud(),
                     s.ultimaPosicion() == null ? null : PosicionRespuesta.de(s.ultimaPosicion()), s.etaMinutos(),
                     s.ahora(), Canales.deEnvio(identificadorNegocio, s.envio().idEnvio()),
-                    s.trazoReciente().stream().map(PosicionRespuesta::de).toList());
+                    s.trazoReciente().stream().map(PosicionRespuesta::de).toList(), RutaRespuesta.de(s.ruta()),
+                    s.velocidadKmh());
         }
     }
 }

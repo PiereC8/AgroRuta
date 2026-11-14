@@ -49,6 +49,8 @@ import pe.agroruta.domain.port.in.SeguimientoConductorUseCase;
 import pe.agroruta.domain.port.out.EnlaceEnvioRepositoryPort;
 import pe.agroruta.domain.port.out.GeneradorTokenPort;
 import pe.agroruta.domain.port.out.PublicadorSeguimientoPort;
+import pe.agroruta.domain.port.out.RutaPort;
+import pe.agroruta.domain.port.out.RutaRepositoryPort;
 import pe.agroruta.domain.port.out.SeguimientoRepositoryPort;
 import pe.agroruta.application.service.ConsultarLiquidacionesService;
 import pe.agroruta.application.service.ConsultarEstadoPagoService;
@@ -261,16 +263,20 @@ public class BeanConfig {
     SeguimientoConductorUseCase seguimientoConductorUseCase(EnvioRepositoryPort envios, PedidoRepositoryPort pedidos,
                                                             UbicacionDestinoPort ubicaciones,
                                                             SeguimientoRepositoryPort seguimiento,
-                                                            PublicadorSeguimientoPort publicador, Clock reloj) {
-        return new SeguimientoConductorService(envios, pedidos, ubicaciones, seguimiento, publicador, reloj);
+                                                            PublicadorSeguimientoPort publicador,
+                                                            RutaPort calculadorRutas, RutaRepositoryPort rutas,
+                                                            Clock reloj) {
+        return new SeguimientoConductorService(envios, pedidos, ubicaciones, seguimiento, publicador,
+                calculadorRutas, rutas, reloj);
     }
 
     @Bean
     ConsultarSeguimientoUseCase consultarSeguimientoUseCase(EnvioRepositoryPort envios, PedidoRepositoryPort pedidos,
                                                             DestinoRepositoryPort destinos,
                                                             UbicacionDestinoPort ubicaciones,
-                                                            SeguimientoRepositoryPort seguimiento, Clock reloj) {
-        return new ConsultarSeguimientoService(envios, pedidos, destinos, ubicaciones, seguimiento, reloj);
+                                                            SeguimientoRepositoryPort seguimiento,
+                                                            RutaRepositoryPort rutas, Clock reloj) {
+        return new ConsultarSeguimientoService(envios, pedidos, destinos, ubicaciones, seguimiento, rutas, reloj);
     }
 
     @Bean

@@ -90,7 +90,7 @@ class SeguimientoWebTest {
                 AHORA.minusSeconds(3600), null, "operador.demo");
         Posicion ultima = new Posicion(1L, 7L, new Coordenada(-17.5, -71.0), 9.0, AHORA.minusSeconds(10), AHORA);
         return new Seguimiento(envio, "Mercado Tacna", "Tacna", new Coordenada(-18.0146, -70.2536), ultima, 42L,
-                AHORA, List.of(ultima));
+                AHORA, List.of(ultima), null, null);
     }
 
     @Test

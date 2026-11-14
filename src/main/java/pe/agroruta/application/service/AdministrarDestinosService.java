@@ -1,6 +1,7 @@
 package pe.agroruta.application.service;
 
 import java.util.List;
+import java.util.Optional;
 
 import pe.agroruta.domain.model.Coordenada;
 import pe.agroruta.domain.model.DestinoNoEncontradoException;
@@ -72,6 +73,12 @@ public class AdministrarDestinosService implements AdministrarDestinosUseCase {
             throw new DominioException("La ubicación del destino debe estar dentro del Perú");
         }
         ubicaciones.guardarCoordenada(idDestinoVenta, coordenada);
+    }
+
+    @Override
+    public Optional<Coordenada> coordenadasDe(Long idDestinoVenta) {
+        obtener(idDestinoVenta);
+        return ubicaciones.buscarCoordenada(idDestinoVenta);
     }
 
     private DestinoVenta obtener(Long idDestinoVenta) {

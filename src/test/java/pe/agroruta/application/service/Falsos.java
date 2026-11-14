@@ -32,6 +32,8 @@ import pe.agroruta.domain.model.TipoAlerta;
 import pe.agroruta.domain.port.out.EnlaceEnvioRepositoryPort;
 import pe.agroruta.domain.port.out.GeneradorTokenPort;
 import pe.agroruta.domain.port.out.PublicadorSeguimientoPort;
+import pe.agroruta.domain.port.out.RutaPort;
+import pe.agroruta.domain.port.out.RutaRepositoryPort;
 import pe.agroruta.domain.port.out.SeguimientoRepositoryPort;
 
 import pe.agroruta.domain.model.Liquidacion;
@@ -585,6 +587,12 @@ final class Falsos {
         final List<Long> etas = new ArrayList<>();
         final List<AlertaEnvio> alertas = new ArrayList<>();
         final List<String> negocios = new ArrayList<>();
+        int rutasPublicadas = 0;
+
+        @Override
+        public void publicarRuta(String identificadorNegocio, Long idEnvio) {
+            rutasPublicadas++;
+        }
 
         @Override
         public void publicarPosicion(String identificadorNegocio, Long idEnvio, Posicion posicion, Long etaMinutos) {
@@ -597,6 +605,39 @@ final class Falsos {
         public void publicarAlerta(String identificadorNegocio, Long idEnvio, AlertaEnvio alerta) {
             negocios.add(identificadorNegocio);
             alertas.add(alerta);
+        }
+    }
+
+    static class RutasEnMemoria implements RutaRepositoryPort {
+        final java.util.Map<Long, pe.agroruta.domain.model.Trayecto> guardadas = new java.util.HashMap<>();
+
+        @Override
+        public void guardar(Long idEnvio, pe.agroruta.domain.model.Trayecto trayecto) {
+            guardadas.put(idEnvio, trayecto);
+        }
+
+        @Override
+        public Optional<pe.agroruta.domain.model.Trayecto> buscar(Long idEnvio) {
+            return Optional.ofNullable(guardadas.get(idEnvio));
+        }
+    }
+
+    /** Calcula una "carretera" de tres puntos (con un codo) o falla, según se pida. */
+    static class RutaFalsa implements RutaPort {
+        boolean disponible = true;
+        int llamadas = 0;
+
+        @Override
+        public pe.agroruta.domain.model.Trayecto calcular(pe.agroruta.domain.model.Coordenada origen,
+                                                          pe.agroruta.domain.model.Coordenada destino, Instant ahora) {
+            llamadas++;
+            if (!disponible) {
+                throw new pe.agroruta.domain.model.ServicioExternoNoDisponibleException("sin servicio");
+            }
+            var codo = new pe.agroruta.domain.model.Coordenada(origen.latitud(), destino.longitud());
+            double metros = origen.distanciaMetrosA(codo) + codo.distanciaMetrosA(destino);
+            return new pe.agroruta.domain.model.Trayecto(List.of(origen, codo, destino), metros,
+                    Math.round(metros / (50 * 1000 / 3600.0)), true, ahora);
         }
     }
 

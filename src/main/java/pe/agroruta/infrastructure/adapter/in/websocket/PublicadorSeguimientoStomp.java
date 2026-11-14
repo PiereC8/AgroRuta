@@ -15,6 +15,9 @@ public class PublicadorSeguimientoStomp implements PublicadorSeguimientoPort {
                                   String fecha, Long etaMinutos) {
     }
 
+    public record MensajeRuta(String tipo) {
+    }
+
     public record MensajeAlerta(String tipo, TipoAlerta tipoAlerta, String descripcion, String fecha) {
     }
 
@@ -29,6 +32,11 @@ public class PublicadorSeguimientoStomp implements PublicadorSeguimientoPort {
         plantilla.convertAndSend(Canales.deEnvio(identificadorNegocio, idEnvio),
                 new MensajePosicion("POSICION", posicion.coordenada().latitud(), posicion.coordenada().longitud(),
                         posicion.precisionMetros(), posicion.fechaPosicion().toString(), etaMinutos));
+    }
+
+    @Override
+    public void publicarRuta(String identificadorNegocio, Long idEnvio) {
+        plantilla.convertAndSend(Canales.deEnvio(identificadorNegocio, idEnvio), new MensajeRuta("RUTA"));
     }
 
     @Override

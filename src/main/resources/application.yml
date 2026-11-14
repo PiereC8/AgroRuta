@@ -39,6 +39,10 @@ agroruta:
       url-base: ${MERCADOPAGO_URL_BASE:https://api.mercadopago.com}
       llave-publica: ${MERCADOPAGO_LLAVE_PUBLICA:}
       token-acceso: ${MERCADOPAGO_TOKEN_ACCESO:}
+  rutas:
+    # osrm calcula el camino por carretera; lineal usa una línea recta y no llama a ningún servicio.
+    proveedor: ${RUTAS_PROVEEDOR:osrm}
+    url-base: ${RUTAS_URL_BASE:https://router.project-osrm.org}
   correo:
     servidor: ${CORREO_SERVIDOR:smtp.gmail.com}
     puerto: ${CORREO_PUERTO:587}

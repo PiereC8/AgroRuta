@@ -19,12 +19,16 @@ import pe.agroruta.domain.model.RecursoNoEncontradoException;
 import pe.agroruta.domain.model.ReglasSeguimiento;
 import pe.agroruta.domain.model.SesionEnlace;
 import pe.agroruta.domain.model.TipoAlerta;
+import pe.agroruta.domain.model.ServicioExternoNoDisponibleException;
 import pe.agroruta.domain.model.TipoEnlace;
+import pe.agroruta.domain.model.Trayecto;
 import pe.agroruta.domain.port.in.SeguimientoConductorUseCase;
 import pe.agroruta.domain.port.out.UbicacionDestinoPort;
 import pe.agroruta.domain.port.out.EnvioRepositoryPort;
 import pe.agroruta.domain.port.out.PedidoRepositoryPort;
 import pe.agroruta.domain.port.out.PublicadorSeguimientoPort;
+import pe.agroruta.domain.port.out.RutaPort;
+import pe.agroruta.domain.port.out.RutaRepositoryPort;
 import pe.agroruta.domain.port.out.SeguimientoRepositoryPort;
 
 public class SeguimientoConductorService implements SeguimientoConductorUseCase {
@@ -38,16 +42,21 @@ public class SeguimientoConductorService implements SeguimientoConductorUseCase 
     private final UbicacionDestinoPort ubicaciones;
     private final SeguimientoRepositoryPort seguimiento;
     private final PublicadorSeguimientoPort publicador;
+    private final RutaPort calculadorRutas;
+    private final RutaRepositoryPort rutas;
     private final Clock reloj;
 
     public SeguimientoConductorService(EnvioRepositoryPort envios, PedidoRepositoryPort pedidos,
                                        UbicacionDestinoPort ubicaciones, SeguimientoRepositoryPort seguimiento,
-                                       PublicadorSeguimientoPort publicador, Clock reloj) {
+                                       PublicadorSeguimientoPort publicador, RutaPort calculadorRutas,
+                                       RutaRepositoryPort rutas, Clock reloj) {
         this.envios = envios;
         this.pedidos = pedidos;
         this.ubicaciones = ubicaciones;
         this.seguimiento = seguimiento;
         this.publicador = publicador;
+        this.calculadorRutas = calculadorRutas;
+        this.rutas = rutas;
         this.reloj = reloj;
     }
 
@@ -87,10 +96,12 @@ public class SeguimientoConductorService implements SeguimientoConductorUseCase 
         boolean reciente = !posicion.fechaPosicion().isBefore(ahora.minus(FRESCURA));
         Optional<Coordenada> destino = coordenadaDestino(envio);
         OptionalLong eta = OptionalLong.empty();
+        Trayecto trayecto = null;
         if (reciente && destino.isPresent()) {
+            trayecto = asegurarRuta(sesion, envio, posicion.coordenada(), destino.get(), ahora);
             List<Posicion> ultimas = seguimiento.posicionesDesde(envio.idEnvio(),
                     posicion.fechaPosicion().minus(ReglasSeguimiento.VENTANA_VELOCIDAD));
-            eta = ReglasSeguimiento.etaMinutos(ultimas, destino.get());
+            eta = ReglasSeguimiento.etaMinutos(ultimas, destino.get(), trayecto);
         }
         publicador.publicarPosicion(sesion.identificadorNegocio(), envio.idEnvio(), guardada.get(),
                 eta.isPresent() ? eta.getAsLong() : null);
@@ -98,6 +109,7 @@ public class SeguimientoConductorService implements SeguimientoConductorUseCase 
         if (reciente && envio.estadoEnvio() == EstadoEnvio.EN_RUTA) {
             avisarSiLlego(sesion, envio, posicion, destino, ahora);
             avisarSiSeDetuvo(sesion, envio, ahora);
+            avisarSiHayRetraso(sesion, envio, trayecto, eta, ahora);
         }
         return ResultadoPosicion.ACEPTADA;
     }
@@ -118,6 +130,57 @@ public class SeguimientoConductorService implements SeguimientoConductorUseCase 
         }
         alertar(sesion, envio, TipoAlerta.GPS_DESACTIVADO,
                 "El GPS o el permiso de ubicación del celular del conductor se desactivó", ahora);
+    }
+
+    /**
+     * Mantiene la ruta desde donde está el vehículo hasta el destino. Se calcula con la primera posición y se
+     * recalcula si el vehículo se sale de ella, o si solo había una línea recta de respaldo. Nunca falla: si el
+     * servicio de rutas no responde, queda la línea recta.
+     */
+    private Trayecto asegurarRuta(SesionEnlace sesion, Envio envio, Coordenada origen, Coordenada destino,
+                                  Instant ahora) {
+        Optional<Trayecto> actual = rutas.buscar(envio.idEnvio());
+        if (actual.isPresent() && !necesitaRutaNueva(actual.get(), origen, destino, ahora)) {
+            return actual.get();
+        }
+        Trayecto nuevo;
+        try {
+            nuevo = calculadorRutas.calcular(origen, destino, ahora);
+        } catch (ServicioExternoNoDisponibleException | DominioException e) {
+            nuevo = Trayecto.lineaRecta(origen, destino, ahora);
+        }
+        rutas.guardar(envio.idEnvio(), nuevo);
+        publicador.publicarRuta(sesion.identificadorNegocio(), envio.idEnvio());
+        return nuevo;
+    }
+
+    private boolean necesitaRutaNueva(Trayecto actual, Coordenada posicion, Coordenada destino, Instant ahora) {
+        if (ReglasSeguimiento.llego(posicion, destino)) {
+            return false;
+        }
+        if (ReglasSeguimiento.desviado(actual, posicion)) {
+            return true;
+        }
+        return !actual.porCarretera()
+                && Duration.between(actual.fechaCalculo(), ahora).compareTo(ReglasSeguimiento.REINTENTO_RUTA) >= 0;
+    }
+
+    private void avisarSiHayRetraso(SesionEnlace sesion, Envio envio, Trayecto trayecto, OptionalLong eta,
+                                    Instant ahora) {
+        if (trayecto == null || eta.isEmpty()) {
+            return;
+        }
+        Duration duracion = Duration.ofSeconds(trayecto.duracionSegundos());
+        Instant prevista = trayecto.fechaCalculo().plus(duracion);
+        Instant estimada = ahora.plus(Duration.ofMinutes(eta.getAsLong()));
+        if (!ReglasSeguimiento.hayRetraso(prevista, estimada, duracion)) {
+            return;
+        }
+        if (!seguimiento.existeAlertaDesde(envio.idEnvio(), TipoAlerta.RETRASO, trayecto.fechaCalculo())) {
+            long minutos = Duration.between(prevista, estimada).toMinutes();
+            alertar(sesion, envio, TipoAlerta.RETRASO, "El envío lleva un retraso de unos " + minutos
+                    + " minutos respecto de lo previsto", ahora);
+        }
     }
 
     private void avisarSiLlego(SesionEnlace sesion, Envio envio, Posicion posicion, Optional<Coordenada> destino,

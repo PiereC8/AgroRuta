@@ -123,4 +123,91 @@ class SeguimientoDominioTest {
                 .isBetween(29L, 31L);
         assertThat(ReglasSeguimiento.etaMinutos(List.of(), destino)).isEmpty();
     }
+
+    // ---------- ruta (trayecto) ----------
+
+    private static Trayecto enL() {
+        // Un kilometro al norte y luego un kilometro al este (aprox.), a 36 km/h: 200 s.
+        Coordenada a = new Coordenada(0.0, 0.0);
+        Coordenada b = new Coordenada(0.009, 0.0);
+        Coordenada c = new Coordenada(0.009, 0.009);
+        return new Trayecto(List.of(a, b, c), 2000, 200, true, T0);
+    }
+
+    @Test
+    void el_trayecto_mide_cuanto_se_avanzo_y_cuanto_falta() {
+        Trayecto t = enL();
+        double total = t.longitudMetros();
+
+        Trayecto.Medida alInicio = t.medirDesde(new Coordenada(0.0, 0.0));
+        assertThat(alInicio.metrosRecorridos()).isLessThan(1);
+        assertThat(alInicio.desvioMetros()).isLessThan(1);
+
+        Trayecto.Medida enElCodo = t.medirDesde(new Coordenada(0.009, 0.0));
+        assertThat(enElCodo.metrosRecorridos()).isBetween(995.0, 1005.0);
+        assertThat(enElCodo.metrosRestantes()).isBetween(total - 1005, total - 995);
+
+        Trayecto.Medida alFinal = t.medirDesde(new Coordenada(0.009, 0.009));
+        assertThat(alFinal.metrosRestantes()).isLessThan(1);
+    }
+
+    @Test
+    void un_punto_al_lado_de_la_ruta_se_proyecta_sobre_ella_y_cuenta_como_desvio() {
+        Trayecto t = enL();
+
+        Trayecto.Medida medida = t.medirDesde(new Coordenada(0.0045, 0.0009));
+
+        assertThat(medida.metrosRecorridos()).isBetween(495.0, 505.0);
+        assertThat(medida.desvioMetros()).isBetween(95.0, 105.0);
+        assertThat(ReglasSeguimiento.desviado(t, new Coordenada(0.0045, 0.0009))).isFalse();
+        assertThat(ReglasSeguimiento.desviado(t, new Coordenada(0.0045, 0.03))).isTrue();
+    }
+
+    @Test
+    void la_linea_recta_de_respaldo_usa_la_velocidad_de_referencia() {
+        Trayecto t = Trayecto.lineaRecta(new Coordenada(0, 0), new Coordenada(0.36, 0), T0);
+
+        assertThat(t.porCarretera()).isFalse();
+        assertThat(t.puntos()).hasSize(2);
+        // 40 km en linea recta a 40 km/h: una hora.
+        assertThat(t.duracionSegundos()).isBetween(3500L, 3700L);
+        assertThat(t.velocidadMediaKmh()).isBetween(39.0, 41.0);
+    }
+
+    @Test
+    void el_trayecto_exige_dos_puntos_y_datos_validos() {
+        assertThatThrownBy(() -> new Trayecto(List.of(new Coordenada(0, 0)), 10, 10, true, T0))
+                .isInstanceOf(DominioException.class);
+        assertThatThrownBy(() -> new Trayecto(List.of(new Coordenada(0, 0), new Coordenada(1, 1)), 0, 10, true, T0))
+                .isInstanceOf(DominioException.class);
+    }
+
+    @Test
+    void la_hora_estimada_se_mide_sobre_la_ruta_y_no_en_linea_recta() {
+        Trayecto t = enL();
+        List<Posicion> posiciones = List.of(en(0.0, 0.0, T0));
+
+        long sobreLaRuta = ReglasSeguimiento.etaMinutos(posiciones, new Coordenada(0.009, 0.009), t).getAsLong();
+        long enLinea = ReglasSeguimiento.etaMinutos(posiciones, new Coordenada(0.009, 0.009)).getAsLong();
+
+        // La ruta (2 km) a 36 km/h son 4 min; en linea recta (1.4 km) a 40 km/h son 3 min.
+        assertThat(sobreLaRuta).isGreaterThan(enLinea);
+        assertThat(ReglasSeguimiento.etaMinutos(posiciones, new Coordenada(0.009, 0.009), null).getAsLong())
+                .isEqualTo(enLinea);
+    }
+
+    @Test
+    void hay_retraso_solo_si_se_pasa_de_la_tolerancia() {
+        Duration viaje = Duration.ofHours(4);
+        Instant prevista = T0.plus(viaje);
+
+        assertThat(ReglasSeguimiento.hayRetraso(prevista, prevista.plus(Duration.ofMinutes(40)), viaje)).isFalse();
+        assertThat(ReglasSeguimiento.hayRetraso(prevista, prevista.plus(Duration.ofMinutes(50)), viaje)).isTrue();
+        // En un viaje corto vale el minimo de 15 minutos.
+        Duration corto = Duration.ofMinutes(30);
+        assertThat(ReglasSeguimiento.hayRetraso(T0.plus(corto), T0.plus(corto).plus(Duration.ofMinutes(14)), corto))
+                .isFalse();
+        assertThat(ReglasSeguimiento.hayRetraso(T0.plus(corto), T0.plus(corto).plus(Duration.ofMinutes(16)), corto))
+                .isTrue();
+    }
 }

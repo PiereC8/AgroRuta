@@ -30,6 +30,7 @@ import pe.agroruta.domain.model.Lote;
 import pe.agroruta.domain.model.Pedido;
 import pe.agroruta.domain.model.RecursoNoEncontradoException;
 import pe.agroruta.domain.model.SesionEnlace;
+import pe.agroruta.domain.model.ReglasSeguimiento;
 import pe.agroruta.domain.model.TipoAlerta;
 import pe.agroruta.domain.model.TipoEnlace;
 import pe.agroruta.domain.port.in.SeguimientoConductorUseCase.ResultadoPosicion;
@@ -47,13 +48,16 @@ class SeguimientoServiceTest {
     private final DestinosEnMemoria destinos = new DestinosEnMemoria();
     private final SeguimientoEnMemoria seguimiento = new SeguimientoEnMemoria();
     private final PublicadorGrabador publicador = new PublicadorGrabador();
+    private final Falsos.RutasEnMemoria rutas = new Falsos.RutasEnMemoria();
+    private final Falsos.RutaFalsa calculador = new Falsos.RutaFalsa();
     private SeguimientoConductorService conductor;
     private ConsultarSeguimientoService consulta;
 
     @BeforeEach
     void preparar() {
-        conductor = new SeguimientoConductorService(envios, pedidos, destinos, seguimiento, publicador, RELOJ);
-        consulta = new ConsultarSeguimientoService(envios, pedidos, destinos, destinos, seguimiento, RELOJ);
+        conductor = new SeguimientoConductorService(envios, pedidos, destinos, seguimiento, publicador, calculador,
+                rutas, RELOJ);
+        consulta = new ConsultarSeguimientoService(envios, pedidos, destinos, destinos, seguimiento, rutas, RELOJ);
         new AdministrarDestinosService(destinos, destinos, destinos).registrarDestino("Mercado Tacna", "Tacna", false);
         destinos.guardarCoordenada(1L, TACNA);
         Lote lote = Lote.nuevo("Palta", new BigDecimal("1000"), LocalDate.of(2026, 11, 5), "Sur", "dueno.demo",
@@ -167,6 +171,74 @@ class SeguimientoServiceTest {
 
     // ---------- avisos ----------
 
+    // ---------- ruta y retraso ----------
+
+    @Test
+    void con_la_primera_posicion_se_calcula_y_publica_la_ruta_y_la_siguiente_la_reutiliza() {
+        aceptarConsentimiento();
+
+        reportar(-17.0, -71.0, AHORA.minusSeconds(60));
+        reportar(-17.0, -70.99, AHORA.minusSeconds(30));
+
+        assertThat(calculador.llamadas).isEqualTo(1);
+        assertThat(publicador.rutasPublicadas).isEqualTo(1);
+        var ruta = rutas.guardadas.get(1L);
+        assertThat(ruta.porCarretera()).isTrue();
+        assertThat(ruta.puntos().get(0)).isEqualTo(new Coordenada(-17.0, -71.0));
+        assertThat(ruta.puntos().get(ruta.puntos().size() - 1)).isEqualTo(TACNA);
+    }
+
+    @Test
+    void si_el_vehiculo_se_sale_de_la_ruta_se_calcula_una_nueva_desde_donde_esta() {
+        aceptarConsentimiento();
+
+        reportar(-17.0, -71.0, AHORA.minusSeconds(60));
+        reportar(-16.5, -71.0, AHORA.minusSeconds(30));
+
+        assertThat(calculador.llamadas).isEqualTo(2);
+        assertThat(publicador.rutasPublicadas).isEqualTo(2);
+        assertThat(rutas.guardadas.get(1L).puntos().get(0)).isEqualTo(new Coordenada(-16.5, -71.0));
+    }
+
+    @Test
+    void sin_servicio_de_rutas_queda_una_linea_recta_y_el_seguimiento_sigue_funcionando() {
+        aceptarConsentimiento();
+        calculador.disponible = false;
+
+        assertThat(reportar(-17.0, -71.0, AHORA.minusSeconds(30))).isEqualTo(ResultadoPosicion.ACEPTADA);
+
+        var ruta = rutas.guardadas.get(1L);
+        assertThat(ruta.porCarretera()).isFalse();
+        assertThat(ruta.puntos()).hasSize(2);
+        assertThat(publicador.etas.get(0)).isNotNull().isPositive();
+    }
+
+    @Test
+    void avisa_una_sola_vez_si_el_vehiculo_va_mucho_mas_lento_de_lo_previsto() {
+        aceptarConsentimiento();
+
+        reportar(-17.0, -71.0, AHORA.minusSeconds(100));
+        reportar(-16.996, -71.0, AHORA.minusSeconds(5));
+        reportar(-16.992, -71.0, AHORA.minusSeconds(1));
+
+        assertThat(seguimiento.alertas).extracting(a -> a.tipoAlerta()).containsExactly(TipoAlerta.RETRASO);
+    }
+
+    @Test
+    void la_consulta_trae_la_ruta_y_calcula_la_hora_estimada_sobre_ella() {
+        aceptarConsentimiento();
+        reportar(-17.0, -71.0, AHORA.minusSeconds(30));
+
+        var seguimientoEnvio = consulta.obtener(1L);
+
+        assertThat(seguimientoEnvio.ruta()).isNotNull();
+        assertThat(seguimientoEnvio.velocidadKmh()).isBetween(45.0, 55.0);
+        // Por el codo de la ruta hay mas camino que en linea recta: la hora estimada lo refleja.
+        long enLineaRecta = ReglasSeguimiento.etaMinutos(seguimientoEnvio.trazoReciente(), TACNA).getAsLong();
+        assertThat(seguimientoEnvio.etaMinutos()).isNotNull();
+        assertThat(seguimientoEnvio.etaMinutos()).isNotEqualTo(enLineaRecta);
+    }
+
     @Test
     void avisa_una_sola_vez_cuando_el_vehiculo_llega_al_destino() {
         aceptarConsentimiento();
@@ -217,7 +289,7 @@ class SeguimientoServiceTest {
 
         reportar(-17.0, -71.0, AHORA.minusSeconds(5));
 
-        assertThat(seguimiento.alertas).isEmpty();
+        assertThat(seguimiento.alertas).extracting(x -> x.tipoAlerta()).doesNotContain(TipoAlerta.DETENIDO);
     }
 
     @Test

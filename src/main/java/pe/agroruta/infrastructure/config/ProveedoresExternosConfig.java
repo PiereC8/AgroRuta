@@ -16,6 +16,7 @@ import pe.agroruta.domain.port.out.ComprobantePort;
 import pe.agroruta.domain.port.out.EnvioCorreoPort;
 import pe.agroruta.domain.port.out.PagoPort;
 import pe.agroruta.domain.port.out.RepresentacionComprobantePort;
+import pe.agroruta.domain.port.out.RutaPort;
 import pe.agroruta.infrastructure.adapter.out.comprobante.ComprobantePdf;
 import pe.agroruta.infrastructure.adapter.out.comprobante.ComprobanteSimulado;
 import pe.agroruta.infrastructure.adapter.out.comprobante.DatosEmisor;
@@ -27,6 +28,8 @@ import pe.agroruta.infrastructure.adapter.out.http.ClienteHttp;
 import pe.agroruta.infrastructure.adapter.out.pago.MercadoPagoPagoAdapter;
 import pe.agroruta.infrastructure.adapter.out.pago.PasarelaSimulada;
 import pe.agroruta.infrastructure.adapter.out.resiliencia.ComprobantePortConDisyuntor;
+import pe.agroruta.infrastructure.adapter.out.ruta.RutaLinealAdapter;
+import pe.agroruta.infrastructure.adapter.out.ruta.RutaOsrmAdapter;
 import pe.agroruta.infrastructure.adapter.out.resiliencia.Disyuntor;
 import pe.agroruta.infrastructure.adapter.out.resiliencia.PagoPortConDisyuntor;
 
@@ -67,6 +70,22 @@ public class ProveedoresExternosConfig {
         }
         REGISTRO.warn("Pasarela de pago: SIMULADOR (no hay credenciales de Mercado Pago en el .env)");
         return new PasarelaSimulada();
+    }
+
+    /**
+     * El camino por carretera lo calcula OSRM (el servidor de demostración es gratuito y de uso moderado). Con
+     * RUTAS_PROVEEDOR=lineal no se llama a nadie y la ruta es una línea recta. Si el servicio falla, el seguimiento
+     * usa la línea recta de respaldo y sigue funcionando.
+     */
+    @Bean
+    RutaPort rutaPort(@Value("${agroruta.rutas.proveedor:osrm}") String proveedor,
+                      @Value("${agroruta.rutas.url-base:https://router.project-osrm.org}") String urlBase) {
+        if ("lineal".equalsIgnoreCase(proveedor.trim())) {
+            REGISTRO.warn("Rutas: LINEA RECTA (RUTAS_PROVEEDOR=lineal)");
+            return new RutaLinealAdapter();
+        }
+        REGISTRO.info("Rutas: OSRM ({})", urlBase);
+        return new RutaOsrmAdapter(new ClienteHttp(Duration.ofSeconds(3), Duration.ofSeconds(6)), urlBase);
     }
 
     /**

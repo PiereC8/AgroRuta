@@ -16,7 +16,8 @@
 
     const vista = {
         mapa: null,
-        marcadorVehiculo: null,
+        capa: null,
+        encuadrado: false,
         marcadorDestino: null,
         trazo: null,
         puntos: [],
@@ -45,14 +46,11 @@
             attribution: '&copy; Colaboradores de OpenStreetMap'
         }).addTo(vista.mapa);
         vista.trazo = L.polyline([], {color: '#2f7d32', weight: 4, opacity: 0.8}).addTo(vista.mapa);
+        vista.capa = new window.RutaSimulada.Capa(vista.mapa);
         // Si el contenedor cambia de tamaño (pestaña en segundo plano, girar el celular), el mapa se reajusta.
         if ('ResizeObserver' in window) {
             new ResizeObserver(() => vista.mapa.invalidateSize()).observe($('mapa'));
         }
-    }
-
-    function iconoVehiculo() {
-        return L.divIcon({className: '', html: '<div class="marcador-vehiculo"></div>', iconSize: [18, 18]});
     }
 
     function iconoDestino() {
@@ -68,19 +66,22 @@
     }
 
     function agregarPosicion(latitud, longitud, fechaIso) {
-        const punto = [latitud, longitud];
-        vista.puntos.push(punto);
-        vista.trazo.setLatLngs(vista.puntos);
-        if (!vista.marcadorVehiculo) {
-            vista.marcadorVehiculo = L.marker(punto, {icon: iconoVehiculo()}).addTo(vista.mapa);
-        } else {
-            vista.marcadorVehiculo.setLatLng(punto);
-        }
+        vista.puntos.push([latitud, longitud]);
+        // Con ruta, el camino que falta reemplaza al recorrido ya hecho: este se borra a medida que se avanza.
+        vista.trazo.setLatLngs(vista.capa.tieneRuta() ? [] : vista.puntos);
         vista.ultimaFecha = Date.parse(fechaIso);
-        encuadrar();
+        vista.capa.fijarPosicion(latitud, longitud, vista.ultimaFecha);
+        if (!vista.capa.tieneRuta()) {
+            encuadrar();
+        }
     }
 
     function encuadrar() {
+        const limites = vista.capa.limites();
+        if (limites) {
+            vista.mapa.fitBounds(limites, {padding: [40, 40], maxZoom: 16});
+            return;
+        }
         const puntos = vista.puntos.slice();
         if (vista.marcadorDestino) {
             puntos.push(vista.marcadorDestino.getLatLng());
@@ -105,6 +106,7 @@
         if (!datos) {
             return;
         }
+        const sim = vista.capa.pintar(ahoraServidor());
         $('dato-estado').textContent = ESTADOS[datos.estadoEnvio] || datos.estadoEnvio;
         $('dato-destino').textContent = datos.ciudadDestino || '-';
 
@@ -130,7 +132,15 @@
         } else {
             resumen.textContent = vista.ultimaFecha ? 'Tu pedido está en camino.' : 'Tu pedido salió en ruta. Esperando la ubicación del vehículo.';
             resumen.className = 'mensaje ok';
-            if (vista.eta != null && vista.etaRecibidaMs != null) {
+            if (datos.conRetraso) {
+                resumen.textContent = 'Tu pedido está en camino, pero viene con retraso respecto de lo previsto.';
+                resumen.className = 'mensaje aviso';
+            }
+            if (sim && sim.llegadaMs != null) {
+                const minutos = Math.max(1, Math.round((sim.llegadaMs - ahoraServidor()) / 60000));
+                $('dato-eta').textContent = 'hacia las ' + formatoHora(sim.llegadaMs) + ' (en unos ' + minutos
+                    + ' min)' + (sim.estimado ? ', estimado' : '');
+            } else if (vista.eta != null && vista.etaRecibidaMs != null) {
                 const llegada = vista.etaRecibidaMs + vista.eta * 60000;
                 $('dato-eta').textContent = 'en unos ' + vista.eta + ' min (' + formatoHora(llegada) + ')';
             } else {
@@ -140,11 +150,15 @@
 
         if (vista.ultimaFecha) {
             const segundos = Math.max(0, Math.round((ahoraServidor() - vista.ultimaFecha) / 1000));
-            $('dato-actualizacion').textContent = segundos < 90 ? 'hace ' + segundos + ' s'
-                : 'hace ' + Math.round(segundos / 60) + ' min';
+            $('dato-actualizacion').textContent = 'ubicación real ' + (segundos < 90 ? 'hace ' + segundos + ' s'
+                : 'hace ' + Math.round(segundos / 60) + ' min');
             if (datos.estadoEnvio === 'EN_RUTA' && segundos > SEGUNDOS_SIN_SENAL && !datos.llegoAlDestino) {
-                aviso.textContent = 'Sin señal del vehículo desde hace ' + Math.round(segundos / 60)
-                    + ' min. Mostramos su última posición conocida.';
+                const hace = Math.round(segundos / 60);
+                aviso.textContent = sim && sim.estimado
+                    ? 'Sin señal del vehículo desde hace ' + hace + ' min. El punto con borde punteado es una '
+                    + 'estimación de por dónde va según la ruta; se corrige cuando vuelva la señal.'
+                    + (sim.enTope ? ' Ya casi llega: esperamos su ubicación real para confirmar.' : '')
+                    : 'Sin señal del vehículo desde hace ' + hace + ' min. Mostramos su última posición conocida.';
                 aviso.classList.remove('oculto');
             }
         } else {
@@ -158,12 +172,15 @@
         vista.eta = datos.etaMinutos;
         vista.etaRecibidaMs = ahoraServidor();
         dibujarDestino(datos);
+        const rutaCambio = vista.capa.fijarRuta(datos.ruta, datos.velocidadKmh);
+        vista.capa.activar(datos.estadoEnvio === 'EN_RUTA' && !datos.llegoAlDestino);
         vista.puntos = [];
         for (const p of datos.trazoReciente) {
             agregarPosicion(p.latitud, p.longitud, p.fechaPosicion);
         }
-        if (vista.puntos.length === 0) {
+        if (!vista.encuadrado || rutaCambio) {
             encuadrar();
+            vista.encuadrado = true;
         }
         pintarTextos();
     }
@@ -192,8 +209,15 @@
             vista.eta = cuerpo.etaMinutos;
             vista.etaRecibidaMs = ahoraServidor();
             agregarPosicion(cuerpo.latitud, cuerpo.longitud, cuerpo.fecha);
+        } else if (cuerpo.tipo === 'RUTA') {
+            // La ruta se calculó o cambió: se pide completa.
+            cargar().catch(() => {
+            });
         } else if (cuerpo.tipo === 'ALERTA' && cuerpo.tipoAlerta === 'LLEGADA') {
             vista.datos.llegoAlDestino = true;
+            vista.capa.activar(false);
+        } else if (cuerpo.tipo === 'ALERTA' && cuerpo.tipoAlerta === 'RETRASO') {
+            vista.datos.conRetraso = true;
         }
         pintarTextos();
     }

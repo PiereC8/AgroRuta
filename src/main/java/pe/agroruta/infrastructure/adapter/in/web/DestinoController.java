@@ -54,6 +54,14 @@ public class DestinoController {
         destinos.fijarCoordenadas(idDestinoVenta, solicitud.latitud(), solicitud.longitud());
     }
 
+    /** Latitud y longitud en null si el destino todavía no tiene ubicación. */
+    @GetMapping("/{idDestinoVenta}/coordenadas")
+    public CoordenadasRespuesta coordenadas(@PathVariable Long idDestinoVenta) {
+        return destinos.coordenadasDe(idDestinoVenta)
+                .map(c -> new CoordenadasRespuesta(c.latitud(), c.longitud()))
+                .orElse(new CoordenadasRespuesta(null, null));
+    }
+
     @PutMapping("/{idDestinoVenta}/tarifa")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void fijarTarifa(@PathVariable Long idDestinoVenta, @Valid @RequestBody TarifaSolicitud solicitud) {
@@ -68,6 +76,9 @@ public class DestinoController {
     }
 
     public record TarifaSolicitud(@NotNull BigDecimal costoFletePorKg) {
+    }
+
+    public record CoordenadasRespuesta(Double latitud, Double longitud) {
     }
 
     public record CoordenadasSolicitud(@NotNull Double latitud, @NotNull Double longitud) {

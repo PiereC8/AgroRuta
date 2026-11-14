@@ -15,7 +15,7 @@
         ENTREGA_CON_PERDIDA: 'Entrega con pérdida', MERMA_ALTA: 'Merma alta', PAGO_RECIBIDO: 'Pago recibido',
         COMPROBANTE_RECHAZADO: 'Comprobante rechazado', COMPROBANTE_ATASCADO: 'Comprobante pendiente',
         COBRO_VENCIDO: 'Cobro vencido', ENVIO_DETENIDO: 'Envío detenido', GPS_DESACTIVADO: 'GPS apagado',
-        ENVIO_LLEGADO: 'Envío llegó', RESUMEN_SEMANAL: 'Resumen semanal', PRUEBA: 'Prueba'
+        ENVIO_RETRASADO: 'Envío con retraso', ENVIO_LLEGADO: 'Envío llegó', RESUMEN_SEMANAL: 'Resumen semanal', PRUEBA: 'Prueba'
     };
     const ESTADOS = {
         PENDIENTE: ['Por enviar', 'espera'], ENVIADA: ['Enviado', ''], FALLIDA: ['No se pudo enviar', 'error']

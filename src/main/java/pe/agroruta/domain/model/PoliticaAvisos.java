@@ -69,9 +69,11 @@ public record PoliticaAvisos(BigDecimal mermaAltaPorcentaje) {
             case DETENIDO -> TipoAviso.ENVIO_DETENIDO;
             case GPS_DESACTIVADO -> TipoAviso.GPS_DESACTIVADO;
             case LLEGADA -> TipoAviso.ENVIO_LLEGADO;
+            case RETRASO -> TipoAviso.ENVIO_RETRASADO;
         };
         String titulo = switch (tipo) {
             case ENVIO_DETENIDO -> "Envío detenido";
+            case ENVIO_RETRASADO -> "Envío con retraso";
             case GPS_DESACTIVADO -> "El conductor apagó el GPS";
             default -> "El envío llegó a su destino";
         };

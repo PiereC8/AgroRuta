@@ -45,25 +45,28 @@ public class PublicoController {
                 .orElseThrow(() -> new RecursoNoEncontradoException("El enlace no es válido o ya venció"));
         return TenantContext.ejecutarEn(sesion.identificadorNegocio(), () -> {
             Seguimiento seguimiento = consultar.obtener(sesion.idEnvio());
-            boolean llego = consultar.alertas(sesion.idEnvio()).stream()
-                    .anyMatch(a -> a.tipoAlerta() == TipoAlerta.LLEGADA);
-            return SeguimientoPublicoRespuesta.de(seguimiento, sesion, llego);
+            var alertas = consultar.alertas(sesion.idEnvio());
+            boolean llego = alertas.stream().anyMatch(a -> a.tipoAlerta() == TipoAlerta.LLEGADA);
+            boolean conRetraso = alertas.stream().anyMatch(a -> a.tipoAlerta() == TipoAlerta.RETRASO);
+            return SeguimientoPublicoRespuesta.de(seguimiento, sesion, llego, conRetraso);
         });
     }
 
     public record SeguimientoPublicoRespuesta(EstadoEnvio estadoEnvio, Instant fechaSalida, Instant fechaEntrega,
                                               String ciudadDestino, Double latitudDestino, Double longitudDestino,
                                               PosicionRespuesta ultimaPosicion, Long etaMinutos,
-                                              boolean llegoAlDestino, Instant ahora, String canal,
-                                              List<PosicionRespuesta> trazoReciente) {
-        static SeguimientoPublicoRespuesta de(Seguimiento s, SesionEnlace sesion, boolean llego) {
+                                              boolean llegoAlDestino, boolean conRetraso, Instant ahora, String canal,
+                                              List<PosicionRespuesta> trazoReciente,
+                                              SeguimientoController.RutaRespuesta ruta, Double velocidadKmh) {
+        static SeguimientoPublicoRespuesta de(Seguimiento s, SesionEnlace sesion, boolean llego, boolean conRetraso) {
             return new SeguimientoPublicoRespuesta(s.envio().estadoEnvio(), s.envio().fechaSalida(),
                     s.envio().fechaEntrega(), s.ciudadDestino(),
                     s.coordenadaDestino() == null ? null : s.coordenadaDestino().latitud(),
                     s.coordenadaDestino() == null ? null : s.coordenadaDestino().longitud(),
                     s.ultimaPosicion() == null ? null : PosicionRespuesta.de(s.ultimaPosicion()), s.etaMinutos(),
-                    llego, s.ahora(), Canales.deEnvio(sesion.identificadorNegocio(), sesion.idEnvio()),
-                    s.trazoReciente().stream().map(PosicionRespuesta::de).toList());
+                    llego, conRetraso, s.ahora(), Canales.deEnvio(sesion.identificadorNegocio(), sesion.idEnvio()),
+                    s.trazoReciente().stream().map(PosicionRespuesta::de).toList(),
+                    SeguimientoController.RutaRespuesta.de(s.ruta()), s.velocidadKmh());
         }
     }
 }

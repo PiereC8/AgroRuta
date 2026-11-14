@@ -12,6 +12,7 @@ public enum TipoAviso {
     COBRO_VENCIDO(Set.of(Rol.DUENO)),
     ENVIO_DETENIDO(Set.of(Rol.OPERADOR, Rol.DUENO)),
     GPS_DESACTIVADO(Set.of(Rol.OPERADOR, Rol.DUENO)),
+    ENVIO_RETRASADO(Set.of(Rol.OPERADOR, Rol.DUENO)),
     ENVIO_LLEGADO(Set.of(Rol.OPERADOR)),
     RESUMEN_SEMANAL(Set.of(Rol.DUENO)),
     /** Va al correo que escribe quien cobra, no a un rol del equipo. */

@@ -145,7 +145,7 @@
             }
         }
 
-        function poner(lat, lon, acercar) {
+        function poner(lat, lon, acercar, zoom) {
             if (!dentroDelPeru(lat, lon)) {
                 direccion.className = 'dato-perdida';
                 direccion.textContent = 'Ese punto está fuera del Perú. Elige un lugar dentro del país.';
@@ -164,7 +164,7 @@
                 });
             }
             if (acercar) {
-                vista.setView(punto, Math.max(vista.getZoom(), 16));
+                vista.setView(punto, Math.max(vista.getZoom(), zoom || 16));
             }
             campo('latitud').value = String(punto[0]);
             campo('longitud').value = String(punto[1]);
@@ -180,15 +180,18 @@
             resultados.replaceChildren();
             try {
                 let lugares = await buscarLugar(texto);
+                let soloCiudad = false;
                 if (lugares.length === 0 && elegirPrimero) {
                     lugares = await buscarLugar(destino.ciudadDestino);
+                    soloCiudad = true;
                 }
                 if (lugares.length === 0) {
                     resultados.appendChild(el('li', 'suave', 'No se encontró. Marca el punto en el mapa.'));
                     return;
                 }
                 if (elegirPrimero) {
-                    vista.setView([lugares[0].lat, lugares[0].lon], 15);
+                    // Al abrir, el destino ya queda marcado en el mapa (se puede mover antes de guardar).
+                    poner(lugares[0].lat, lugares[0].lon, true, soloCiudad ? 13 : 16);
                     return;
                 }
                 for (const lugar of lugares) {
@@ -215,7 +218,8 @@
             }
         });
 
-        function iniciar() {
+        /** guardada: {latitud, longitud} ya fijados para el destino, o null si aún no tiene ubicación. */
+        function iniciar(guardada) {
             const limites = L.latLngBounds([PERU.latMin, PERU.lonMin], [PERU.latMax, PERU.lonMax]);
             vista = L.map(mapa, {maxBounds: limites.pad(0.05), maxBoundsViscosity: 1.0, minZoom: 5})
                 .setView([-16.4, -71.5], 6);
@@ -233,13 +237,23 @@
             campo('latitud').addEventListener('change', alEscribir);
             campo('longitud').addEventListener('change', alEscribir);
             setTimeout(() => vista.invalidateSize(), 300);
-            ejecutarBusqueda(true);
+            if (guardada && guardada.latitud !== null && guardada.latitud !== undefined) {
+                poner(guardada.latitud, guardada.longitud, true);
+            } else {
+                ejecutarBusqueda(true);
+            }
         }
 
         return {caja, iniciar, cerrar: () => vista && vista.remove()};
     }
 
     async function cambiarUbicacion(destino) {
+        let guardada = null;
+        try {
+            guardada = await window.Api.pedir('/api/destinos/' + destino.idDestinoVenta + '/coordenadas');
+        } catch (error) {
+            guardada = null;
+        }
         const selector = selectorEnMapa(destino);
         const abierto = window.Ui.panel({
             titulo: 'Ubicación de ' + destino.nombreDestino,
@@ -258,7 +272,7 @@
                 cuerpo: {latitud: Number(v.latitud.replace(',', '.')), longitud: Number(v.longitud.replace(',', '.'))}
             })
         });
-        selector.iniciar();
+        selector.iniciar(guardada);
         const guardado = await abierto;
         selector.cerrar();
         if (guardado) {

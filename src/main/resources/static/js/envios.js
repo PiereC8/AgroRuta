@@ -11,7 +11,7 @@
         CANCELADO: ['Cancelado', 'neutro']};
     const FILTROS = [['', 'Todos'], ['PROGRAMADO', 'Programados'], ['EN_RUTA', 'En ruta'], ['ENTREGADO', 'Entregados'],
         ['CANCELADO', 'Cancelados']];
-    const ALERTAS = {GPS_DESACTIVADO: 'El conductor desactivó el GPS', DETENIDO: 'Lleva mucho tiempo detenido',
+    const ALERTAS = {GPS_DESACTIVADO: 'El conductor desactivó el GPS', DETENIDO: 'Lleva mucho tiempo detenido', RETRASO: 'Va con retraso',
         LLEGADA: 'Llegó al destino'};
     const REFRESCO_MAPA_MS = 15000;
     const TOLERANCIA_KG = 0.0005;
@@ -262,10 +262,41 @@
         contenido.append(resumen, mapa, alertas);
         let temporizador = null;
         let vista = null;
-        const marcas = {destino: null, vehiculo: null, trazo: null};
+        const marcas = {destino: null, trazo: null};
+        let capa = null;
+        let ultimo = null;
+        let desfaseMs = 0;
 
         function iconos(clase, tamano) {
             return L.divIcon({className: '', html: '<div class="' + clase + '"></div>', iconSize: [tamano, tamano]});
+        }
+
+        function textoEta(s, sim) {
+            if (sim && sim.llegadaMs != null) {
+                const minutos = Math.max(1, Math.round((sim.llegadaMs - (Date.now() + desfaseMs)) / 60000));
+                return 'hacia las ' + new Date(sim.llegadaMs).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})
+                    + ' (en unos ' + minutos + ' min)' + (sim.estimado ? ', estimado' : '');
+            }
+            if (s.etaMinutos === null || s.etaMinutos === undefined) {
+                return 'sin calcular';
+            }
+            return s.etaMinutos < 1 ? 'menos de 1 minuto' : s.etaMinutos + ' min';
+        }
+
+        // Se repinta cada segundo con la hora del servidor: sin señal el vehículo sigue avanzando, como estimación.
+        function pintarSimulacion() {
+            if (!ultimo || !capa) {
+                return;
+            }
+            const s = ultimo;
+            const sim = capa.pintar(Date.now() + desfaseMs);
+            let ubicacion = ' · Aún no hay posición del conductor';
+            if (s.ultimaPosicion) {
+                ubicacion = ' · Última ubicación real: ' + window.Ui.fecha(s.ultimaPosicion.fechaPosicion)
+                    + (sim && sim.estimado ? ' · Sin señal: la posición del mapa es una estimación por la ruta' : '');
+            }
+            resumen.textContent = 'Hacia ' + (s.nombreDestino || '—') + (s.ciudadDestino ? ' (' + s.ciudadDestino + ')' : '')
+                + ' · Llegada estimada: ' + textoEta(s, sim) + ubicacion;
         }
 
         async function actualizar() {
@@ -273,11 +304,14 @@
                 const [s, listaAlertas] = await Promise.all([
                     window.Api.pedir('/api/envios/' + envio.idEnvio + '/seguimiento'),
                     window.Api.pedir('/api/envios/' + envio.idEnvio + '/alertas')]);
-                const eta = s.etaMinutos === null || s.etaMinutos === undefined ? 'sin calcular'
-                    : (s.etaMinutos < 1 ? 'menos de 1 minuto' : s.etaMinutos + ' min');
-                resumen.textContent = 'Hacia ' + (s.nombreDestino || '—') + (s.ciudadDestino ? ' (' + s.ciudadDestino + ')' : '')
-                    + ' · Llegada estimada: ' + eta + (s.ultimaPosicion ? ' · Última posición: '
-                    + window.Ui.fecha(s.ultimaPosicion.fechaPosicion) : ' · Aún no hay posición del conductor');
+                ultimo = s;
+                desfaseMs = Date.parse(s.ahora) - Date.now();
+                const rutaCambio = capa.fijarRuta(s.ruta, s.velocidadKmh);
+                capa.activar(s.estadoEnvio === 'EN_RUTA');
+                if (s.ultimaPosicion) {
+                    capa.fijarPosicion(s.ultimaPosicion.latitud, s.ultimaPosicion.longitud,
+                        Date.parse(s.ultimaPosicion.fechaPosicion));
+                }
                 const puntos = [];
                 if (s.latitudDestino !== null && s.latitudDestino !== undefined) {
                     const punto = [s.latitudDestino, s.longitudDestino];
@@ -287,25 +321,26 @@
                     }
                 }
                 if (s.ultimaPosicion) {
-                    const punto = [s.ultimaPosicion.latitud, s.ultimaPosicion.longitud];
-                    puntos.push(punto);
-                    if (!marcas.vehiculo) {
-                        marcas.vehiculo = L.marker(punto, {icon: iconos('marcador-vehiculo', 18)}).addTo(vista);
-                    } else {
-                        marcas.vehiculo.setLatLng(punto);
-                    }
+                    puntos.push([s.ultimaPosicion.latitud, s.ultimaPosicion.longitud]);
                 }
                 if (marcas.trazo) {
                     marcas.trazo.remove();
+                    marcas.trazo = null;
                 }
-                if ((s.trazoReciente || []).length > 1) {
+                // Con ruta, el camino que falta (que se va borrando) reemplaza al recorrido ya hecho.
+                if (!capa.tieneRuta() && (s.trazoReciente || []).length > 1) {
                     marcas.trazo = L.polyline(s.trazoReciente.map((p) => [p.latitud, p.longitud]),
                         {color: '#1E7F4B', weight: 4}).addTo(vista);
                 }
-                if (puntos.length > 0 && !vista.encuadrado) {
-                    vista.fitBounds(puntos, {padding: [40, 40], maxZoom: 14});
+                if ((!vista.encuadrado || rutaCambio) && (puntos.length > 0 || capa.limites())) {
+                    if (capa.limites()) {
+                        vista.fitBounds(capa.limites(), {padding: [40, 40], maxZoom: 14});
+                    } else {
+                        vista.fitBounds(puntos, {padding: [40, 40], maxZoom: 14});
+                    }
                     vista.encuadrado = true;
                 }
+                pintarSimulacion();
                 alertas.replaceChildren();
                 if (listaAlertas.length > 0) {
                     alertas.appendChild(el('h3', null, 'Alertas'));
@@ -324,12 +359,16 @@
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 18,
             attribution: '&copy; OpenStreetMap'}).addTo(vista);
         setTimeout(() => vista.invalidateSize(), 300);
+        capa = new window.RutaSimulada.Capa(vista);
         await actualizar();
+        let reloj = null;
         if (envio.estadoEnvio === 'EN_RUTA') {
             temporizador = setInterval(actualizar, REFRESCO_MAPA_MS);
+            reloj = setInterval(pintarSimulacion, 1000);
         }
         await cerrado;
         clearInterval(temporizador);
+        clearInterval(reloj);
         vista.remove();
     }
 

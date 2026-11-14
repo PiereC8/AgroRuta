@@ -969,6 +969,18 @@ a {
     box-shadow: 0 0 0 2px var(--verde-oscuro);
 }
 
+/* El marcador se desliza entre una posición y la siguiente en vez de saltar. */
+.marcador-suave {
+    transition: transform 1s linear;
+}
+
+/* Posición estimada (sin señal): hueco y con borde punteado, para no confundirla con la real. */
+.marcador-vehiculo.marcador-estimado {
+    background: #FFFFFF;
+    border: 3px dashed var(--verde);
+    box-shadow: none;
+}
+
 .marcador-destino {
     width: 16px;
     height: 16px;

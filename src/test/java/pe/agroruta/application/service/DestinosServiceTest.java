@@ -176,6 +176,20 @@ class DestinosServiceTest {
     }
 
     @Test
+    void consulta_la_ubicacion_guardada_del_destino_y_esta_vacia_si_aun_no_se_marco() {
+        administrar.registrarDestino("Mercado Tacna", "Tacna", true);
+
+        assertThat(administrar.coordenadasDe(1L)).isEmpty();
+        administrar.fijarCoordenadas(1L, -18.0105, -70.2486);
+
+        assertThat(administrar.coordenadasDe(1L)).hasValueSatisfying(c -> {
+            assertThat(c.latitud()).isEqualTo(-18.0105);
+            assertThat(c.longitud()).isEqualTo(-70.2486);
+        });
+        assertThatThrownBy(() -> administrar.coordenadasDe(99L)).isInstanceOf(DestinoNoEncontradoException.class);
+    }
+
+    @Test
     void un_destino_local_no_acepta_tarifa_y_el_flete_no_puede_ser_negativo() {
         administrar.registrarDestino("Mercado Tacna", "Tacna", true);
         administrar.registrarDestino("Mercado Lima", "Lima", false);
