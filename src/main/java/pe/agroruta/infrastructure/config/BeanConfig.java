@@ -249,6 +249,14 @@ public class BeanConfig {
     }
 
     @Bean
+    pe.agroruta.domain.port.in.AvisarDespachoUseCase avisarDespachoUseCase(GenerarEnlacesEnvioUseCase enlaces,
+            EnvioRepositoryPort envios, PedidoRepositoryPort pedidos, CompradorRepositoryPort compradores,
+            TransporteRepositoryPort transporte, NotificacionRepositoryPort bandeja, Clock reloj) {
+        return new pe.agroruta.application.service.AvisarDespachoService(enlaces, envios, pedidos, compradores,
+                transporte, bandeja, reloj);
+    }
+
+    @Bean
     EnviarEnlacePagoUseCase enviarEnlacePagoUseCase(GenerarEnlacesEnvioUseCase enlaces, EnvioRepositoryPort envios,
                                                     LiquidacionRepositoryPort liquidaciones,
                                                     NotificacionRepositoryPort bandeja, Clock reloj) {

@@ -18,7 +18,7 @@ import pe.agroruta.domain.port.out.CompradorRepositoryPort;
 public class CompradorJdbcAdapter implements CompradorRepositoryPort {
 
     private static final String COLUMNAS = "id_comprador, nombre_comprador, tipo_comprador, documento_comprador, "
-            + "telefono_comprador, ciudad_comprador, comprador_activo";
+            + "telefono_comprador, ciudad_comprador, correo_comprador, comprador_activo";
 
     private static final RowMapper<Comprador> FILA = (rs, fila) -> new Comprador(
             rs.getLong("id_comprador"),
@@ -27,6 +27,7 @@ public class CompradorJdbcAdapter implements CompradorRepositoryPort {
             rs.getString("documento_comprador"),
             rs.getString("telefono_comprador"),
             rs.getString("ciudad_comprador"),
+            rs.getString("correo_comprador"),
             rs.getBoolean("comprador_activo"));
 
     private final JdbcTemplate jdbc;
@@ -45,18 +46,21 @@ public class CompradorJdbcAdapter implements CompradorRepositoryPort {
     @Override
     public Comprador guardar(Comprador comprador) {
         long id = Sql.insertar(jdbc, "INSERT INTO comprador (nombre_comprador, tipo_comprador, documento_comprador, "
-                        + "telefono_comprador, ciudad_comprador, comprador_activo) VALUES (?, ?, ?, ?, ?, ?)",
+                        + "telefono_comprador, ciudad_comprador, correo_comprador, comprador_activo) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?)",
                 comprador.nombreComprador(), comprador.tipoComprador().name(), comprador.documentoComprador(),
-                comprador.telefonoComprador(), comprador.ciudadComprador(), comprador.compradorActivo());
+                comprador.telefonoComprador(), comprador.ciudadComprador(), comprador.correoComprador(),
+                comprador.compradorActivo());
         return comprador.conId(id);
     }
 
     @Override
     public void actualizar(Comprador comprador) {
         jdbc.update("UPDATE comprador SET nombre_comprador = ?, tipo_comprador = ?, documento_comprador = ?, "
-                        + "telefono_comprador = ?, ciudad_comprador = ? WHERE id_comprador = ?",
+                        + "telefono_comprador = ?, ciudad_comprador = ?, correo_comprador = ? WHERE id_comprador = ?",
                 comprador.nombreComprador(), comprador.tipoComprador().name(), comprador.documentoComprador(),
-                comprador.telefonoComprador(), comprador.ciudadComprador(), comprador.idComprador());
+                comprador.telefonoComprador(), comprador.ciudadComprador(), comprador.correoComprador(),
+                comprador.idComprador());
     }
 
     @Override

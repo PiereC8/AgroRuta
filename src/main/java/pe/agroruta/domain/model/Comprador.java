@@ -4,7 +4,7 @@ import java.util.regex.Pattern;
 
 public record Comprador(Long idComprador, String nombreComprador, TipoComprador tipoComprador,
                         String documentoComprador, String telefonoComprador, String ciudadComprador,
-                        boolean compradorActivo) {
+                        String correoComprador, boolean compradorActivo) {
 
     private static final Pattern FORMATO_DOCUMENTO = Pattern.compile("^(\\d{8}|\\d{11})$");
     private static final Pattern FORMATO_TELEFONO = Pattern.compile("^[0-9+() -]{6,20}$");
@@ -31,16 +31,23 @@ public record Comprador(Long idComprador, String nombreComprador, TipoComprador 
         if (telefonoComprador != null && !FORMATO_TELEFONO.matcher(telefonoComprador).matches()) {
             throw new DominioException("El teléfono solo admite números, espacios, +, paréntesis y guion (6 a 20)");
         }
+        // Opcional: si está, al despachar le llega solo el enlace para seguir su pedido.
+        correoComprador = Correo.normalizar(correoComprador);
     }
 
     public static Comprador nuevo(String nombreComprador, TipoComprador tipoComprador, String documentoComprador,
                                   String telefonoComprador, String ciudadComprador) {
+        return nuevo(nombreComprador, tipoComprador, documentoComprador, telefonoComprador, ciudadComprador, null);
+    }
+
+    public static Comprador nuevo(String nombreComprador, TipoComprador tipoComprador, String documentoComprador,
+                                  String telefonoComprador, String ciudadComprador, String correoComprador) {
         return new Comprador(null, nombreComprador, tipoComprador, documentoComprador, telefonoComprador,
-                ciudadComprador, true);
+                ciudadComprador, correoComprador, true);
     }
 
     public Comprador conId(Long nuevoIdComprador) {
         return new Comprador(nuevoIdComprador, nombreComprador, tipoComprador, documentoComprador,
-                telefonoComprador, ciudadComprador, compradorActivo);
+                telefonoComprador, ciudadComprador, correoComprador, compradorActivo);
     }
 }

@@ -19,9 +19,9 @@ public class AdministrarCompradoresService implements AdministrarCompradoresUseC
 
     @Override
     public Comprador registrar(String nombreComprador, TipoComprador tipoComprador, String documentoComprador,
-                               String telefonoComprador, String ciudadComprador) {
+                               String telefonoComprador, String ciudadComprador, String correoComprador) {
         Comprador comprador = Comprador.nuevo(nombreComprador, tipoComprador, documentoComprador,
-                telefonoComprador, ciudadComprador);
+                telefonoComprador, ciudadComprador, correoComprador);
         if (comprador.documentoComprador() != null && compradores.existePorDocumento(comprador.documentoComprador())) {
             throw new ConflictoDominioException(
                     "Ya existe un comprador con el documento " + comprador.documentoComprador());
@@ -31,18 +31,19 @@ public class AdministrarCompradoresService implements AdministrarCompradoresUseC
 
     @Override
     public Comprador actualizar(Long idComprador, String nombreComprador, TipoComprador tipoComprador,
-                                String documentoComprador, String telefonoComprador, String ciudadComprador) {
+                                String documentoComprador, String telefonoComprador, String ciudadComprador,
+                                String correoComprador) {
         Comprador actual = compradores.buscarPorId(idComprador)
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe el comprador " + idComprador));
         Comprador datos = Comprador.nuevo(nombreComprador, tipoComprador, documentoComprador, telefonoComprador,
-                ciudadComprador);
+                ciudadComprador, correoComprador);
         String documento = datos.documentoComprador();
         if (documento != null && !documento.equals(actual.documentoComprador())
                 && compradores.existePorDocumento(documento)) {
             throw new ConflictoDominioException("Ya existe un comprador con el documento " + documento);
         }
         Comprador actualizado = new Comprador(idComprador, datos.nombreComprador(), datos.tipoComprador(), documento,
-                datos.telefonoComprador(), datos.ciudadComprador(), actual.compradorActivo());
+                datos.telefonoComprador(), datos.ciudadComprador(), datos.correoComprador(), actual.compradorActivo());
         compradores.actualizar(actualizado);
         return actualizado;
     }

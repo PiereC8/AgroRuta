@@ -41,6 +41,8 @@
                         + 'Para cobrar S/ 700 o más hace falta el documento.'},
                 {id: 'telefonoComprador', etiqueta: 'Teléfono', tipo: 'telefono', validar: telefonoValido,
                     valor: c.telefonoComprador},
+                {id: 'correoComprador', etiqueta: 'Correo', tipo: 'correo', valor: c.correoComprador,
+                    ayuda: 'Opcional. Al despachar su pedido le llega solo el enlace para seguirlo en el mapa.'},
                 {id: 'ciudadComprador', etiqueta: 'Ciudad', tipo: 'texto', requerido: true, valor: c.ciudadComprador}
             ],
             enviar: (valores) => window.Api.pedir('/api/compradores' + (editar ? '/' + c.idComprador : ''), {
@@ -50,6 +52,7 @@
                     tipoComprador: valores.tipoComprador,
                     documentoComprador: valores.documentoComprador || null,
                     telefonoComprador: valores.telefonoComprador || null,
+                    correoComprador: valores.correoComprador || null,
                     ciudadComprador: valores.ciudadComprador
                 }
             })

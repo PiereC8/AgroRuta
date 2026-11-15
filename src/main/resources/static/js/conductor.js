@@ -9,6 +9,28 @@
     const token = new URLSearchParams(location.hash.slice(1)).get('t');
     // Marca para separar la cola por enlace: los últimos caracteres del token bastan y no lo guardan entero.
     const huellaEnlace = token ? token.slice(-16) : '';
+    // Si el conductor ya aceptó con este enlace y cierra o recarga la página, al volver retoma solo.
+    const CLAVE_ACEPTADO = 'agroruta-conductor-aceptado:' + huellaEnlace;
+
+    function recordarAceptado(si) {
+        try {
+            if (si) {
+                localStorage.setItem(CLAVE_ACEPTADO, String(Date.now()));
+            } else {
+                localStorage.removeItem(CLAVE_ACEPTADO);
+            }
+        } catch (e) {
+            // Sin almacenamiento (modo privado): tendrá que pulsar el botón otra vez.
+        }
+    }
+
+    function yaAcepto() {
+        try {
+            return localStorage.getItem(CLAVE_ACEPTADO) !== null;
+        } catch (e) {
+            return false;
+        }
+    }
 
     const estado = {
         compartiendo: false,
@@ -310,8 +332,11 @@
         }
     }
 
-    async function comenzar() {
+    async function comenzar(automatico) {
         limpiarAviso();
+        if (automatico) {
+            aviso('Retomando el envío de tu ubicación…', 'aviso');
+        }
         $('comenzar').disabled = true;
         if (!('geolocation' in navigator)) {
             aviso('Este navegador no permite obtener la ubicación. Usa Chrome o Safari actualizados.', 'error');
@@ -333,19 +358,26 @@
             cliente.enviar('/app/iniciar', {gpsActivo: true, permisoUbicacion: true, consentimiento: true});
             const acuse = await espera;
             if (acuse.estado !== 'ACEPTADA') {
+                recordarAceptado(false);
                 cliente.cerrar();
                 aviso(acuse.detalle || 'No se pudo iniciar.', 'error');
                 $('comenzar').disabled = false;
                 return;
             }
         } catch (e) {
-            aviso(/autorizado|inválido/i.test(e.message)
+            const invalido = /autorizado|inválido/i.test(e.message);
+            if (invalido) {
+                recordarAceptado(false);
+            }
+            aviso(invalido
                 ? 'El enlace ya no es válido. Pide uno nuevo al operador.'
                 : 'No se pudo conectar. Revisa tu señal e intenta de nuevo.', 'error');
             $('comenzar').disabled = false;
             return;
         }
         estado.compartiendo = true;
+        recordarAceptado(true);
+        limpiarAviso();
         mostrar('consentimiento', false);
         mostrar('compartiendo', true);
         await mantenerPantallaEncendida();
@@ -356,6 +388,7 @@
 
     function detener(motivo) {
         estado.compartiendo = false;
+        recordarAceptado(false);
         clearInterval(estado.temporizador);
         clearTimeout(estado.reconexion);
         estado.reconexion = null;
@@ -386,6 +419,19 @@
         });
     }
 
+    // Solo si el permiso de ubicación sigue concedido: así no aparece ninguna ventana del navegador sin que la pida.
+    function retomarSiYaAcepto() {
+        if (!yaAcepto() || !navigator.permissions || !navigator.permissions.query) {
+            return;
+        }
+        navigator.permissions.query({name: 'geolocation'}).then((permiso) => {
+            if (permiso.state === 'granted' && !estado.compartiendo) {
+                comenzar(true);
+            }
+        }).catch(() => {
+        });
+    }
+
     function reconectarYa() {
         if (!estado.compartiendo || estado.cliente) {
             return;
@@ -400,6 +446,8 @@
         if (document.visibilityState === 'visible' && estado.compartiendo) {
             mantenerPantallaEncendida();
             reconectarYa();
+            // No esperar al siguiente turno de 15 s: el mapa se pone al día apenas vuelve.
+            tomarPosicion();
         }
     });
     window.addEventListener('online', reconectarYa);
@@ -408,8 +456,9 @@
         mostrar('sin-enlace', true);
     } else {
         mostrar('consentimiento', true);
-        $('comenzar').addEventListener('click', comenzar);
+        $('comenzar').addEventListener('click', () => comenzar(false));
         $('detener').addEventListener('click', () => detener());
         vigilarPermiso();
+        retomarSiYaAcepto();
     }
 })();

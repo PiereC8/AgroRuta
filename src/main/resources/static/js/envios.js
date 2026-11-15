@@ -21,11 +21,13 @@
     let compradores = [];
     let destinos = [];
     let vehiculos = [];
+    let transportistas = [];
     let filtro = '';
 
     const pedidoDe = (id) => pedidos.find((p) => p.idPedido === id);
     const compradorDe = (id) => (compradores.find((c) => c.idComprador === id) || {}).nombreComprador || '—';
     const destinoDe = (id) => (destinos.find((d) => d.idDestinoVenta === id) || {}).nombreDestino || '—';
+    const transportistaDe = (id) => transportistas.find((t) => t.idTransportista === id);
     const placaDe = (id) => (vehiculos.find((v) => v.idVehiculo === id) || {}).placaVehiculo || '—';
 
     function resumenPedido(envio) {
@@ -82,9 +84,63 @@
                 cuerpo: {idPedido: Number(v.idPedido), idVehiculo: Number(v.idVehiculo)}})
         });
         if (creado) {
-            window.Ui.aviso('Envío programado');
             cargar();
+            await avisosDelDespacho(creado);
         }
+    }
+
+    // wa.me pide el número con código de país y solo dígitos. Un celular peruano de 9 dígitos se completa con 51.
+    function numeroWhatsapp(telefono) {
+        let digitos = String(telefono || '').replace(/\D/g, '').replace(/^00/, '');
+        if (digitos.length === 9 && digitos.startsWith('9')) {
+            digitos = '51' + digitos;
+        }
+        return digitos.length >= 8 ? digitos : null;
+    }
+
+    function botonWhatsapp(url, nombre, telefono, idEnvio) {
+        const numero = numeroWhatsapp(telefono);
+        if (!numero) {
+            return null;
+        }
+        const mensaje = 'Hola' + (nombre ? ' ' + nombre : '') + ', este es tu enlace de AgroRuta para el envío '
+            + idEnvio + '. Ábrelo en tu celular, pulsa «Acepto y comenzar» y deja la pantalla encendida durante '
+            + 'la ruta:\n' + url;
+        const a = el('a', 'boton boton-ancho boton--grande', 'Enviar por WhatsApp a ' + (nombre || telefono));
+        a.href = 'https://wa.me/' + numero + '?text=' + encodeURIComponent(mensaje);
+        a.target = '_blank';
+        a.rel = 'noopener';
+        return a;
+    }
+
+    // Tras despachar: el enlace del conductor sale por WhatsApp con un toque y el del comprador ya se fue por correo.
+    async function avisosDelDespacho(r) {
+        const contenido = el('div');
+        if (!r.urlConductor) {
+            contenido.appendChild(el('p', null, 'No se pudo preparar el enlace del conductor. Pulsa «Enlaces» en '
+                + 'el envío ' + r.idEnvio + ' para generarlo.'));
+        } else {
+            const caja = el('section', 'bloque');
+            caja.appendChild(el('h3', null, 'Conductor'));
+            const whatsapp = botonWhatsapp(r.urlConductor, r.nombreTransportista, r.telefonoTransportista, r.idEnvio);
+            if (whatsapp) {
+                caja.append(el('p', 'suave', 'Se abre WhatsApp con el mensaje y el enlace listos; solo pulsa enviar.'),
+                    whatsapp);
+            } else {
+                caja.append(el('p', 'suave', 'El transportista no tiene teléfono registrado (agrégalo en Transporte '
+                    + 'para enviarlo por WhatsApp la próxima vez). Por ahora, que escanee este código:'),
+                    window.Ui.codigoQr(r.urlConductor, 'Código para el conductor'),
+                    window.Ui.campoCopiable('Enlace del conductor', r.urlConductor));
+            }
+            contenido.appendChild(caja);
+        }
+        const comprador = el('section', 'bloque');
+        comprador.append(el('h3', null, 'Comprador'), el('p', 'suave', r.correoComprador
+            ? 'Le enviamos a ' + r.correoComprador + ' el enlace para seguir su pedido en el mapa.'
+            : 'El comprador no tiene correo registrado, así que no se le avisó. Agrégalo en Compradores o '
+            + 'genera su enlace con el botón «Enlaces».'));
+        contenido.appendChild(comprador);
+        await window.Ui.detalle({titulo: 'Envío ' + r.idEnvio + ' programado', contenido});
     }
 
     async function avisarFalta(titulo, texto) {
@@ -225,7 +281,11 @@
                 const r = await window.Api.pedir('/api/envios/' + envio.idEnvio + '/enlaces?tipo=' + tipo,
                     {metodo: 'POST'});
                 const url = window.location.origin + (tipo === 'CONDUCTOR' ? r.rutaConductor : r.rutaComprador);
-                resultado.replaceChildren(window.Ui.campoCopiable('Enlace nuevo', url),
+                const t = tipo === 'CONDUCTOR' ? transportistaDe(envio.idTransportista) : null;
+                const whatsapp = t ? botonWhatsapp(url, t.nombreTransportista, t.telefonoTransportista,
+                    envio.idEnvio) : null;
+                resultado.replaceChildren(...(whatsapp ? [whatsapp] : []),
+                    window.Ui.campoCopiable('Enlace nuevo', url),
                     window.Ui.codigoQr(url, descripcionQr),
                     el('p', 'suave', 'Vence el ' + window.Ui.fecha(r.fechaExpiracion)),
                     el('p', 'suave', 'Quien tenga el enlace puede verlo, sin contraseña: envíalo solo a quien corresponde.'));
@@ -459,9 +519,10 @@
     async function cargar() {
         window.Ui.errorDePagina('');
         try {
-            [pedidos, compradores, destinos, vehiculos] = await Promise.all([
+            [pedidos, compradores, destinos, vehiculos, transportistas] = await Promise.all([
                 window.Ui.cargarTodo('/api/pedidos'), window.Api.pedir('/api/compradores'),
-                window.Api.pedir('/api/destinos'), window.Api.pedir('/api/vehiculos')]);
+                window.Api.pedir('/api/destinos'), window.Api.pedir('/api/vehiculos'),
+                window.Api.pedir('/api/transportistas').catch(() => [])]);
             await lista.cargar();
         } catch (error) {
             window.Ui.errorDePagina(error.message);

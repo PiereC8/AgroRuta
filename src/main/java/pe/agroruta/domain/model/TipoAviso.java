@@ -17,6 +17,8 @@ public enum TipoAviso {
     RESUMEN_SEMANAL(Set.of(Rol.DUENO)),
     /** Va al correo que escribe quien cobra, no a un rol del equipo. */
     ENLACE_PAGO(Set.of()),
+    /** Enlace para que el comprador siga su pedido; va al correo guardado del comprador. */
+    SEGUIMIENTO_ENVIO(Set.of()),
     PRUEBA(Set.of(Rol.DUENO));
 
     private final Set<Rol> destinatarios;

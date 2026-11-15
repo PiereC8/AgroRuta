@@ -3,6 +3,9 @@ package pe.agroruta.infrastructure.adapter.in.web;
 import java.time.Instant;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,11 +16,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import pe.agroruta.domain.model.Envio;
 import pe.agroruta.domain.model.EstadoEnvio;
+import pe.agroruta.domain.port.in.AvisarDespachoUseCase;
 import pe.agroruta.domain.port.in.DespacharEnvioUseCase;
 import pe.agroruta.infrastructure.adapter.out.seguridad.ServicioJwt.DatosToken;
 
@@ -25,18 +32,38 @@ import pe.agroruta.infrastructure.adapter.out.seguridad.ServicioJwt.DatosToken;
 @RequestMapping("/api/envios")
 public class EnvioController {
 
-    private final DespacharEnvioUseCase envios;
+    private static final Logger REGISTRO = LoggerFactory.getLogger(EnvioController.class);
 
-    public EnvioController(DespacharEnvioUseCase envios) {
+    private final DespacharEnvioUseCase envios;
+    private final AvisarDespachoUseCase avisarDespacho;
+    /** Dirección de las páginas cuando no las sirve este backend (por ejemplo, Vercel). Vacía: la del pedido. */
+    private final String urlPublica;
+
+    public EnvioController(DespacharEnvioUseCase envios, AvisarDespachoUseCase avisarDespacho,
+                           @Value("${agroruta.web.url-publica:}") String urlPublica) {
         this.envios = envios;
+        this.avisarDespacho = avisarDespacho;
+        this.urlPublica = urlPublica.endsWith("/") ? urlPublica.substring(0, urlPublica.length() - 1) : urlPublica;
     }
 
+    /**
+     * Despacha y, aparte, deja listo el enlace del conductor y avisa al comprador por correo. Si el aviso falla, el
+     * envío igual queda programado y los enlaces se pueden generar con el botón «Enlaces».
+     */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public EnvioRespuesta despachar(@Valid @RequestBody DespachoSolicitud solicitud,
-                                    @AuthenticationPrincipal DatosToken usuario) {
-        return EnvioRespuesta.de(envios.despachar(solicitud.idPedido(), solicitud.idVehiculo(),
-                usuario.nombreUsuario()));
+    public DespachoRespuesta despachar(@Valid @RequestBody DespachoSolicitud solicitud,
+                                       @AuthenticationPrincipal DatosToken usuario) {
+        Envio envio = envios.despachar(solicitud.idPedido(), solicitud.idVehiculo(), usuario.nombreUsuario());
+        AvisarDespachoUseCase.Resultado aviso = null;
+        try {
+            aviso = avisarDespacho.avisar(usuario.identificadorNegocio(), envio.idEnvio(), urlPublica.isBlank()
+                    ? ServletUriComponentsBuilder.fromCurrentContextPath().toUriString() : urlPublica);
+        } catch (RuntimeException e) {
+            REGISTRO.warn("Envío {} programado, pero no se pudieron preparar sus enlaces: {}", envio.idEnvio(),
+                    e.getMessage());
+        }
+        return DespachoRespuesta.de(envio, aviso);
     }
 
     @PostMapping("/{idEnvio}/salida")
@@ -56,6 +83,18 @@ public class EnvioController {
     }
 
     public record DespachoSolicitud(@NotNull Long idPedido, @NotNull Long idVehiculo) {
+    }
+
+    /** Los datos del envío más lo necesario para mandarle su enlace al conductor por WhatsApp. */
+    public record DespachoRespuesta(@JsonUnwrapped EnvioRespuesta envio, String urlConductor,
+                                    String nombreTransportista, String telefonoTransportista,
+                                    String correoComprador, Instant fechaExpiracion) {
+        static DespachoRespuesta de(Envio envio, AvisarDespachoUseCase.Resultado aviso) {
+            return aviso == null ? new DespachoRespuesta(EnvioRespuesta.de(envio), null, null, null, null, null)
+                    : new DespachoRespuesta(EnvioRespuesta.de(envio), aviso.urlConductor(),
+                    aviso.nombreTransportista(), aviso.telefonoTransportista(), aviso.correoComprador(),
+                    aviso.fechaExpiracion());
+        }
     }
 
     public record EnvioRespuesta(Long idEnvio, Long idPedido, Long idLote, Long idVehiculo, Long idTransportista,

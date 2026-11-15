@@ -33,7 +33,8 @@ public class CompradorController {
     @ResponseStatus(HttpStatus.CREATED)
     public CompradorRespuesta registrar(@Valid @RequestBody CompradorSolicitud solicitud) {
         return CompradorRespuesta.de(compradores.registrar(solicitud.nombreComprador(), solicitud.tipoComprador(),
-                solicitud.documentoComprador(), solicitud.telefonoComprador(), solicitud.ciudadComprador()));
+                solicitud.documentoComprador(), solicitud.telefonoComprador(), solicitud.ciudadComprador(),
+                solicitud.correoComprador()));
     }
 
     @PutMapping("/{idComprador}")
@@ -41,7 +42,7 @@ public class CompradorController {
                                          @Valid @RequestBody CompradorSolicitud solicitud) {
         return CompradorRespuesta.de(compradores.actualizar(idComprador, solicitud.nombreComprador(),
                 solicitud.tipoComprador(), solicitud.documentoComprador(), solicitud.telefonoComprador(),
-                solicitud.ciudadComprador()));
+                solicitud.ciudadComprador(), solicitud.correoComprador()));
     }
 
     @GetMapping
@@ -51,15 +52,16 @@ public class CompradorController {
 
     public record CompradorSolicitud(@NotBlank String nombreComprador, @NotNull TipoComprador tipoComprador,
                                      String documentoComprador, String telefonoComprador,
-                                     @NotBlank String ciudadComprador) {
+                                     @NotBlank String ciudadComprador, String correoComprador) {
     }
 
     public record CompradorRespuesta(Long idComprador, String nombreComprador, TipoComprador tipoComprador,
-                                     String documentoComprador, String telefonoComprador, String ciudadComprador) {
+                                     String documentoComprador, String telefonoComprador, String ciudadComprador,
+                                     String correoComprador) {
         static CompradorRespuesta de(Comprador comprador) {
             return new CompradorRespuesta(comprador.idComprador(), comprador.nombreComprador(),
                     comprador.tipoComprador(), comprador.documentoComprador(), comprador.telefonoComprador(),
-                    comprador.ciudadComprador());
+                    comprador.ciudadComprador(), comprador.correoComprador());
         }
     }
 }

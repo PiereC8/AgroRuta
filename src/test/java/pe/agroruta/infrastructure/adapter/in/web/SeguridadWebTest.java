@@ -112,6 +112,8 @@ class SeguridadWebTest {
     @MockitoBean
     DespacharEnvioUseCase despacharEnvio;
     @MockitoBean
+    pe.agroruta.domain.port.in.AvisarDespachoUseCase avisarDespacho;
+    @MockitoBean
     RegistrarEntregaUseCase registrarEntrega;
     @MockitoBean
     ConsultarLiquidacionesUseCase consultarLiquidaciones;
