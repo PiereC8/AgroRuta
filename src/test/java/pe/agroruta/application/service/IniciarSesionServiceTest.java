@@ -65,8 +65,11 @@ class IniciarSesionServiceTest {
         negocios.guardar(Negocio.nuevo("chacra_demo", "Chacra Demo", Plan.CHACRA));
         usuarios.guardar("chacra_demo", Usuario.nuevo("dueno.demo", "hash:clave-segura-1", Rol.DUENO));
         usuarios.guardar(null, Usuario.nuevo("admin", "hash:clave-admin-1", Rol.ADMINISTRADOR_PLATAFORMA));
+        // Aquí el Dueño no tiene correo: entra sin el segundo paso (ese caso se prueba en VerificarCodigoServiceTest).
         servicio = new IniciarSesionService(usuarios, negocios, new HashFalso(),
-                (negocio, nombre, rol) -> "token:" + negocio + ":" + nombre + ":" + rol, reloj);
+                (negocio, nombre, rol) -> "token:" + negocio + ":" + nombre + ":" + rol,
+                new VerificarCodigoServiceTest.VerificacionesEnMemoria(usuarios), new Falsos.GeneradorTokenFalso(),
+                new VerificarCodigoServiceTest.CorreoGrabado(), reloj);
     }
 
     private Comando login(String negocio, String usuario, String clave) {

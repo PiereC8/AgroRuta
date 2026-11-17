@@ -119,6 +119,8 @@ class SeguridadWebTest {
     ConsultarLiquidacionesUseCase consultarLiquidaciones;
     @MockitoBean
     pe.agroruta.domain.port.in.RecuperarClaveUseCase recuperarClave;
+    @MockitoBean
+    pe.agroruta.domain.port.in.VerificarCodigoUseCase verificarCodigo;
 
     private static final String LOTE = """
             {"productoLote":"Palta Hass","cantidadKg":1250.5,"fechaCosecha":"2026-11-05","chacraOrigen":"Chacra Sur"}""";
@@ -170,6 +172,28 @@ class SeguridadWebTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").value("el-token"))
                 .andExpect(jsonPath("$.rolUsuario").value("DUENO"));
+    }
+
+    @Test
+    void el_dueno_con_correo_recibe_un_desafio_sin_token_y_lo_verifica_sin_estar_autenticado() throws Exception {
+        when(iniciarSesion.iniciar(any())).thenReturn(IniciarSesionUseCase.Resultado.esperaCodigo(Rol.DUENO,
+                "chacra_demo", "el-desafio", "d***o@chacra.pe"));
+        when(verificarCodigo.verificar("chacra_demo", "el-desafio", "123456")).thenReturn(
+                new IniciarSesionUseCase.Resultado("el-token", Rol.DUENO, "chacra_demo"));
+
+        mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"identificadorNegocio\":\"chacra_demo\",\"nombreUsuario\":\"dueno.demo\",\"clave\":\"x\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").doesNotExist())
+                .andExpect(jsonPath("$.requiereCodigo").value(true))
+                .andExpect(jsonPath("$.desafio").value("el-desafio"))
+                .andExpect(jsonPath("$.correoOculto").value("d***o@chacra.pe"));
+
+        mvc.perform(post("/api/auth/verificar").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"identificadorNegocio\":\"chacra_demo\",\"desafio\":\"el-desafio\",\"codigo\":\"123456\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").value("el-token"))
+                .andExpect(jsonPath("$.requiereCodigo").value(false));
     }
 
     @Test

@@ -61,7 +61,7 @@ public class ConfiguracionSeguridad {
                 .authorizeHttpRequests(a -> a
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers("/api/auth/login", "/api/auth/recuperar", "/api/auth/restablecer",
-                                "/actuator/health").permitAll()
+                                "/api/auth/verificar", "/api/auth/reenviar-codigo", "/actuator/health").permitAll()
                         // Las páginas son públicas (los datos se piden a la API con el token), igual que sus recursos
                         // y el WebSocket (se autentica por token). Una página que no existe responde con la 404 propia.
                         .requestMatchers(HttpMethod.GET, "/", "/*.html").permitAll()

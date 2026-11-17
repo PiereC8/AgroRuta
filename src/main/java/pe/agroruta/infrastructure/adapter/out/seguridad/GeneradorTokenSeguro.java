@@ -26,6 +26,11 @@ public class GeneradorTokenSeguro implements GeneradorTokenPort {
     }
 
     @Override
+    public String nuevoCodigo() {
+        return String.format("%06d", azar.nextInt(1_000_000));
+    }
+
+    @Override
     public String hash(String token) {
         try {
             byte[] resumen = MessageDigest.getInstance("SHA-256").digest(token.getBytes(StandardCharsets.UTF_8));

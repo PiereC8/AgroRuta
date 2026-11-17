@@ -220,6 +220,13 @@
         }
     }
 
+    // RFF-01: el Dueño entró sin correo (sin verificación en dos pasos); se le recuerda en esta sesión.
+    try {
+        $('aviso-correo').classList.toggle('oculto', sessionStorage.getItem('agroruta.avisoCorreo') !== '1');
+    } catch (e) {
+        // Sin almacenamiento no hay aviso.
+    }
+
     $('reintentar').addEventListener('click', cargar);
     cargar();
 })();

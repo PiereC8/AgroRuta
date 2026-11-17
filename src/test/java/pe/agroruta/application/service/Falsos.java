@@ -518,6 +518,13 @@ final class Falsos {
         public String hash(String token) {
             return "hash:" + token;
         }
+
+        /** Códigos predecibles para las pruebas: 000001, 000002… */
+        @Override
+        public String nuevoCodigo() {
+            contador++;
+            return String.format("%06d", contador);
+        }
     }
 
     static class EnlacesEnMemoria implements EnlaceEnvioRepositoryPort {

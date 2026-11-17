@@ -352,7 +352,19 @@ public class BeanConfig {
 
     @Bean
     IniciarSesionUseCase iniciarSesionUseCase(UsuarioRepositoryPort usuarios, NegocioRepositoryPort negocios,
-                                              HashClavePort hashes, EmisorTokenPort emisor, Clock reloj) {
-        return new IniciarSesionService(usuarios, negocios, hashes, emisor, reloj);
+                                              HashClavePort hashes, EmisorTokenPort emisor,
+                                              pe.agroruta.domain.port.out.VerificacionSesionPort verificaciones,
+                                              GeneradorTokenPort generador,
+                                              pe.agroruta.domain.port.out.EnvioCorreoPort correo, Clock reloj) {
+        return new IniciarSesionService(usuarios, negocios, hashes, emisor, verificaciones, generador, correo, reloj);
+    }
+
+    // RFF-01: segundo paso del inicio de sesión del Dueño (código de 6 dígitos por correo).
+    @Bean
+    pe.agroruta.domain.port.in.VerificarCodigoUseCase verificarCodigoUseCase(NegocioRepositoryPort negocios,
+            pe.agroruta.domain.port.out.VerificacionSesionPort verificaciones, GeneradorTokenPort generador,
+            EmisorTokenPort emisor, pe.agroruta.domain.port.out.EnvioCorreoPort correo, Clock reloj) {
+        return new pe.agroruta.application.service.VerificarCodigoService(negocios, verificaciones, generador, emisor,
+                correo, reloj);
     }
 }

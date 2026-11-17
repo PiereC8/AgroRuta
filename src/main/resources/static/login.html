@@ -56,7 +56,24 @@
 
                 <button class="boton boton-ancho" id="entrar" type="submit">Entrar</button>
             </form>
-            <a class="entrada__enlace" href="/recuperar.html">¿Olvidaste tu contraseña?</a>
+            <a class="entrada__enlace" id="enlace-recuperar" href="/recuperar.html">¿Olvidaste tu contraseña?</a>
+
+            <!-- Segundo paso del Dueño: el código de 6 dígitos que le llegó al correo. -->
+            <form id="formulario-codigo" class="oculto" novalidate>
+                <p id="codigo-texto">Te enviamos un código de 6 dígitos a tu correo.</p>
+                <div class="campo" id="campo-codigo">
+                    <label class="campo__etiqueta" for="codigo">Código de verificación</label>
+                    <input class="campo__entrada" id="codigo" name="codigo" type="text" inputmode="numeric"
+                           autocomplete="one-time-code" maxlength="7" pattern="[0-9 ]*" spellcheck="false"
+                           aria-describedby="codigo-ayuda codigo-error">
+                    <span class="campo__ayuda" id="codigo-ayuda">Vence en 10 minutos. Si no lo ves, revisa la carpeta
+                        de spam.</span>
+                    <span class="campo__error oculto" id="codigo-error"></span>
+                </div>
+                <button class="boton boton-ancho" id="verificar" type="submit">Verificar y entrar</button>
+                <button class="boton boton-secundario boton-ancho" id="reenviar" type="button">Enviar otro código</button>
+                <button class="boton boton-secundario boton-ancho" id="volver" type="button">Volver</button>
+            </form>
         </div>
     </main>
 </div>

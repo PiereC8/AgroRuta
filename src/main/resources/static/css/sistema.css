@@ -536,6 +536,20 @@ a {
     text-align: center;
 }
 
+/* Segundo paso del Dueño: el código de 6 dígitos. */
+#codigo-texto {
+    margin: 0 0 16px;
+}
+
+#codigo {
+    font-size: 1.375rem;
+    letter-spacing: 0.3em;
+}
+
+#formulario-codigo .boton-secundario {
+    margin-top: 10px;
+}
+
 .entrada__caja .aviso {
     margin-bottom: 16px;
 }
