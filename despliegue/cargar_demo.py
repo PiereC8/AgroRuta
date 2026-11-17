@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
-"""Crea un negocio de demostración por plan (CHACRA, ASOCIACION, EMPRESA) con datos de Tacna.
+"""Crea los negocios de demostración (cada uno con su Dueño, sus operadores y su base propia) con datos de Tacna.
 
-Se ejecuta en el VPS:  python3 cargar_demo.py /root/agroruta-admin.txt
+Se ejecuta en el VPS, contra el backend de Render:
+    AGRORUTA_API=https://agroruta-api.onrender.com python3 cargar_demo.py /root/agroruta-admin.txt
 Usa la API (respeta todas las reglas del sistema) y al final reparte las fechas en los
-últimos meses para que los reportes muestren historia. Las claves quedan en
-/root/agroruta-cuentas.txt (solo root puede leerlo).
+últimos meses para que los reportes muestren historia. Las claves nuevas se AGREGAN al final de
+/root/agroruta-cuentas.txt (solo root puede leerlo); las que ya estaban no se tocan.
+
+- Un negocio que ya existe no se vuelve a crear: solo se le agregan los operadores que le falten
+  (entra con la clave de su Dueño guardada en ese archivo).
+- sol_de_tacna nunca se toca: es el negocio de la demo en vivo.
+- SOLO=negocio1,negocio2 limita la carga a esos negocios.
 """
 import json
 import os
@@ -21,6 +27,8 @@ API = os.environ.get("AGRORUTA_API", "http://127.0.0.1:8080")
 SUFIJO = os.environ.get("BD_SUFIJO", "_prod")
 SALIDA = os.environ.get("AGRORUTA_SALIDA", "/root/agroruta-cuentas.txt")
 SIN_FECHAS = os.environ.get("SIN_FECHAS") == "1"  # sin cliente mysql: deja las fechas de hoy
+# Negocios que el script nunca toca, aunque estén en la lista (la demo en vivo del grupo).
+PROTEGIDOS = {"sol_de_tacna"}
 random.seed(2026)
 
 # Destinos: (nombre, ciudad, local, lat, lon, flete por kg)
@@ -41,7 +49,7 @@ NEGOCIOS = [
         "nombre": "Chacra Los Durazneros de Calana",
         "plan": "CHACRA",
         "dueno": "rosa.quispe",
-        "operadores": [],
+        "operadores": ["campo.calana", "ventas.calana"],
         "lotes": 14,
         "kg": (600, 2800),
         "productos": {
@@ -126,6 +134,109 @@ NEGOCIOS = [
                        ("Transportes Mamani Hnos.", "952 778 004", [("Z2E-487", "15000"), ("Z2E-488", "15000")]),
                        ("Logística Altiplano", "951 220 615", [("Z6G-302", "20000")])],
     },
+    # ---- Agregados el 2026-11-17: cuatro negocios más, cada uno con Dueño y operadores logísticos ----
+    {
+        "id": "coop_candarave",
+        "nombre": "Cooperativa Agraria del Orégano de Candarave",
+        "plan": "ASOCIACION",
+        "dueno": "elena.ticona",
+        "operadores": ["acopio.candarave", "despacho.candarave"],
+        "lotes": 18,
+        "kg": (800, 4500),
+        "productos": {
+            "Orégano seco": 11.20, "Papa nativa": 2.10, "Haba verde": 2.60, "Maíz amiláceo": 3.40,
+        },
+        "chacras": ["Parcela Camilaca – Socio Ticona", "Parcela Cairani – Socia Flores",
+                    "Parcela Huanuara – Socio Copa", "Parcela Quilahuani – Socia Mamani"],
+        "destinos": [TACNA_MAYORISTA, MOQUEGUA, AREQUIPA_RIOSECO, JULIACA, LIMA],
+        "compradores": [
+            ("Especiería Los Andes S.A.C.", "EMPRESA", "20608814527", "01 652 3318", "Lima"),
+            ("Comercial Río Seco", "MAYORISTA", "20455890213", "054 312 765", "Arequipa"),
+            ("Abarrotes San Martín", "MERCADO", "00471266", "952 330 814", "Tacna"),
+            ("Distribuidora Altiplano", "MAYORISTA", "20448810452", "951 330 287", "Juliaca"),
+            ("Mercado Central – Puesto 23", "MERCADO", "04412983", "953 118 640", "Moquegua"),
+            ("Condimentos del Sur E.I.R.L.", "EMPRESA", "20609932175", "052 401 557", "Tacna"),
+            ("Puesto 67 – Rufina Apaza", "MERCADO", "00488510", "944 520 176", "Tacna"),
+        ],
+        "transporte": [("Transportes Candarave", "952 801 344", [("Z5B-731", "6000"), ("Z5B-732", "6000")]),
+                       ("Fletes Altoandinos", "951 642 078", [("V2H-415", "10000")])],
+    },
+    {
+        "id": "fundo_magollo",
+        "nombre": "Fundo Magollo Agroexport S.A.C.",
+        "plan": "EMPRESA",
+        "dueno": "ricardo.pari",
+        "operadores": ["logistica.magollo", "almacen.magollo", "ventas.magollo"],
+        "lotes": 26,
+        "kg": (2500, 12000),
+        "productos": {
+            "Uva Red Globe": 4.70, "Uva Italia": 4.20, "Granada": 3.90, "Palta Hass": 6.80,
+        },
+        "chacras": ["Fundo Magollo Sector A, Tacna", "Fundo Magollo Sector B, Tacna", "Fundo Pocollay, Tacna"],
+        "destinos": [TACNA_MAYORISTA, ILO, AREQUIPA, PUNO, LIMA],
+        "compradores": [
+            ("Frutas Selectas del Pacífico S.A.C.", "EMPRESA", "20611245098", "01 718 4420", "Lima"),
+            ("Mercado Mayorista N.° 2 – Puesto 310", "MAYORISTA", "20557743016", "01 354 7712", "Lima"),
+            ("Supermercados Arequipa Sur S.A.", "EMPRESA", "20120975564", "054 381 905", "Arequipa"),
+            ("Comercial Lago Titicaca", "MAYORISTA", "20448307791", "051 368 442", "Puno"),
+            ("Distribuidora Portuaria Ilo", "MAYORISTA", "20413678810", "053 784 219", "Ilo"),
+            ("Frutería Bolognesi", "MERCADO", "10004893326", "952 207 315", "Tacna"),
+            ("Juan Carlos Huanacuni", "MERCADO", "00459031", "961 438 207", "Tacna"),
+            ("Hoteles y Eventos Tacna S.A.C.", "EMPRESA", "20602715460", "052 426 118", "Tacna"),
+        ],
+        "transporte": [("Transportes Magollo", "052 318 660", [("Z7C-120", "20000"), ("Z7C-121", "20000")]),
+                       ("Refrigerados del Sur S.A.C.", "054 612 309", [("V8L-552", "25000")]),
+                       ("Transportes Quispe Hnos.", "952 771 486", [("Z2F-903", "15000")])],
+    },
+    {
+        "id": "chacra_sama",
+        "nombre": "Chacra Valle de Sama",
+        "plan": "CHACRA",
+        "dueno": "lucia.choque",
+        "operadores": ["campo.sama"],
+        "lotes": 12,
+        "kg": (500, 2400),
+        "productos": {
+            "Ají amarillo": 3.60, "Cebolla roja": 1.40, "Maíz choclo": 1.90, "Zapallo macre": 1.10,
+        },
+        "chacras": ["Chacra Las Yaras, Sama", "Chacra Inclán, Sama"],
+        "destinos": [TACNA_GRAU, TACNA_2MAYO, MOQUEGUA, ILO],
+        "compradores": [
+            ("Verdulería Doña Rosa", "MERCADO", "00463917", "952 615 203", "Tacna"),
+            ("Comercial Inclán", "MAYORISTA", "20532980441", "952 448 916", "Tacna"),
+            ("Mercado Pacocha – Puesto 14", "MERCADO", "04437128", "953 207 661", "Ilo"),
+            ("Distribuidora Moqueguana del Sur", "MAYORISTA", "20601188342", "953 770 114", "Moquegua"),
+            ("Restaurante La Cabaña Sameña", "MERCADO", "10442817330", "961 902 445", "Tacna"),
+        ],
+        "transporte": [("Fletes Sama", "952 309 871", [("Z1G-204", "3000")]),
+                       ("Transportes Yaras", "940 772 158", [("Z1G-377", "5000")])],
+    },
+    {
+        "id": "agro_locumba",
+        "nombre": "Agrícola Valle de Locumba E.I.R.L.",
+        "plan": "EMPRESA",
+        "dueno": "jorge.alanoca",
+        "operadores": ["logistica.locumba", "ventas.locumba"],
+        "lotes": 20,
+        "kg": (2000, 9000),
+        "productos": {
+            "Ají páprika seco": 8.80, "Ajo morado": 6.20, "Cebolla roja": 1.50, "Uva Quebranta": 3.80,
+        },
+        "chacras": ["Fundo Locumba Bajo, Jorge Basadre", "Fundo Ilabaya, Jorge Basadre",
+                    "Fundo Ite Alto, Jorge Basadre"],
+        "destinos": [TACNA_MAYORISTA, MOQUEGUA, ILO, AREQUIPA, LIMA],
+        "compradores": [
+            ("Agroexportadora Costa Sur S.A.C.", "EMPRESA", "20610377952", "054 274 118", "Arequipa"),
+            ("Especias y Condimentos Lima S.A.C.", "EMPRESA", "20556284017", "01 715 9036", "Lima"),
+            ("Bodegas Pisqueras del Valle", "EMPRESA", "20605219884", "053 462 790", "Moquegua"),
+            ("Comercial Pacocha", "MAYORISTA", "20449120336", "053 482 117", "Ilo"),
+            ("Mercado Grau – Puesto 52", "MERCADO", "00428893", "952 116 504", "Tacna"),
+            ("Distribuidora Basadre", "MAYORISTA", "20532447106", "952 683 290", "Tacna"),
+        ],
+        "transporte": [("Transportes Locumba", "052 781 245", [("Z8D-610", "15000"), ("Z8D-611", "15000")]),
+                       ("Carga Sur Andina S.R.L.", "054 600 128", [("V5K-913", "25000")]),
+                       ("Fletes Ilabaya", "953 440 167", [("Z3H-218", "8000")])],
+    },
 ]
 
 
@@ -133,7 +244,8 @@ class Api:
     def __init__(self, token=None):
         self.token = token
 
-    def llamar(self, metodo, ruta, cuerpo=None, encabezados=None):
+    def llamar(self, metodo, ruta, cuerpo=None, encabezados=None, permitir=()):
+        """permitir: códigos HTTP que no detienen el script (devuelve None), p. ej. 409 si ya existe."""
         datos = None if cuerpo is None else json.dumps(cuerpo).encode()
         req = urllib.request.Request(API + ruta, data=datos, method=metodo)
         req.add_header("Content-Type", "application/json")
@@ -146,13 +258,52 @@ class Api:
                 texto = r.read().decode()
                 return json.loads(texto) if texto else None
         except urllib.error.HTTPError as e:
+            if e.code in permitir:
+                return None
             raise SystemExit(f"{metodo} {ruta} -> {e.code}: {e.read().decode()[:400]}")
 
 
 def login(negocio, usuario, clave):
     r = Api().llamar("POST", "/api/auth/login",
                      {"identificadorNegocio": negocio, "nombreUsuario": usuario, "clave": clave})
+    if r.get("requiereCodigo"):
+        # Verificación en dos pasos: un Dueño con correo recibe un código y el script no puede seguir.
+        raise SystemExit(f"{negocio}: el Dueño {usuario} tiene correo y le llega un código para entrar. "
+                         "Crea sus operadores desde la pantalla Equipo o quítale el correo antes de correr el script.")
     return Api(r["token"])
+
+
+def clave_guardada(negocio, usuario):
+    """La clave de una cuenta ya creada, leída del archivo de cuentas (la última que aparezca)."""
+    if not os.path.exists(SALIDA):
+        return None
+    clave, en_negocio = None, False
+    with open(SALIDA, encoding="utf-8") as f:
+        for linea in f:
+            if "Código del negocio:" in linea:
+                en_negocio = linea.split(":", 1)[1].strip() == negocio
+            elif en_negocio and f"usuario: {usuario} " in linea + " " and "clave:" in linea:
+                clave = linea.rsplit("clave:", 1)[1].strip()
+    return clave
+
+
+def completar_operadores(n):
+    """Negocio que ya existe: le agrega los operadores que le falten. Devuelve las cuentas nuevas."""
+    clave_dueno = clave_guardada(n["id"], n["dueno"])
+    if not clave_dueno:
+        print(f"{n['id']}: ya existe, pero no está la clave de {n['dueno']} en {SALIDA}; agrega sus operadores "
+              "desde la pantalla Equipo.")
+        return []
+    api = login(n["id"], n["dueno"], clave_dueno)
+    existentes = {m["nombreUsuario"] for m in api.llamar("GET", "/api/equipo")}
+    cuentas = []
+    for op in n["operadores"]:
+        if op in existentes:
+            continue
+        c = clave_nueva("Operador")
+        api.llamar("POST", "/api/equipo", {"nombreUsuario": op, "clave": c, "correo": None})
+        cuentas.append((op, "Operador", c))
+    return cuentas
 
 
 def clave_nueva(palabra):
@@ -168,11 +319,15 @@ def mysql(sql):
 
 
 def cargar(admin, n):
+    """Devuelve (cuentas nuevas, resumen). Si el negocio ya existe, solo completa sus operadores."""
     cuentas = []
     clave_dueno = clave_nueva(n["id"].split("_")[-1].capitalize() + "Tacna")
-    admin.llamar("POST", "/api/plataforma/negocios", {
+    creado = admin.llamar("POST", "/api/plataforma/negocios", {
         "identificadorNegocio": n["id"], "nombreNegocio": n["nombre"], "planSuscripcion": n["plan"],
-        "nombreUsuarioDueno": n["dueno"], "claveInicialDueno": clave_dueno})
+        "nombreUsuarioDueno": n["dueno"], "claveInicialDueno": clave_dueno}, permitir=(409,))
+    if creado is None:
+        nuevos = completar_operadores(n)
+        return nuevos, {"ya_existia": True, "operadores_nuevos": [c[0] for c in nuevos]}
     cuentas.append((n["dueno"], "Dueño", clave_dueno))
     api = login(n["id"], n["dueno"], clave_dueno)
 
@@ -322,20 +477,26 @@ def main():
     with open(sys.argv[1], encoding="utf-8") as f:
         datos = dict(l.split(":", 1) for l in f.read().splitlines() if ":" in l)
     admin = login(None, datos["Usuario"].strip(), datos["Clave"].strip())
-    lineas = ["Cuentas de demostración AgroRuta (https://agroruta.duckdns.org)", ""]
-    solo = os.environ.get("SOLO")
-    for n in [x for x in NEGOCIOS if not solo or x["id"] == solo]:
+    lineas = ["", f"Cuentas de demostración AgroRuta (https://agroruta.vercel.app) – {date.today().isoformat()}", ""]
+    solo = {x.strip() for x in os.environ.get("SOLO", "").split(",") if x.strip()}
+    for n in [x for x in NEGOCIOS if not solo or x["id"] in solo]:
+        if n["id"] in PROTEGIDOS:
+            print(n["id"], "no se toca (demo en vivo)")
+            continue
         cuentas, resumen = cargar(admin, n)
-        print(n["id"], n["plan"], json.dumps(resumen))
+        print(n["id"], n["plan"], json.dumps(resumen, ensure_ascii=False))
+        if not cuentas:
+            continue
         lineas.append(f"Plan {n['plan']} – {n['nombre']}")
         lineas.append(f"  Código del negocio: {n['id']}")
         for usuario, rol, clave in cuentas:
             lineas.append(f"  {rol:9} usuario: {usuario:16} clave: {clave}")
         lineas.append("")
-    with open(SALIDA, "w", encoding="utf-8") as f:
+    # Se agrega al final: las claves de las cuentas que ya existían no se pierden.
+    with open(SALIDA, "a", encoding="utf-8") as f:
         f.write("\n".join(lineas))
     os.chmod(SALIDA, 0o600)
-    print("Claves guardadas en", SALIDA)
+    print("Claves nuevas agregadas al final de", SALIDA)
 
 
 if __name__ == "__main__":
