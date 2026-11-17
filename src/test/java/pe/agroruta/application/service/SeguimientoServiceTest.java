@@ -370,6 +370,52 @@ class SeguimientoServiceTest {
         assertThat(generados.fechaExpiracion()).isEqualTo(AHORA.plus(GenerarEnlacesEnvioService.VIGENCIA));
     }
 
+    // RFF-09: al abrir «Enlaces» se muestran los vigentes, sin generar otros.
+    @Test
+    void los_enlaces_generados_se_pueden_volver_a_mostrar_sin_guardar_el_token_en_claro() {
+        var enlaces = new EnlacesEnMemoria();
+        var generar = new GenerarEnlacesEnvioService(envios, enlaces, new GeneradorTokenFalso(),
+                new Falsos.CifradoFalso(), RELOJ);
+
+        var generados = generar.generar("empresa_demo", 1L);
+        var vigentes = generar.vigentes("empresa_demo", 1L);
+
+        assertThat(vigentes.tokenConductor()).isEqualTo(generados.tokenConductor());
+        assertThat(vigentes.tokenComprador()).isEqualTo(generados.tokenComprador());
+        assertThat(vigentes.venceConductor()).isEqualTo(generados.fechaExpiracion());
+        assertThat(enlaces.enlaces).extracting(e -> e.tokenCifrado())
+                .doesNotContain(generados.tokenConductor(), generados.tokenComprador());
+    }
+
+    @Test
+    void al_generar_otro_enlace_se_muestra_el_nuevo_y_no_el_anterior() {
+        var enlaces = new EnlacesEnMemoria();
+        var generar = new GenerarEnlacesEnvioService(envios, enlaces, new GeneradorTokenFalso(),
+                new Falsos.CifradoFalso(), RELOJ);
+        var primeros = generar.generar("empresa_demo", 1L);
+
+        var nuevo = generar.generar("empresa_demo", 1L, TipoEnlace.COMPRADOR);
+        var vigentes = generar.vigentes("empresa_demo", 1L);
+
+        assertThat(vigentes.tokenComprador()).isEqualTo(nuevo.tokenComprador()).isNotEqualTo(primeros.tokenComprador());
+        assertThat(vigentes.tokenConductor()).isEqualTo(primeros.tokenConductor());
+    }
+
+    @Test
+    void un_enlace_antiguo_sin_token_cifrado_no_se_muestra_y_se_ofrece_generarlo() {
+        var enlaces = new EnlacesEnMemoria();
+        enlaces.guardar(new pe.agroruta.domain.model.EnlaceEnvio("empresa_demo", 1L, TipoEnlace.CONDUCTOR,
+                "hash:viejo", AHORA.plus(Duration.ofDays(5))));
+        var generar = new GenerarEnlacesEnvioService(envios, enlaces, new GeneradorTokenFalso(),
+                new Falsos.CifradoFalso(), RELOJ);
+
+        var vigentes = generar.vigentes("empresa_demo", 1L);
+
+        assertThat(vigentes.tokenConductor()).isNull();
+        assertThat(vigentes.venceConductor()).isNull();
+        assertThat(vigentes.tokenComprador()).isNull();
+    }
+
     @Test
     void al_generar_otros_enlaces_los_anteriores_dejan_de_valer() {
         var enlaces = new EnlacesEnMemoria();

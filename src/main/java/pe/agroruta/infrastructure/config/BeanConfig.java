@@ -244,8 +244,10 @@ public class BeanConfig {
     @Bean
     GenerarEnlacesEnvioUseCase generarEnlacesEnvioUseCase(EnvioRepositoryPort envios,
                                                           EnlaceEnvioRepositoryPort enlaces,
-                                                          GeneradorTokenPort generador, Clock reloj) {
-        return new GenerarEnlacesEnvioService(envios, enlaces, generador, reloj);
+                                                          GeneradorTokenPort generador,
+                                                          pe.agroruta.domain.port.out.CifradoPort cifrado,
+                                                          Clock reloj) {
+        return new GenerarEnlacesEnvioService(envios, enlaces, generador, cifrado, reloj);
     }
 
     // RF-14 y RF-21 (RFF-09 y RFF-22): conecta el caso de uso de avisos con sus puertos (enlaces, repositorios y bandeja de correo).

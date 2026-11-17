@@ -281,49 +281,70 @@
         }
     }
 
-    // Cada enlace se genera aparte y solo cuando se pide: abrir esta ventana no corta a nadie. AgroRuta no guarda los
-    // enlaces (solo su huella), así que solo se pueden mostrar al generarlos.
-    function seccionEnlace(envio, tipo, titulo, explicacion, descripcionQr) {
+    // RFF-09: al abrir «Enlaces» se muestra el enlace vigente con su QR (el servidor lo guarda cifrado), sin generar
+    // otro: abrir esta ventana no corta a nadie. Solo queda el botón para generar uno nuevo.
+    function seccionEnlace(envio, tipo, titulo, explicacion, descripcionQr, vigente) {
         const caja = el('section', 'bloque');
         caja.append(el('h3', null, titulo), el('p', 'suave', explicacion));
         const resultado = el('div');
+
+        function mostrar(ruta, vence) {
+            const url = window.location.origin + ruta;
+            const t = tipo === 'CONDUCTOR' ? transportistaDe(envio.idTransportista) : null;
+            const whatsapp = t ? botonWhatsapp(url, t.nombreTransportista, t.telefonoTransportista,
+                envio.idEnvio) : null;
+            resultado.replaceChildren(...(whatsapp ? [whatsapp] : []),
+                window.Ui.campoCopiable('Enlace', url),
+                window.Ui.codigoQr(url, descripcionQr),
+                el('p', 'suave', 'Vence el ' + window.Ui.fecha(vence)),
+                el('p', 'suave', 'Quien tenga el enlace puede verlo, sin contraseña: envíalo solo a quien corresponde.'));
+            boton.textContent = 'Generar otro enlace (este dejará de funcionar)';
+        }
+
         const boton = window.Ui.boton('Generar ' + titulo.toLowerCase(), 'boton-secundario', async () => {
+            if (vigente && vigente.ruta && !window.confirm('El enlace actual dejará de funcionar y habrá que enviar '
+                + 'el nuevo. ¿Generar otro?')) {
+                return;
+            }
             boton.disabled = true;
             try {
                 const r = await window.Api.pedir('/api/envios/' + envio.idEnvio + '/enlaces?tipo=' + tipo,
                     {metodo: 'POST'});
-                const url = window.location.origin + (tipo === 'CONDUCTOR' ? r.rutaConductor : r.rutaComprador);
-                const t = tipo === 'CONDUCTOR' ? transportistaDe(envio.idTransportista) : null;
-                const whatsapp = t ? botonWhatsapp(url, t.nombreTransportista, t.telefonoTransportista,
-                    envio.idEnvio) : null;
-                resultado.replaceChildren(...(whatsapp ? [whatsapp] : []),
-                    window.Ui.campoCopiable('Enlace nuevo', url),
-                    window.Ui.codigoQr(url, descripcionQr),
-                    el('p', 'suave', 'Vence el ' + window.Ui.fecha(r.fechaExpiracion)),
-                    el('p', 'suave', 'Quien tenga el enlace puede verlo, sin contraseña: envíalo solo a quien corresponde.'));
-                boton.textContent = 'Generar otro (el de arriba dejará de funcionar)';
+                vigente = {ruta: tipo === 'CONDUCTOR' ? r.rutaConductor : r.rutaComprador, vence: r.fechaExpiracion};
+                mostrar(vigente.ruta, vigente.vence);
+                window.Ui.aviso('Enlace nuevo generado: envíaselo de nuevo');
             } catch (error) {
                 window.Ui.aviso(error.message, 'error');
             } finally {
                 boton.disabled = false;
             }
         });
-        caja.append(boton, resultado);
+        if (vigente && vigente.ruta) {
+            mostrar(vigente.ruta, vigente.vence);
+        }
+        caja.append(resultado, boton);
         return caja;
     }
 
     async function verEnlaces(envio) {
+        // Los enlaces vigentes; si no se pueden traer, se ofrece generarlos como antes.
+        let vigentes = {};
+        try {
+            vigentes = await window.Api.pedir('/api/envios/' + envio.idEnvio + '/enlaces') || {};
+        } catch (error) {
+            vigentes = {};
+        }
         const contenido = el('div');
         if (envio.estadoEnvio !== 'ENTREGADO') {
             contenido.appendChild(seccionEnlace(envio, 'CONDUCTOR', 'Enlace del conductor',
-                'Para que el conductor comparta su ubicación. Si ya le diste uno, ese deja de funcionar y tendrá '
-                + 'que abrir el nuevo.',
-                'Pídele al conductor que escanee este código con la cámara de su celular'));
+                'Para que el conductor comparta su ubicación desde su celular.',
+                'Pídele al conductor que escanee este código con la cámara de su celular',
+                {ruta: vigentes.rutaConductor, vence: vigentes.venceConductor}));
         }
         contenido.appendChild(seccionEnlace(envio, 'COMPRADOR', 'Enlace del comprador',
-            'Para que el comprador siga su pedido en el mapa. Si ya le diste uno, ese deja de funcionar. '
-            + 'Generarlo no afecta al conductor.',
-            'Código para el comprador, si prefiere escanearlo'));
+            'Para que el comprador siga su pedido en el mapa. Generar uno nuevo no afecta al conductor.',
+            'Código para el comprador, si prefiere escanearlo',
+            {ruta: vigentes.rutaComprador, vence: vigentes.venceComprador}));
         await window.Ui.detalle({titulo: 'Enlaces del envío ' + envio.idEnvio, contenido, ancho: true});
     }
 

@@ -327,6 +327,7 @@ def cargar(admin, n):
         "nombreUsuarioDueno": n["dueno"], "claveInicialDueno": clave_dueno}, permitir=(409,))
     if creado is None:
         nuevos = completar_operadores(n)
+        guardar_cuentas(n, nuevos)
         return nuevos, {"ya_existia": True, "operadores_nuevos": [c[0] for c in nuevos]}
     cuentas.append((n["dueno"], "Dueño", clave_dueno))
     api = login(n["id"], n["dueno"], clave_dueno)
@@ -335,6 +336,8 @@ def cargar(admin, n):
         c = clave_nueva("Operador")
         api.llamar("POST", "/api/equipo", {"nombreUsuario": op, "clave": c, "correo": None})
         cuentas.append((op, "Operador", c))
+    # Las claves se guardan apenas existen las cuentas: si algo falla después, no se pierden.
+    guardar_cuentas(n, cuentas)
 
     destinos = []
     productos = list(n["productos"].items())
@@ -364,7 +367,9 @@ def cargar(admin, n):
         for placa, cap in unidades:
             v = api.llamar("POST", "/api/vehiculos", {"idTransportista": t["idTransportista"],
                                                       "placaVehiculo": placa, "capacidadKg": cap})
-            vehiculos.append(v["idVehiculo"])
+            vehiculos.append((v["idVehiculo"], float(cap)))
+    # Ningún lote pasa la capacidad del vehículo más grande: si no, no se podría despachar.
+    capacidad_maxima = max(cap for _, cap in vehiculos)
 
     total = n["lotes"]
     # Reparto de estados: la mayoría ya liquidados; algunos en camino, despachados, con pedido o recién cosechados.
@@ -379,7 +384,7 @@ def cargar(admin, n):
     lotes_info = []
     for i in range(total):
         prod, _ = productos[i % len(productos)]
-        cantidad = random.randrange(n["kg"][0], n["kg"][1], 50)
+        cantidad = min(random.randrange(n["kg"][0], n["kg"][1], 50), int(capacidad_maxima))
         lote = api.llamar("POST", "/api/lotes", {
             "productoLote": prod, "cantidadKg": kg(cantidad),
             "fechaCosecha": (hoy - timedelta(days=random.randint(1, 3))).isoformat(),
@@ -401,11 +406,18 @@ def cargar(admin, n):
                                                      "idDestinoVenta": id_dest, "precioAcordadoPorKg": f"{precio:.2f}"})
         if estado == "pedido":
             continue
+        # Un vehículo que cargue el pedido. Los que quedan en ruta o despachados ya no se reusan (un envío activo
+        # por vehículo); si no queda ninguno que alcance, el lote se queda con su pedido sin despachar.
         if estado == "entregado":
-            vehiculo = vehiculos[idx % len(vehiculos)]
+            aptos = [v for v in vehiculos if v[1] >= cantidad]
+            vehiculo = aptos[idx % len(aptos)]
         else:
-            vehiculo = vehiculo_libre.pop(0)
-        envio = api.llamar("POST", "/api/envios", {"idPedido": pedido["idPedido"], "idVehiculo": vehiculo})
+            aptos = [v for v in vehiculo_libre if v[1] >= cantidad]
+            if not aptos:
+                continue
+            vehiculo = aptos[0]
+            vehiculo_libre.remove(vehiculo)
+        envio = api.llamar("POST", "/api/envios", {"idPedido": pedido["idPedido"], "idVehiculo": vehiculo[0]})
         if estado == "despachado":
             continue
         api.llamar("POST", f"/api/envios/{envio['idEnvio']}/salida")
@@ -477,26 +489,27 @@ def main():
     with open(sys.argv[1], encoding="utf-8") as f:
         datos = dict(l.split(":", 1) for l in f.read().splitlines() if ":" in l)
     admin = login(None, datos["Usuario"].strip(), datos["Clave"].strip())
-    lineas = ["", f"Cuentas de demostración AgroRuta (https://agroruta.vercel.app) – {date.today().isoformat()}", ""]
     solo = {x.strip() for x in os.environ.get("SOLO", "").split(",") if x.strip()}
     for n in [x for x in NEGOCIOS if not solo or x["id"] in solo]:
         if n["id"] in PROTEGIDOS:
             print(n["id"], "no se toca (demo en vivo)")
             continue
-        cuentas, resumen = cargar(admin, n)
+        _, resumen = cargar(admin, n)
         print(n["id"], n["plan"], json.dumps(resumen, ensure_ascii=False))
-        if not cuentas:
-            continue
-        lineas.append(f"Plan {n['plan']} – {n['nombre']}")
-        lineas.append(f"  Código del negocio: {n['id']}")
-        for usuario, rol, clave in cuentas:
-            lineas.append(f"  {rol:9} usuario: {usuario:16} clave: {clave}")
-        lineas.append("")
-    # Se agrega al final: las claves de las cuentas que ya existían no se pierden.
-    with open(SALIDA, "a", encoding="utf-8") as f:
-        f.write("\n".join(lineas))
-    os.chmod(SALIDA, 0o600)
     print("Claves nuevas agregadas al final de", SALIDA)
+
+
+def guardar_cuentas(n, cuentas):
+    """Agrega las cuentas al final del archivo (las que ya estaban no se tocan) en cuanto se crean."""
+    if not cuentas:
+        return
+    lineas = ["", f"Plan {n['plan']} – {n['nombre']} (agregado el {date.today().isoformat()})",
+              f"  Código del negocio: {n['id']}"]
+    for usuario, rol, clave in cuentas:
+        lineas.append(f"  {rol:9} usuario: {usuario:16} clave: {clave}")
+    with open(SALIDA, "a", encoding="utf-8") as f:
+        f.write("\n".join(lineas) + "\n")
+    os.chmod(SALIDA, 0o600)
 
 
 if __name__ == "__main__":

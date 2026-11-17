@@ -22,10 +22,23 @@ public class EnlaceEnvioJdbcAdapter implements EnlaceEnvioRepositoryPort {
 
     @Override
     public void guardar(EnlaceEnvio enlace) {
-        jdbc.update("INSERT INTO enlace_envio (hash_token, tipo_enlace, identificador_negocio, id_envio, "
-                        + "fecha_expiracion) VALUES (?, ?, ?, ?, ?)",
-                enlace.hashToken(), enlace.tipoEnlace().name(), enlace.identificadorNegocio(), enlace.idEnvio(),
-                Sql.marca(enlace.fechaExpiracion()));
+        jdbc.update("INSERT INTO enlace_envio (hash_token, token_cifrado, tipo_enlace, identificador_negocio, id_envio, "
+                        + "fecha_expiracion) VALUES (?, ?, ?, ?, ?, ?)",
+                enlace.hashToken(), enlace.tokenCifrado(), enlace.tipoEnlace().name(), enlace.identificadorNegocio(),
+                enlace.idEnvio(), Sql.marca(enlace.fechaExpiracion()));
+    }
+
+    @Override
+    public Optional<EnlaceEnvio> buscarVigenteDeEnvio(String identificadorNegocio, Long idEnvio, TipoEnlace tipo,
+                                                      Instant ahora) {
+        return jdbc.query("SELECT hash_token, token_cifrado, tipo_enlace, identificador_negocio, id_envio, "
+                        + "fecha_expiracion FROM enlace_envio WHERE identificador_negocio = ? AND id_envio = ? "
+                        + "AND tipo_enlace = ? AND enlace_activo = TRUE AND fecha_expiracion > ? "
+                        + "ORDER BY id_enlace DESC LIMIT 1",
+                (rs, fila) -> new EnlaceEnvio(rs.getString("identificador_negocio"), rs.getLong("id_envio"),
+                        TipoEnlace.valueOf(rs.getString("tipo_enlace")), rs.getString("hash_token"),
+                        Sql.instante(rs.getTimestamp("fecha_expiracion")), rs.getString("token_cifrado")),
+                identificadorNegocio, idEnvio, tipo.name(), Sql.marca(ahora)).stream().findFirst();
     }
 
     @Override

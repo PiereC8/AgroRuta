@@ -550,6 +550,31 @@ final class Falsos {
                             && e.fechaExpiracion().isAfter(ahora))
                     .findFirst();
         }
+
+        @Override
+        public Optional<EnlaceEnvio> buscarVigenteDeEnvio(String identificadorNegocio, Long idEnvio, TipoEnlace tipo,
+                                                          Instant ahora) {
+            return enlaces.stream()
+                    .filter(e -> e.identificadorNegocio().equals(identificadorNegocio) && e.idEnvio().equals(idEnvio)
+                            && e.tipoEnlace() == tipo && !desactivados.contains(e.hashToken())
+                            && e.fechaExpiracion().isAfter(ahora))
+                    .reduce((primero, segundo) -> segundo);
+        }
+    }
+
+    /** Cifrado de mentira para las pruebas: se puede leer, pero no es el token en claro. */
+    static class CifradoFalso implements pe.agroruta.domain.port.out.CifradoPort {
+        @Override
+        public String cifrar(String texto) {
+            return new StringBuilder(texto).reverse().toString() + ":cifrado";
+        }
+
+        @Override
+        public Optional<String> descifrar(String cifrado) {
+            return cifrado.endsWith(":cifrado")
+                    ? Optional.of(new StringBuilder(cifrado.substring(0, cifrado.length() - 8)).reverse().toString())
+                    : Optional.empty();
+        }
     }
 
     static class SeguimientoEnMemoria implements SeguimientoRepositoryPort {

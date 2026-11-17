@@ -66,6 +66,23 @@ public class SeguimientoController {
                 enlaces.fechaExpiracion());
     }
 
+    /**
+     * RFF-09: los enlaces vigentes, para mostrarlos con su QR al abrir «Enlaces» sin generar otros (no corta a
+     * nadie). La ruta viene en null si no hay uno vigente que se pueda mostrar.
+     */
+    @GetMapping("/enlaces")
+    public EnlacesVigentesRespuesta enlacesVigentes(@PathVariable Long idEnvio,
+                                                    @AuthenticationPrincipal DatosToken usuario) {
+        var v = generarEnlaces.vigentes(usuario.identificadorNegocio(), idEnvio);
+        return new EnlacesVigentesRespuesta(
+                v.tokenConductor() == null ? null : "/conductor.html#t=" + v.tokenConductor(), v.venceConductor(),
+                v.tokenComprador() == null ? null : "/seguimiento.html#t=" + v.tokenComprador(), v.venceComprador());
+    }
+
+    public record EnlacesVigentesRespuesta(String rutaConductor, java.time.Instant venceConductor,
+                                           String rutaComprador, java.time.Instant venceComprador) {
+    }
+
     @GetMapping("/seguimiento")
     public SeguimientoRespuesta seguimiento(@PathVariable Long idEnvio, @AuthenticationPrincipal DatosToken usuario) {
         return SeguimientoRespuesta.de(consultar.obtener(idEnvio), usuario.identificadorNegocio());

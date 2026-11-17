@@ -20,4 +20,17 @@ public interface GenerarEnlacesEnvioUseCase {
 
     record EnlacesGenerados(String tokenConductor, String tokenComprador, Instant fechaExpiracion) {
     }
+
+    /**
+     * RFF-09: los enlaces vigentes del envío, para mostrarlos con su QR al abrir «Enlaces» sin cortar a nadie.
+     * Cada token viene en null si no hay uno vigente que se pueda mostrar (por ejemplo, uno creado antes de que se
+     * guardaran cifrados): entonces la pantalla ofrece generarlo.
+     */
+    default EnlacesVigentes vigentes(String identificadorNegocio, Long idEnvio) {
+        return new EnlacesVigentes(null, null, null, null);
+    }
+
+    record EnlacesVigentes(String tokenConductor, Instant venceConductor, String tokenComprador,
+                           Instant venceComprador) {
+    }
 }
