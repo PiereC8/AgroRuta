@@ -10,6 +10,8 @@ public interface TransporteRepositoryPort {
 
     Transportista guardarTransportista(Transportista transportista);
 
+    void actualizarTransportista(Transportista transportista);
+
     Optional<Transportista> buscarTransportista(Long idTransportista);
 
     List<Transportista> listarTransportistas();

@@ -25,6 +25,19 @@ public class AdministrarTransporteService implements AdministrarTransporteUseCas
         return transporte.guardarTransportista(Transportista.nuevo(nombreTransportista, telefonoTransportista));
     }
 
+    // Corrige el nombre o el teléfono (al que se le manda el enlace por WhatsApp). Sus vehículos no cambian.
+    @Override
+    public Transportista editarTransportista(Long idTransportista, String nombreTransportista,
+                                             String telefonoTransportista) {
+        Transportista actual = transporte.buscarTransportista(idTransportista)
+                .filter(Transportista::transportistaActivo)
+                .orElseThrow(() -> new RecursoNoEncontradoException("No existe el transportista " + idTransportista));
+        Transportista editado = new Transportista(actual.idTransportista(), nombreTransportista,
+                telefonoTransportista, actual.transportistaActivo());
+        transporte.actualizarTransportista(editado);
+        return editado;
+    }
+
     @Override
     public List<Transportista> listarTransportistas() {
         return transporte.listarTransportistas();

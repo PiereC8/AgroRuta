@@ -52,6 +52,14 @@ public class TransporteJdbcAdapter implements TransporteRepositoryPort {
     }
 
     @Override
+    public void actualizarTransportista(Transportista transportista) {
+        jdbc.update("UPDATE transportista SET nombre_transportista = ?, telefono_transportista = ? "
+                        + "WHERE id_transportista = ?",
+                transportista.nombreTransportista(), transportista.telefonoTransportista(),
+                transportista.idTransportista());
+    }
+
+    @Override
     public Optional<Transportista> buscarTransportista(Long idTransportista) {
         return jdbc.query("SELECT " + COLUMNAS_TRANSPORTISTA + " FROM transportista WHERE id_transportista = ?",
                 FILA_TRANSPORTISTA, idTransportista).stream().findFirst();

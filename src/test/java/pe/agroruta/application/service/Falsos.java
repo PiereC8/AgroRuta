@@ -230,6 +230,12 @@ final class Falsos {
         }
 
         @Override
+        public void actualizarTransportista(Transportista transportista) {
+            transportistas.replaceAll(t -> t.idTransportista().equals(transportista.idTransportista())
+                    ? transportista : t);
+        }
+
+        @Override
         public Optional<Transportista> buscarTransportista(Long idTransportista) {
             return transportistas.stream().filter(t -> t.idTransportista().equals(idTransportista)).findFirst();
         }

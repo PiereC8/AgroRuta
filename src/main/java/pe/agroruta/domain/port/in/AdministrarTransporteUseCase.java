@@ -10,6 +10,8 @@ public interface AdministrarTransporteUseCase {
 
     Transportista registrarTransportista(String nombreTransportista, String telefonoTransportista);
 
+    Transportista editarTransportista(Long idTransportista, String nombreTransportista, String telefonoTransportista);
+
     List<Transportista> listarTransportistas();
 
     Vehiculo registrarVehiculo(Long idTransportista, String placaVehiculo, BigDecimal capacidadKg);

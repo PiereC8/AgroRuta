@@ -22,21 +22,27 @@
         return t ? t.nombreTransportista : '—';
     }
 
-    async function registrarTransportista() {
+    // Sin transportista: registrar uno nuevo. Con transportista: corregir su nombre o su teléfono.
+    async function registrarTransportista(actual) {
+        const editar = Boolean(actual && actual.idTransportista);
+        const t = editar ? actual : {};
         const creado = await window.Ui.panel({
-            titulo: 'Registrar transportista',
-            textoEnviar: 'Registrar transportista',
+            titulo: editar ? 'Editar transportista' : 'Registrar transportista',
+            textoEnviar: editar ? 'Guardar cambios' : 'Registrar transportista',
             campos: [
-                {id: 'nombreTransportista', etiqueta: 'Nombre', tipo: 'texto', requerido: true},
-                {id: 'telefonoTransportista', etiqueta: 'Teléfono', tipo: 'telefono', validar: telefonoValido}
+                {id: 'nombreTransportista', etiqueta: 'Nombre', tipo: 'texto', requerido: true,
+                    valor: t.nombreTransportista},
+                {id: 'telefonoTransportista', etiqueta: 'Teléfono', tipo: 'telefono', validar: telefonoValido,
+                    valor: t.telefonoTransportista,
+                    ayuda: 'A este número se le manda por WhatsApp el enlace para compartir su ubicación.'}
             ],
-            enviar: (v) => window.Api.pedir('/api/transportistas', {
-                metodo: 'POST',
+            enviar: (v) => window.Api.pedir('/api/transportistas' + (editar ? '/' + t.idTransportista : ''), {
+                metodo: editar ? 'PUT' : 'POST',
                 cuerpo: {nombreTransportista: v.nombreTransportista, telefonoTransportista: v.telefonoTransportista || null}
             })
         });
         if (creado) {
-            window.Ui.aviso('Transportista registrado');
+            window.Ui.aviso(editar ? 'Datos del transportista guardados' : 'Transportista registrado');
             cargar();
         }
     }
@@ -90,6 +96,9 @@
                 {titulo: 'Teléfono', valor: (t) => t.telefonoTransportista},
                 {titulo: 'Vehículos', valor: (t) => vehiculos.filter((v) => v.idTransportista === t.idTransportista).length}
             ], transportistas, {
+                acciones: puedeEscribir
+                    ? (t) => [window.Ui.boton('Editar', 'boton-secundario', () => registrarTransportista(t))]
+                    : undefined,
                 vacio: {titulo: 'Aún no hay transportistas',
                     texto: puedeEscribir ? 'Registra al primero para poder asignarle vehículos.'
                         : 'El Dueño del negocio los registra.'}
@@ -112,7 +121,7 @@
         {texto: 'Transportistas', vista: vistaTransportistas, alActivar: () => { pestanaActual = 0; actualizarBoton(); }},
         {texto: 'Vehículos', vista: vistaVehiculos, alActivar: () => { pestanaActual = 1; actualizarBoton(); }}
     ]);
-    $('accion-principal').addEventListener('click', () => pestanaActual === 0 ? registrarTransportista() : registrarVehiculo());
+    $('accion-principal').addEventListener('click', () => pestanaActual === 0 ? registrarTransportista(null) : registrarVehiculo());
     window.Ui.alReintentar(cargar);
     cargar();
 })();
