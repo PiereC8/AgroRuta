@@ -10,7 +10,9 @@ import org.slf4j.LoggerFactory;
 
 import pe.agroruta.domain.model.CredencialesInvalidasException;
 import pe.agroruta.domain.model.DominioException;
+import pe.agroruta.domain.model.ReglasSesion;
 import pe.agroruta.domain.model.ReglasVerificacion;
+import pe.agroruta.domain.model.SesionAbiertaException;
 import pe.agroruta.domain.model.Usuario;
 import pe.agroruta.domain.port.in.IniciarSesionUseCase;
 import pe.agroruta.domain.port.out.EmisorTokenPort;
@@ -18,6 +20,7 @@ import pe.agroruta.domain.port.out.EnvioCorreoPort;
 import pe.agroruta.domain.port.out.GeneradorTokenPort;
 import pe.agroruta.domain.port.out.HashClavePort;
 import pe.agroruta.domain.port.out.NegocioRepositoryPort;
+import pe.agroruta.domain.port.out.SesionUsuarioPort;
 import pe.agroruta.domain.port.out.UsuarioRepositoryPort;
 import pe.agroruta.domain.port.out.VerificacionSesionPort;
 
@@ -25,6 +28,8 @@ import pe.agroruta.domain.port.out.VerificacionSesionPort;
  * RFF-01: iniciar sesión con negocio, usuario y contraseña.
  * Cómo: revisa la clave (con bloqueo tras 5 fallos) y emite el token. Si es el Dueño y tiene correo, todavía no
  * emite el token: le manda un código de 6 dígitos y devuelve un desafío (verificación en dos pasos).
+ * Sesión única: si la cuenta tiene una sesión abierta en otro dispositivo (actividad en los últimos 5 minutos),
+ * no deja entrar.
  */
 public class IniciarSesionService implements IniciarSesionUseCase {
 
@@ -37,11 +42,13 @@ public class IniciarSesionService implements IniciarSesionUseCase {
     private final VerificacionSesionPort verificaciones;
     private final GeneradorTokenPort generador;
     private final EnvioCorreoPort correo;
+    private final SesionUsuarioPort sesiones;
     private final Clock reloj;
 
     public IniciarSesionService(UsuarioRepositoryPort usuarios, NegocioRepositoryPort negocios,
                                 HashClavePort hashes, EmisorTokenPort emisor, VerificacionSesionPort verificaciones,
-                                GeneradorTokenPort generador, EnvioCorreoPort correo, Clock reloj) {
+                                GeneradorTokenPort generador, EnvioCorreoPort correo, SesionUsuarioPort sesiones,
+                                Clock reloj) {
         this.usuarios = usuarios;
         this.negocios = negocios;
         this.hashes = hashes;
@@ -49,6 +56,7 @@ public class IniciarSesionService implements IniciarSesionUseCase {
         this.verificaciones = verificaciones;
         this.generador = generador;
         this.correo = correo;
+        this.sesiones = sesiones;
         this.reloj = reloj;
     }
 
@@ -75,6 +83,13 @@ public class IniciarSesionService implements IniciarSesionUseCase {
             usuarios.guardar(identificadorNegocio, usuario.conAccesoExitoso());
         }
 
+        // Sesión única: se revisa después de la clave, para no contarle a un extraño si la cuenta está en uso.
+        if (ReglasSesion.aplicaA(identificadorNegocio)
+                && sesiones.ultimoUso(identificadorNegocio, usuario.nombreUsuario())
+                        .filter(uso -> ReglasSesion.estaAbierta(uso, ahora)).isPresent()) {
+            throw new SesionAbiertaException();
+        }
+
         // Segundo paso, solo para el Dueño: el token se entrega después, con el código correcto.
         if (ReglasVerificacion.aplicaA(usuario.rolUsuario(), identificadorNegocio)) {
             Optional<String> correoDueno = verificaciones.correoDe(identificadorNegocio, usuario.idUsuario());
@@ -82,12 +97,25 @@ public class IniciarSesionService implements IniciarSesionUseCase {
                 return enviarCodigo(identificadorNegocio, usuario, correoDueno.get(), ahora);
             }
             // Sin correo entra con su clave, y la pantalla le pide registrarlo para activar el segundo paso.
-            String token = emisor.emitir(identificadorNegocio, usuario.nombreUsuario(), usuario.rolUsuario());
+            String token = emitirConSesion(identificadorNegocio, usuario, ahora);
             return new Resultado(token, usuario.rolUsuario(), identificadorNegocio, null, null, true);
         }
 
-        String token = emisor.emitir(identificadorNegocio, usuario.nombreUsuario(), usuario.rolUsuario());
+        String token = emitirConSesion(identificadorNegocio, usuario, ahora);
         return new Resultado(token, usuario.rolUsuario(), identificadorNegocio);
+    }
+
+    /** Abre la sesión (si la cuenta sigue libre) y emite el token con ella. */
+    private String emitirConSesion(String identificadorNegocio, Usuario usuario, Instant ahora) {
+        if (!ReglasSesion.aplicaA(identificadorNegocio)) {
+            return emisor.emitir(identificadorNegocio, usuario.nombreUsuario(), usuario.rolUsuario());
+        }
+        String sesion = generador.nuevoToken();
+        if (!sesiones.abrirSiLibre(identificadorNegocio, usuario.nombreUsuario(), generador.hash(sesion), ahora,
+                ReglasSesion.libreAntesDe(ahora))) {
+            throw new SesionAbiertaException();
+        }
+        return emisor.emitir(identificadorNegocio, usuario.nombreUsuario(), usuario.rolUsuario(), sesion);
     }
 
     private Resultado enviarCodigo(String identificadorNegocio, Usuario usuario, String correoDueno, Instant ahora) {

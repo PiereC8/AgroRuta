@@ -10,13 +10,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import pe.agroruta.domain.model.DominioException;
+import pe.agroruta.domain.model.ReglasSesion;
 import pe.agroruta.domain.model.ReglasVerificacion;
+import pe.agroruta.domain.model.SesionAbiertaException;
 import pe.agroruta.domain.port.in.IniciarSesionUseCase.Resultado;
 import pe.agroruta.domain.port.in.VerificarCodigoUseCase;
 import pe.agroruta.domain.port.out.EmisorTokenPort;
 import pe.agroruta.domain.port.out.EnvioCorreoPort;
 import pe.agroruta.domain.port.out.GeneradorTokenPort;
 import pe.agroruta.domain.port.out.NegocioRepositoryPort;
+import pe.agroruta.domain.port.out.SesionUsuarioPort;
 import pe.agroruta.domain.port.out.VerificacionSesionPort;
 import pe.agroruta.domain.port.out.VerificacionSesionPort.Desafio;
 
@@ -34,16 +37,18 @@ public class VerificarCodigoService implements VerificarCodigoUseCase {
     private final GeneradorTokenPort generador;
     private final EmisorTokenPort emisor;
     private final EnvioCorreoPort correo;
+    private final SesionUsuarioPort sesiones;
     private final Clock reloj;
 
     public VerificarCodigoService(NegocioRepositoryPort negocios, VerificacionSesionPort verificaciones,
                                   GeneradorTokenPort generador, EmisorTokenPort emisor, EnvioCorreoPort correo,
-                                  Clock reloj) {
+                                  SesionUsuarioPort sesiones, Clock reloj) {
         this.negocios = negocios;
         this.verificaciones = verificaciones;
         this.generador = generador;
         this.emisor = emisor;
         this.correo = correo;
+        this.sesiones = sesiones;
         this.reloj = reloj;
     }
 
@@ -64,10 +69,17 @@ public class VerificarCodigoService implements VerificarCodigoUseCase {
                     ? "El código no es correcto. Te " + (quedan == 1 ? "queda 1 intento." : "quedan " + quedan + " intentos.")
                     : "El código no es correcto y ya no quedan intentos. Vuelve a iniciar sesión.");
         }
+        // Sesión única: si mientras tanto entró desde otro dispositivo, no se gasta el código.
+        String sesion = generador.nuevoToken();
+        if (!sesiones.abrirSiLibre(identificadorNegocio, pendiente.nombreUsuario(), generador.hash(sesion), ahora,
+                ReglasSesion.libreAntesDe(ahora))) {
+            throw new SesionAbiertaException();
+        }
         if (!verificaciones.consumir(identificadorNegocio, pendiente.idVerificacion(), ahora)) {
+            sesiones.cerrar(identificadorNegocio, pendiente.nombreUsuario(), generador.hash(sesion));
             throw new DominioException(ReglasVerificacion.CODIGO_VENCIDO);
         }
-        String token = emisor.emitir(identificadorNegocio, pendiente.nombreUsuario(), pendiente.rolUsuario());
+        String token = emisor.emitir(identificadorNegocio, pendiente.nombreUsuario(), pendiente.rolUsuario(), sesion);
         return new Resultado(token, pendiente.rolUsuario(), identificadorNegocio);
     }
 

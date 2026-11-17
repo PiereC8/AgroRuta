@@ -18,11 +18,17 @@ import pe.agroruta.domain.port.out.EmisorTokenPort;
 
 public class ServicioJwt implements EmisorTokenPort {
 
-    public record DatosToken(String nombreUsuario, String identificadorNegocio, Rol rolUsuario) {
+    /** {@code sesion}: la sesión abierta al entrar (RFF-01, sesión única); null en tokens sin sesión. */
+    public record DatosToken(String nombreUsuario, String identificadorNegocio, Rol rolUsuario, String sesion) {
+
+        public DatosToken(String nombreUsuario, String identificadorNegocio, Rol rolUsuario) {
+            this(nombreUsuario, identificadorNegocio, rolUsuario, null);
+        }
     }
 
     private static final String CLAVE_NEGOCIO = "negocio";
     private static final String CLAVE_ROL = "rol";
+    private static final String CLAVE_SESION = "sid";
 
     private final SecretKey llave;
     private final Duration validez;
@@ -40,6 +46,11 @@ public class ServicioJwt implements EmisorTokenPort {
 
     @Override
     public String emitir(String identificadorNegocio, String nombreUsuario, Rol rolUsuario) {
+        return emitir(identificadorNegocio, nombreUsuario, rolUsuario, null);
+    }
+
+    @Override
+    public String emitir(String identificadorNegocio, String nombreUsuario, Rol rolUsuario, String sesion) {
         Instant ahora = reloj.instant();
         var constructor = Jwts.builder()
                 .subject(nombreUsuario)
@@ -48,6 +59,9 @@ public class ServicioJwt implements EmisorTokenPort {
                 .expiration(Date.from(ahora.plus(validez)));
         if (identificadorNegocio != null) {
             constructor.claim(CLAVE_NEGOCIO, identificadorNegocio);
+        }
+        if (sesion != null) {
+            constructor.claim(CLAVE_SESION, sesion);
         }
         return constructor.signWith(llave).compact();
     }
@@ -63,7 +77,8 @@ public class ServicioJwt implements EmisorTokenPort {
             return Optional.of(new DatosToken(
                     datos.getSubject(),
                     datos.get(CLAVE_NEGOCIO, String.class),
-                    Rol.valueOf(datos.get(CLAVE_ROL, String.class))));
+                    Rol.valueOf(datos.get(CLAVE_ROL, String.class)),
+                    datos.get(CLAVE_SESION, String.class)));
         } catch (JwtException | IllegalArgumentException e) {
             return Optional.empty();
         }

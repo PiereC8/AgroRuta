@@ -14,6 +14,14 @@
         return;
     }
 
+    // RFF-01 (sesión única): se llegó aquí porque el servidor dio la sesión por terminada.
+    if (new URLSearchParams(window.location.search).get('sesion') === 'vencida') {
+        const aviso = document.getElementById('aviso');
+        aviso.textContent = 'Tu sesión terminó (por 5 minutos sin actividad o porque se cerró). Entra otra vez.';
+        aviso.classList.remove('oculto', 'aviso--error');
+        aviso.classList.add('aviso--atencion');
+    }
+
     function marcarError(campo, mensaje) {
         const caja = $('campo-' + campo.id);
         const entrada = $(campo.id);
@@ -33,7 +41,8 @@
     function mostrarAviso(texto) {
         const aviso = $('aviso');
         aviso.textContent = texto;
-        aviso.classList.remove('oculto');
+        aviso.classList.remove('oculto', 'aviso--atencion');
+        aviso.classList.add('aviso--error');
         aviso.focus();
     }
 

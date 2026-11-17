@@ -138,7 +138,7 @@ window.Estructura = (function () {
         usuario.appendChild(elemento('span', 'suave', datos ? (ROLES[datos.rolUsuario] || datos.rolUsuario) : ''));
         const salir = elemento('button', 'boton boton-secundario', 'Cerrar sesión');
         salir.type = 'button';
-        salir.addEventListener('click', window.Api.cerrarSesion);
+        salir.addEventListener('click', () => window.Api.cerrarSesion());
         const clave = elemento('button', 'boton boton-secundario', 'Contraseña');
         clave.type = 'button';
         clave.setAttribute('aria-label', 'Cambiar mi contraseña');
@@ -156,7 +156,24 @@ window.Estructura = (function () {
         dibujarMenu(document.getElementById('menu'), opciones.activo);
         dibujarEncabezado(document.getElementById('encabezado'), opciones.titulo
             || (() => saludo()));
+        latir();
         return true;
+    }
+
+    // RFF-01 (sesión única): mientras la página está abierta, cada 2 minutos le avisa al servidor que la sesión sigue
+    // en uso. Si se cierra sin «Cerrar sesión», a los 5 minutos la cuenta queda libre para otro dispositivo.
+    // Si el servidor responde que la sesión ya no vale, Api.pedir vuelve a la pantalla de entrada.
+    const CADA_LATIDO_MS = 2 * 60 * 1000;
+
+    function latir() {
+        const avisar = () => window.Api.pedir('/api/auth/sesion').catch(() => {});
+        setInterval(avisar, CADA_LATIDO_MS);
+        // Al volver a la pestaña (por ejemplo, desde otra app en el celular) se avisa enseguida.
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                avisar();
+            }
+        });
     }
 
     return {montar, saludo};

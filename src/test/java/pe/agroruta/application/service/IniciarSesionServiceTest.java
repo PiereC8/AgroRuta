@@ -69,7 +69,29 @@ class IniciarSesionServiceTest {
         servicio = new IniciarSesionService(usuarios, negocios, new HashFalso(),
                 (negocio, nombre, rol) -> "token:" + negocio + ":" + nombre + ":" + rol,
                 new VerificarCodigoServiceTest.VerificacionesEnMemoria(usuarios), new Falsos.GeneradorTokenFalso(),
-                new VerificarCodigoServiceTest.CorreoGrabado(), reloj);
+                new VerificarCodigoServiceTest.CorreoGrabado(), new SesionesSiempreLibres(), reloj);
+    }
+
+    /** Aquí se prueban la clave y el bloqueo; la sesión única se prueba en VerificarCodigoServiceTest. */
+    private static final class SesionesSiempreLibres implements pe.agroruta.domain.port.out.SesionUsuarioPort {
+        @Override
+        public java.util.Optional<Instant> ultimoUso(String negocio, String nombre) {
+            return java.util.Optional.empty();
+        }
+
+        @Override
+        public boolean abrirSiLibre(String negocio, String nombre, String hash, Instant ahora, Instant libreAntesDe) {
+            return true;
+        }
+
+        @Override
+        public boolean usar(String negocio, String nombre, String hash, Instant ahora, Instant libreAntesDe) {
+            return true;
+        }
+
+        @Override
+        public void cerrar(String negocio, String nombre, String hash) {
+        }
     }
 
     private Comando login(String negocio, String usuario, String clave) {

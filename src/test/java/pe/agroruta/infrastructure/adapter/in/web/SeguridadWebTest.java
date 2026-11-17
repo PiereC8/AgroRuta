@@ -68,7 +68,7 @@ import pe.agroruta.infrastructure.config.TenantContext;
 
 @WebMvcTest(controllers = {NegocioController.class, AuthController.class, LoteController.class,
         DestinoController.class, CotizacionController.class, CompradorController.class, PedidoController.class,
-        TransporteController.class, EnvioController.class, LiquidacionController.class})
+        TransporteController.class, EnvioController.class, LiquidacionController.class, SesionController.class})
 @Import({ConfiguracionSeguridad.class, ManejadorErrores.class, SeguridadWebTest.Reloj.class})
 @TestPropertySource(properties = {
         "agroruta.jwt.secreto=secreto-de-prueba-con-mas-de-32-caracteres!!",
@@ -121,6 +121,8 @@ class SeguridadWebTest {
     pe.agroruta.domain.port.in.RecuperarClaveUseCase recuperarClave;
     @MockitoBean
     pe.agroruta.domain.port.in.VerificarCodigoUseCase verificarCodigo;
+    @MockitoBean
+    pe.agroruta.domain.port.in.CerrarSesionUseCase cerrarSesion;
 
     private static final String LOTE = """
             {"productoLote":"Palta Hass","cantidadKg":1250.5,"fechaCosecha":"2026-11-05","chacraOrigen":"Chacra Sur"}""";
@@ -194,6 +196,31 @@ class SeguridadWebTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").value("el-token"))
                 .andExpect(jsonPath("$.requiereCodigo").value(false));
+    }
+
+    // RFF-01 (sesión única)
+    @Test
+    void con_otra_sesion_abierta_el_login_responde_409_con_el_aviso() throws Exception {
+        when(iniciarSesion.iniciar(any())).thenThrow(new pe.agroruta.domain.model.SesionAbiertaException());
+
+        mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"identificadorNegocio\":\"chacra_demo\",\"nombreUsuario\":\"dueno.demo\",\"clave\":\"x\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error").value(pe.agroruta.domain.model.ReglasSesion.SESION_ABIERTA));
+    }
+
+    @Test
+    void salir_y_el_latido_piden_token_y_salir_cierra_la_sesion_del_token() throws Exception {
+        mvc.perform(post("/api/auth/salir")).andExpect(status().isUnauthorized());
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/auth/sesion"))
+                .andExpect(status().isUnauthorized());
+
+        String token = "Bearer " + jwt.emitir("chacra_demo", "dueno.demo", Rol.DUENO, "la-sesion");
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/auth/sesion")
+                        .header("Authorization", token))
+                .andExpect(status().isNoContent());
+        mvc.perform(post("/api/auth/salir").header("Authorization", token)).andExpect(status().isNoContent());
+        org.mockito.Mockito.verify(cerrarSesion).cerrar("chacra_demo", "dueno.demo", "la-sesion");
     }
 
     @Test

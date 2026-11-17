@@ -42,6 +42,7 @@ class VerificarCodigoServiceTest {
     private final VerificacionesEnMemoria verificaciones = new VerificacionesEnMemoria(usuarios);
     private final GeneradorTokenFalso generador = new GeneradorTokenFalso();
     private final CorreoGrabado correo = new CorreoGrabado();
+    private final SesionesEnMemoria sesiones = new SesionesEnMemoria();
     private RelojMovil reloj;
     private IniciarSesionService login;
     private VerificarCodigoService verificar;
@@ -55,9 +56,9 @@ class VerificarCodigoServiceTest {
         verificaciones.correos.put(dueno.idUsuario(), "dueno@chacra.pe");
         login = new IniciarSesionService(usuarios, negocios, new HashFalso(),
                 (negocio, nombre, rol) -> "token:" + negocio + ":" + nombre + ":" + rol, verificaciones, generador,
-                correo, reloj);
+                correo, sesiones, reloj);
         verificar = new VerificarCodigoService(negocios, verificaciones, generador,
-                (negocio, nombre, rol) -> "token:" + negocio + ":" + nombre + ":" + rol, correo, reloj);
+                (negocio, nombre, rol) -> "token:" + negocio + ":" + nombre + ":" + rol, correo, sesiones, reloj);
     }
 
     private Resultado entrarComoDueno() {
@@ -221,6 +222,70 @@ class VerificarCodigoServiceTest {
                 .isInstanceOf(DominioException.class).hasMessageContaining("No pudimos enviar el código");
     }
 
+    // ---------- Sesión única (RFF-01) ----------
+
+    @Test
+    void con_una_sesion_abierta_no_se_puede_entrar_desde_otro_dispositivo() {
+        login.iniciar(new Comando("chacra_demo", "operador.demo", "clave-segura-2"));
+
+        assertThatThrownBy(() -> login.iniciar(new Comando("chacra_demo", "operador.demo", "clave-segura-2")))
+                .isInstanceOf(pe.agroruta.domain.model.SesionAbiertaException.class)
+                .hasMessage(pe.agroruta.domain.model.ReglasSesion.SESION_ABIERTA);
+    }
+
+    @Test
+    void la_sesion_abierta_no_bloquea_a_otra_cuenta_ni_a_quien_no_sabe_la_clave() {
+        login.iniciar(new Comando("chacra_demo", "operador.demo", "clave-segura-2"));
+
+        // Con la clave mala se responde como siempre: no se le dice a un extraño que la cuenta está en uso.
+        assertThatThrownBy(() -> login.iniciar(new Comando("chacra_demo", "operador.demo", "mala")))
+                .isInstanceOf(pe.agroruta.domain.model.CredencialesInvalidasException.class);
+        verificaciones.correos.clear();
+        assertThat(entrarComoDueno().token()).isNotNull();
+    }
+
+    @Test
+    void tras_cinco_minutos_sin_actividad_se_puede_entrar_desde_otro_dispositivo() {
+        login.iniciar(new Comando("chacra_demo", "operador.demo", "clave-segura-2"));
+        reloj.avanzar(pe.agroruta.domain.model.ReglasSesion.INACTIVIDAD.plusSeconds(1));
+
+        assertThat(login.iniciar(new Comando("chacra_demo", "operador.demo", "clave-segura-2")).token()).isNotNull();
+    }
+
+    @Test
+    void con_actividad_la_sesion_sigue_abierta_y_al_cerrarla_la_cuenta_queda_libre() {
+        login.iniciar(new Comando("chacra_demo", "operador.demo", "clave-segura-2"));
+        String hash = sesiones.hashes.get("chacra_demo/operador.demo");
+        reloj.avanzar(Duration.ofMinutes(4));
+        assertThat(sesiones.usar("chacra_demo", "operador.demo", hash, reloj.instant(),
+                pe.agroruta.domain.model.ReglasSesion.libreAntesDe(reloj.instant()))).isTrue();
+        reloj.avanzar(Duration.ofMinutes(4));
+
+        assertThatThrownBy(() -> login.iniciar(new Comando("chacra_demo", "operador.demo", "clave-segura-2")))
+                .isInstanceOf(pe.agroruta.domain.model.SesionAbiertaException.class);
+
+        new CerrarSesionService(sesiones, generador).cerrar("chacra_demo", "operador.demo",
+                hash.substring("hash:".length()));
+        assertThat(login.iniciar(new Comando("chacra_demo", "operador.demo", "clave-segura-2")).token()).isNotNull();
+    }
+
+    @Test
+    void el_dueno_con_sesion_abierta_no_recibe_codigo_y_si_entra_otro_mientras_tanto_no_se_gasta_el_codigo() {
+        Resultado r = entrarComoDueno();
+        // Mientras escribe el código, otro dispositivo… (aquí sin correo, entra directo y abre la sesión).
+        verificaciones.correos.clear();
+        login.iniciar(new Comando("chacra_demo", "dueno.demo", "clave-segura-1"));
+
+        assertThatThrownBy(() -> verificar.verificar("chacra_demo", r.desafio(), correo.ultimoCodigo()))
+                .isInstanceOf(pe.agroruta.domain.model.SesionAbiertaException.class);
+        assertThat(verificaciones.desafios.get(0).usado).isFalse();
+        int enviados = correo.enviados.size();
+        verificaciones.correos.put(1L, "dueno@chacra.pe");
+        assertThatThrownBy(this::entrarComoDueno)
+                .isInstanceOf(pe.agroruta.domain.model.SesionAbiertaException.class);
+        assertThat(correo.enviados).hasSize(enviados);
+    }
+
     @Test
     void oculta_el_correo_sin_mostrarlo_entero() {
         assertThat(ReglasVerificacion.ocultarCorreo("mattias@gmail.com")).isEqualTo("m*****s@gmail.com");
@@ -229,6 +294,49 @@ class VerificarCodigoServiceTest {
     }
 
     // ---------- Falsos ----------
+
+    /** Sesiones en memoria con las mismas condiciones que SesionUsuarioJdbcAdapter. */
+    static final class SesionesEnMemoria implements pe.agroruta.domain.port.out.SesionUsuarioPort {
+        final Map<String, String> hashes = new HashMap<>();
+        final Map<String, Instant> usos = new HashMap<>();
+
+        @Override
+        public Optional<Instant> ultimoUso(String negocio, String nombre) {
+            return hashes.containsKey(negocio + "/" + nombre) ? Optional.ofNullable(usos.get(negocio + "/" + nombre))
+                    : Optional.empty();
+        }
+
+        @Override
+        public boolean abrirSiLibre(String negocio, String nombre, String hash, Instant ahora, Instant libreAntesDe) {
+            String k = negocio + "/" + nombre;
+            Instant uso = usos.get(k);
+            if (hashes.get(k) != null && uso != null && uso.isAfter(libreAntesDe)) {
+                return false;
+            }
+            hashes.put(k, hash);
+            usos.put(k, ahora);
+            return true;
+        }
+
+        @Override
+        public boolean usar(String negocio, String nombre, String hash, Instant ahora, Instant libreAntesDe) {
+            String k = negocio + "/" + nombre;
+            if (!hash.equals(hashes.get(k)) || usos.get(k) == null || !usos.get(k).isAfter(libreAntesDe)) {
+                return false;
+            }
+            usos.put(k, ahora);
+            return true;
+        }
+
+        @Override
+        public void cerrar(String negocio, String nombre, String hash) {
+            String k = negocio + "/" + nombre;
+            if (hash.equals(hashes.get(k))) {
+                hashes.remove(k);
+                usos.remove(k);
+            }
+        }
+    }
 
     static final class RelojMovil extends Clock {
         private Instant ahora;

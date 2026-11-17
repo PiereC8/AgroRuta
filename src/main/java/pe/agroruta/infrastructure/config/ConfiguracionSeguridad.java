@@ -36,14 +36,19 @@ public class ConfiguracionSeguridad {
 
     @Bean
     SecurityFilterChain cadenaDeSeguridad(HttpSecurity http, ServicioJwt servicioJwt,
-                                          ObjectProvider<UsuarioRepositoryPort> usuarios, Clock reloj,
+                                          ObjectProvider<UsuarioRepositoryPort> usuarios,
+                                          ObjectProvider<pe.agroruta.domain.port.out.SesionUsuarioPort> sesiones,
+                                          ObjectProvider<pe.agroruta.domain.port.out.GeneradorTokenPort> generador,
+                                          Clock reloj,
                                           @Value("${agroruta.seguridad.intentos-auth-por-minuto:20}")
                                           int intentosPorMinuto)
             throws Exception {
         // Sin repositorio de usuarios (pruebas de controladores) solo se valida la firma del token.
         UsuarioRepositoryPort repositorio = usuarios.getIfAvailable();
+        // RFF-01 (sesión única): con la tabla de sesiones, cada petición revisa que la sesión del token siga abierta.
         VerificadorUsuarioActivo verificador = repositorio == null ? null
-                : new VerificadorUsuarioActivo(repositorio, reloj);
+                : new VerificadorUsuarioActivo(repositorio, sesiones.getIfAvailable(), generador.getIfAvailable(),
+                        reloj);
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .headers(cabeceras -> cabeceras.contentSecurityPolicy(politica -> politica.policyDirectives(

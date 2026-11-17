@@ -357,16 +357,26 @@ public class BeanConfig {
                                               HashClavePort hashes, EmisorTokenPort emisor,
                                               pe.agroruta.domain.port.out.VerificacionSesionPort verificaciones,
                                               GeneradorTokenPort generador,
-                                              pe.agroruta.domain.port.out.EnvioCorreoPort correo, Clock reloj) {
-        return new IniciarSesionService(usuarios, negocios, hashes, emisor, verificaciones, generador, correo, reloj);
+                                              pe.agroruta.domain.port.out.EnvioCorreoPort correo,
+                                              pe.agroruta.domain.port.out.SesionUsuarioPort sesiones, Clock reloj) {
+        return new IniciarSesionService(usuarios, negocios, hashes, emisor, verificaciones, generador, correo,
+                sesiones, reloj);
     }
 
     // RFF-01: segundo paso del inicio de sesión del Dueño (código de 6 dígitos por correo).
     @Bean
     pe.agroruta.domain.port.in.VerificarCodigoUseCase verificarCodigoUseCase(NegocioRepositoryPort negocios,
             pe.agroruta.domain.port.out.VerificacionSesionPort verificaciones, GeneradorTokenPort generador,
-            EmisorTokenPort emisor, pe.agroruta.domain.port.out.EnvioCorreoPort correo, Clock reloj) {
+            EmisorTokenPort emisor, pe.agroruta.domain.port.out.EnvioCorreoPort correo,
+            pe.agroruta.domain.port.out.SesionUsuarioPort sesiones, Clock reloj) {
         return new pe.agroruta.application.service.VerificarCodigoService(negocios, verificaciones, generador, emisor,
-                correo, reloj);
+                correo, sesiones, reloj);
+    }
+
+    // RFF-01: sesión única; «Cerrar sesión» libera la cuenta.
+    @Bean
+    pe.agroruta.domain.port.in.CerrarSesionUseCase cerrarSesionUseCase(
+            pe.agroruta.domain.port.out.SesionUsuarioPort sesiones, GeneradorTokenPort generador) {
+        return new pe.agroruta.application.service.CerrarSesionService(sesiones, generador);
     }
 }

@@ -29,14 +29,26 @@ window.Api = (function () {
         guardar(CLAVE_USUARIO, JSON.stringify(usuario));
     }
 
-    function cerrarSesion() {
+    // RFF-01 (sesión única): avisa al servidor para que la cuenta quede libre al instante en otro dispositivo.
+    // keepalive: el aviso sale aunque la página cambie enseguida. Si falla, la cuenta se libera sola a los 5 minutos.
+    // vencida: el servidor ya no acepta el token (inactividad o usuario desactivado); no hace falta avisarle.
+    function cerrarSesion(vencida) {
+        const token = leer(CLAVE_TOKEN);
+        if (token && vencida !== true) {
+            try {
+                fetch('/api/auth/salir', {method: 'POST', headers: {'Authorization': 'Bearer ' + token},
+                    keepalive: true}).catch(() => {});
+            } catch (e) {
+                // Sin red: no importa, la sesión vence sola.
+            }
+        }
         try {
             sessionStorage.removeItem(CLAVE_TOKEN);
             sessionStorage.removeItem(CLAVE_USUARIO);
         } catch (e) {
             // Nada que borrar.
         }
-        window.location.replace('/login.html');
+        window.location.replace(vencida === true ? '/login.html?sesion=vencida' : '/login.html');
     }
 
     function usuario() {
@@ -72,7 +84,7 @@ window.Api = (function () {
             throw new Error('No hay conexión con el servidor. Revisa tu internet e inténtalo de nuevo.');
         }
         if (respuesta.status === 401 && !(opciones && opciones.sinRedireccion)) {
-            cerrarSesion();
+            cerrarSesion(true);
             throw new Error('Tu sesión terminó. Entra otra vez.');
         }
         const datos = await respuesta.json().catch(() => null);

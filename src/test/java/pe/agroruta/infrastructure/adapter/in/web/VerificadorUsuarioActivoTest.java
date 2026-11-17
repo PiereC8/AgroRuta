@@ -73,6 +73,48 @@ class VerificadorUsuarioActivoTest {
         verify(usuarios, never()).buscarPorNombre(null, "admin");
     }
 
+    // ---------- Sesión única (RFF-01) ----------
+
+    @Test
+    void con_sesion_unica_un_token_sin_sesion_o_con_una_sesion_reemplazada_no_pasa() {
+        var sesiones = mock(pe.agroruta.domain.port.out.SesionUsuarioPort.class);
+        var generador = mock(pe.agroruta.domain.port.out.GeneradorTokenPort.class);
+        when(generador.hash("vieja")).thenReturn("h-vieja");
+        when(generador.hash("actual")).thenReturn("h-actual");
+        when(sesiones.usar(org.mockito.ArgumentMatchers.eq("asoc_yarada"), org.mockito.ArgumentMatchers.eq("julio"),
+                org.mockito.ArgumentMatchers.eq("h-actual"), org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any())).thenReturn(true);
+        var verificador = new VerificadorUsuarioActivo(mock(UsuarioRepositoryPort.class), sesiones, generador,
+                Clock.fixed(AHORA, ZoneId.of("UTC")));
+
+        assertThat(verificador.esValido("asoc_yarada", "julio", null)).isFalse();
+        assertThat(verificador.esValido("asoc_yarada", "julio", "vieja")).isFalse();
+        assertThat(verificador.esValido("asoc_yarada", "julio", "actual")).isTrue();
+        assertThat(verificador.esValido(null, "admin", null)).isTrue();
+    }
+
+    @Test
+    void con_sesion_unica_el_uso_se_anota_como_mucho_cada_treinta_segundos() {
+        var sesiones = mock(pe.agroruta.domain.port.out.SesionUsuarioPort.class);
+        var generador = mock(pe.agroruta.domain.port.out.GeneradorTokenPort.class);
+        when(generador.hash("s")).thenReturn("h");
+        when(sesiones.usar(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any())).thenReturn(true);
+        var reloj = new RelojMovible(AHORA);
+        var verificador = new VerificadorUsuarioActivo(mock(UsuarioRepositoryPort.class), sesiones, generador, reloj);
+
+        verificador.esValido("asoc_yarada", "julio", "s");
+        reloj.ahora = AHORA.plusSeconds(10);
+        verificador.esValido("asoc_yarada", "julio", "s");
+        reloj.ahora = AHORA.plus(VerificadorUsuarioActivo.VIGENCIA).plusSeconds(1);
+        verificador.esValido("asoc_yarada", "julio", "s");
+
+        verify(sesiones, times(2)).usar(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any());
+    }
+
     private static final class RelojMovible extends Clock {
         Instant ahora;
 

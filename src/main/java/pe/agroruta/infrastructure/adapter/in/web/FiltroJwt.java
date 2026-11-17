@@ -40,8 +40,8 @@ public class FiltroJwt extends OncePerRequestFilter {
             String encabezado = peticion.getHeader("Authorization");
             if (encabezado != null && encabezado.startsWith(PREFIJO)) {
                 servicioJwt.leer(encabezado.substring(PREFIJO.length()))
-                        .filter(datos -> verificador == null
-                                || verificador.estaActivo(datos.identificadorNegocio(), datos.nombreUsuario()))
+                        .filter(datos -> verificador == null || verificador.esValido(datos.identificadorNegocio(),
+                                datos.nombreUsuario(), datos.sesion()))
                         .ifPresent(datos -> {
                     var autenticacion = new UsernamePasswordAuthenticationToken(datos, null,
                             List.of(new SimpleGrantedAuthority("ROLE_" + datos.rolUsuario().name())));

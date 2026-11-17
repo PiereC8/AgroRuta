@@ -33,6 +33,17 @@ class ServicioJwtTest {
     }
 
     @Test
+    void el_token_lleva_la_sesion_abierta_para_la_sesion_unica() {
+        ServicioJwt servicio = servicio(INICIO, SECRETO);
+
+        var con = servicio.leer(servicio.emitir("chacra_demo", "dueno.demo", Rol.DUENO, "sesion-1")).orElseThrow();
+        var sin = servicio.leer(servicio.emitir("chacra_demo", "dueno.demo", Rol.DUENO)).orElseThrow();
+
+        assertThat(con.sesion()).isEqualTo("sesion-1");
+        assertThat(sin.sesion()).isNull();
+    }
+
+    @Test
     void el_token_del_administrador_no_lleva_negocio() {
         ServicioJwt servicio = servicio(INICIO, SECRETO);
 
