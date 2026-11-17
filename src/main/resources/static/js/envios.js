@@ -1,3 +1,5 @@
+// RFF-08 y RFF-12: pantalla Envíos (despachar, salir en ruta, cancelar, registrar entrega y
+// ver la liquidación).
 'use strict';
 
 (function () {
@@ -49,6 +51,7 @@
         return 'Programado ' + window.Ui.fecha(e.fechaProgramada);
     }
 
+    // RFF-08: elegir pedido y vehículo y despachar.
     async function despachar() {
         const libres = pedidos.filter((p) => p.estadoPedido === 'PENDIENTE');
         const ocupados = new Set(envios.filter((e) => e.estadoEnvio === 'PROGRAMADO' || e.estadoEnvio === 'EN_RUTA')
@@ -151,6 +154,7 @@
         await window.Ui.detalle({titulo, texto, contenido: el('span')});
     }
 
+    // RFF-08: marcar que el envío salió en ruta.
     async function iniciarRuta(envio) {
         const acepto = await window.Ui.confirmar({
             titulo: 'Iniciar la ruta del envío ' + envio.idEnvio,
@@ -171,6 +175,7 @@
         return t;
     }
 
+    // RFF-12: muestra ganancia real, esperada, flete y pérdida.
     function mostrarLiquidacion(l) {
         const contenido = el('div');
         const cifras = el('div', 'cifras-liquidacion');
@@ -194,6 +199,7 @@
     }
 
     // Sin liquidación previa registra la entrega; con ella, la corrige (solo mientras no haya un pago).
+    // RFF-12: registrar lo recibido, la merma y el rechazo.
     async function registrarEntrega(envio, previa) {
         const corregir = Boolean(previa);
         const pedido = pedidoDe(envio.idPedido);
@@ -239,6 +245,7 @@
         }
     }
 
+    // RFF-12: corregir la entrega (si aún no se cobró).
     async function corregirEntrega(envio) {
         try {
             const previa = await window.Api.pedir('/api/envios/' + envio.idEnvio + '/liquidacion');
@@ -248,6 +255,7 @@
         }
     }
 
+    // RFF-08: cancelar el envío antes de la entrega.
     async function cancelarEnvio(envio) {
         const enRuta = envio.estadoEnvio === 'EN_RUTA';
         const acepto = await window.Ui.confirmar({

@@ -15,6 +15,7 @@ import pe.agroruta.domain.model.Rol;
 import pe.agroruta.domain.port.in.CotizarFleteUseCase;
 import pe.agroruta.infrastructure.adapter.out.seguridad.ServicioJwt.DatosToken;
 
+// RFF-06: API GET /api/lotes/{idLote}/cotizacion.
 @RestController
 public class CotizacionController {
 

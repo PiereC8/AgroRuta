@@ -28,6 +28,8 @@ import pe.agroruta.domain.port.out.PedidoRepositoryPort;
 import pe.agroruta.domain.port.out.TarifaPort;
 import pe.agroruta.domain.port.out.TransaccionPort;
 
+// RFF-12: registra la entrega (recibido, merma y rechazo) y calcula la liquidación.
+// Cómo: marca envío y pedido como entregados, calcula con Liquidacion.calcular y guarda todo en una transacción.
 public class RegistrarEntregaService implements RegistrarEntregaUseCase {
 
     private final EnvioRepositoryPort envios;
@@ -65,6 +67,7 @@ public class RegistrarEntregaService implements RegistrarEntregaUseCase {
         Lote lote = lotes.buscarPorId(envio.idLote())
                 .orElseThrow(() -> new LoteNoEncontradoException(envio.idLote()));
 
+        // El flete sale de la tarifa del destino (destino local = 0).
         Dinero fletePorKg = costoFletePorKg(pedido);
         Liquidacion liquidacion = Liquidacion.calcular(pedido, envio, comando.cantidadRecibidaKg(),
                 comando.mermaKg(), comando.rechazoKg(), fletePorKg, comando.usuario(), ahora);
@@ -80,6 +83,7 @@ public class RegistrarEntregaService implements RegistrarEntregaUseCase {
                 comando.usuario(), ahora);
 
         return transaccion.ejecutar(() -> {
+            // Todo o nada: envío y pedido entregados, historial del lote y liquidación.
             envios.actualizar(entregado);
             pedidos.actualizarEstado(pedido.idPedido(), EstadoPedido.ENTREGADO);
             EstadoLote estadoDelLote = ReglasLote.estadoSegun(lote, pedidos.vigentesDeLote(lote.idLote()),

@@ -13,6 +13,8 @@ import pe.agroruta.domain.port.in.ConsultarLotesUseCase;
 import pe.agroruta.domain.port.out.LoteRepositoryPort;
 import pe.agroruta.domain.port.out.PedidoRepositoryPort;
 
+// RFF-05: lista lotes con su stock y muestra el historial de un lote.
+// Cómo: a cada lote le suma los kg comprometidos en pedidos no cancelados.
 public class ConsultarLotesService implements ConsultarLotesUseCase {
 
     private final LoteRepositoryPort lotes;

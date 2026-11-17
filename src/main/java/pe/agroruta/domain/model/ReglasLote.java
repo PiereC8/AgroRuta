@@ -3,6 +3,7 @@ package pe.agroruta.domain.model;
 import java.math.BigDecimal;
 import java.util.List;
 
+// RFF-05 y RFF-07: stock del lote (kg disponibles) y su estado según sus pedidos (RN-24).
 /**
  * Reglas del stock de un lote. Un lote se puede repartir entre varios pedidos mientras lo comprometido no pase de
  * lo cosechado. Los kg de un pedido cancelado vuelven al stock.

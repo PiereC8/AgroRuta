@@ -5,6 +5,8 @@ import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
 
+// RFF-05 (Lotes): lote de cosecha con producto, kg, fecha de cosecha y chacra.
+// Cómo: el constructor valida los datos; Lote.nuevo además no deja una fecha de cosecha futura.
 public record Lote(Long idLote, String productoLote, BigDecimal cantidadKg, LocalDate fechaCosecha,
                    String chacraOrigen, EstadoLote estadoLote, String usuarioRegistro, Instant fechaRegistro) {
 

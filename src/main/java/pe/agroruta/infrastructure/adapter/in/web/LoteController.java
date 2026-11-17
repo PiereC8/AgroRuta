@@ -28,6 +28,7 @@ import pe.agroruta.domain.port.in.ConsultarLotesUseCase;
 import pe.agroruta.domain.port.in.RegistrarLoteUseCase;
 import pe.agroruta.infrastructure.adapter.out.seguridad.ServicioJwt.DatosToken;
 
+// RFF-05: API /api/lotes (registrar, listar, ver uno y su historial).
 @RestController
 @RequestMapping("/api/lotes")
 public class LoteController {

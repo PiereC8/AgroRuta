@@ -9,6 +9,8 @@ import pe.agroruta.domain.model.TipoComprador;
 import pe.agroruta.domain.port.in.AdministrarCompradoresUseCase;
 import pe.agroruta.domain.port.out.CompradorRepositoryPort;
 
+// RFF-04 (Catálogos): registrar, editar y listar compradores.
+// Cómo: Comprador valida los datos y aquí se evita repetir el DNI/RUC.
 public class AdministrarCompradoresService implements AdministrarCompradoresUseCase {
 
     private final CompradorRepositoryPort compradores;

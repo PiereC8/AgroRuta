@@ -1,3 +1,4 @@
+// RFF-18: panel de inicio (cifras del mes, envíos en curso y gráfico de ganancia).
 'use strict';
 
 (function () {
@@ -208,6 +209,7 @@
         pintarTablaEnvios(datos);
     }
 
+    // RFF-18: pide /api/panel/resumen y pinta cada tarjeta.
     async function cargar() {
         $('error').classList.add('oculto');
         try {

@@ -2,6 +2,8 @@ package pe.agroruta.domain.model;
 
 import java.time.Instant;
 
+// RFF-08 (Despacho): envío de un pedido en un vehículo.
+// Estados: programado → en ruta → entregado; se puede cancelar antes de entregar.
 public record Envio(Long idEnvio, Long idPedido, Long idLote, Long idVehiculo, Long idTransportista,
                     EstadoEnvio estadoEnvio, Instant fechaProgramada, Instant fechaSalida, Instant fechaEntrega,
                     String usuarioDespacho) {

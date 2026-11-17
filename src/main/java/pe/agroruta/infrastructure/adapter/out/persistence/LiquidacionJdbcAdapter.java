@@ -14,6 +14,7 @@ import pe.agroruta.domain.model.Dinero;
 import pe.agroruta.domain.model.Liquidacion;
 import pe.agroruta.domain.port.out.LiquidacionRepositoryPort;
 
+// RFF-12: guarda y lee liquidaciones en MySQL (JdbcTemplate).
 @Component
 public class LiquidacionJdbcAdapter implements LiquidacionRepositoryPort {
 

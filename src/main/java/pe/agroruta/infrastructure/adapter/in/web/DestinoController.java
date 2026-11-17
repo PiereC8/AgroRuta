@@ -20,6 +20,7 @@ import pe.agroruta.domain.model.DestinoVenta;
 import pe.agroruta.domain.model.Dinero;
 import pe.agroruta.domain.port.in.AdministrarDestinosUseCase;
 
+// RFF-04: API /api/destinos (registrar, precio, tarifa y coordenadas).
 @RestController
 @RequestMapping("/api/destinos")
 public class DestinoController {

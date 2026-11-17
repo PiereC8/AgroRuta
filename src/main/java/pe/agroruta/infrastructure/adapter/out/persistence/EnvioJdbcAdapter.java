@@ -16,6 +16,7 @@ import pe.agroruta.domain.model.Envio;
 import pe.agroruta.domain.model.EstadoEnvio;
 import pe.agroruta.domain.port.out.EnvioRepositoryPort;
 
+// RFF-08: guarda y lee envíos en MySQL (JdbcTemplate).
 @Component
 public class EnvioJdbcAdapter implements EnvioRepositoryPort {
 

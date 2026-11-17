@@ -21,6 +21,7 @@ import pe.agroruta.domain.port.out.LoteRepositoryPort;
 import pe.agroruta.domain.port.out.PedidoRepositoryPort;
 import pe.agroruta.domain.port.out.TransaccionPort;
 
+// RFF-07 y RFF-08: cancelar un pedido pendiente o un envío antes de la entrega.
 public class CancelarOperacionService implements CancelarOperacionUseCase {
 
     private final EnvioRepositoryPort envios;
@@ -64,6 +65,7 @@ public class CancelarOperacionService implements CancelarOperacionUseCase {
                     envios.existeEnRutaDeLote(lote.idLote())), evento);
             return cancelado;
         });
+        // Los enlaces del envío cancelado dejan de valer.
         enlaces.desactivarDeEnvio(identificadorNegocio, idEnvio, TipoEnlace.CONDUCTOR);
         enlaces.desactivarDeEnvio(identificadorNegocio, idEnvio, TipoEnlace.COMPRADOR);
         return cancelado;

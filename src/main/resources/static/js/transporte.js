@@ -1,3 +1,4 @@
+// RFF-04: pantalla Transporte (transportistas y vehículos).
 'use strict';
 
 (function () {

@@ -1,3 +1,4 @@
+// RFF-04: pantalla Destinos (precio esperado, flete y ubicación en el mapa).
 'use strict';
 
 (function () {

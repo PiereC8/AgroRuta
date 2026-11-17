@@ -17,6 +17,7 @@ import pe.agroruta.domain.model.Transportista;
 import pe.agroruta.domain.model.Vehiculo;
 import pe.agroruta.domain.port.in.AdministrarTransporteUseCase;
 
+// RFF-04: API /api/transportistas y /api/vehiculos.
 @RestController
 public class TransporteController {
 

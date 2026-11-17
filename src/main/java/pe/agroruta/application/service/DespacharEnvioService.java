@@ -23,6 +23,8 @@ import pe.agroruta.domain.port.out.PedidoRepositoryPort;
 import pe.agroruta.domain.port.out.TransaccionPort;
 import pe.agroruta.domain.port.out.TransporteRepositoryPort;
 
+// RFF-08: despachar un pedido y sacarlo en ruta.
+// Cómo: revisa vehículo libre y con capacidad, crea el envío y actualiza pedido y lote en una transacción.
 public class DespacharEnvioService implements DespacharEnvioUseCase {
 
     private final PedidoRepositoryPort pedidos;
@@ -53,6 +55,7 @@ public class DespacharEnvioService implements DespacharEnvioUseCase {
         Vehiculo vehiculo = transporte.buscarVehiculo(idVehiculo)
                 .filter(Vehiculo::vehiculoActivo)
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe el vehículo " + idVehiculo));
+        // El vehículo debe aguantar el peso y no tener otro envío en curso.
         vehiculo.verificarCapacidad(pedido.cantidadKg());
         if (envios.existeActivoDeVehiculo(vehiculo.idVehiculo())) {
             throw new ConflictoDominioException("El vehículo " + vehiculo.placaVehiculo() + " ya tiene un envío en curso");
@@ -64,6 +67,7 @@ public class DespacharEnvioService implements DespacharEnvioUseCase {
                 "Pedido " + pedido.idPedido() + " (" + pedido.cantidadKg().toPlainString() + " kg) despachado en el "
                         + "vehículo " + vehiculo.placaVehiculo(), usuario, ahora);
         return transaccion.ejecutar(() -> {
+            // Todo o nada: envío nuevo, pedido despachado y estado del lote.
             Envio guardado = envios.guardarNuevo(envio);
             pedidos.actualizarEstado(despachado.idPedido(), EstadoPedido.DESPACHADO);
             lotes.actualizarEstado(lote.idLote(), ReglasLote.estadoSegun(lote, pedidos.vigentesDeLote(lote.idLote()),

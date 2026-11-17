@@ -14,6 +14,7 @@ import pe.agroruta.domain.model.Comprador;
 import pe.agroruta.domain.model.TipoComprador;
 import pe.agroruta.domain.port.out.CompradorRepositoryPort;
 
+// RFF-04: guarda y lee compradores en MySQL (JdbcTemplate).
 @Component
 public class CompradorJdbcAdapter implements CompradorRepositoryPort {
 

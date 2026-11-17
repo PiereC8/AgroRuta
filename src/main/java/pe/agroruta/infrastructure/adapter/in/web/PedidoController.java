@@ -22,6 +22,7 @@ import pe.agroruta.domain.model.Pedido;
 import pe.agroruta.domain.port.in.GestionarPedidosUseCase;
 import pe.agroruta.infrastructure.adapter.out.seguridad.ServicioJwt.DatosToken;
 
+// RFF-07: API /api/pedidos (registrar, listar y ver uno).
 @RestController
 @RequestMapping("/api/pedidos")
 public class PedidoController {

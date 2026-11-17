@@ -14,6 +14,7 @@ import pe.agroruta.domain.model.Transportista;
 import pe.agroruta.domain.model.Vehiculo;
 import pe.agroruta.domain.port.out.TransporteRepositoryPort;
 
+// RFF-04: guarda y lee transportistas y vehículos en MySQL (JdbcTemplate).
 @Component
 public class TransporteJdbcAdapter implements TransporteRepositoryPort {
 

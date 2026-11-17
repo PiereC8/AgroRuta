@@ -14,6 +14,8 @@ import pe.agroruta.domain.port.out.DestinoRepositoryPort;
 import pe.agroruta.domain.port.out.PreciosDestinoPort;
 import pe.agroruta.domain.port.out.UbicacionDestinoPort;
 
+// RFF-04: destinos con su precio esperado por producto, tarifa de flete y
+// ubicación en el mapa. Cómo: valida cada dato (precio > 0, flete no negativo, punto dentro del Perú) y lo guarda.
 public class AdministrarDestinosService implements AdministrarDestinosUseCase {
 
     private final DestinoRepositoryPort destinos;

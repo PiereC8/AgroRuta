@@ -19,6 +19,7 @@ import pe.agroruta.domain.model.EstadoPedido;
 import pe.agroruta.domain.model.Pedido;
 import pe.agroruta.domain.port.out.PedidoRepositoryPort;
 
+// RFF-07: guarda y lee pedidos en MySQL (JdbcTemplate) y suma los kg comprometidos.
 @Component
 public class PedidoJdbcAdapter implements PedidoRepositoryPort {
 

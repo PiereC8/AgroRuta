@@ -21,6 +21,7 @@ import pe.agroruta.domain.port.out.PagoRepositoryPort;
 import pe.agroruta.domain.port.out.PedidoRepositoryPort;
 import pe.agroruta.domain.port.out.TransaccionPort;
 
+// RFF-12: corrige una entrega mientras no tenga un pago aprobado o en curso.
 public class CorregirEntregaService implements CorregirEntregaUseCase {
 
     private final EnvioRepositoryPort envios;
@@ -56,6 +57,7 @@ public class CorregirEntregaService implements CorregirEntregaUseCase {
         }
         Liquidacion actual = liquidaciones.buscarPorEnvio(envio.idEnvio())
                 .orElseThrow(() -> new RecursoNoEncontradoException("El envío " + envio.idEnvio() + " no tiene liquidación"));
+        // Si ya se cobró o hay un cobro en curso, no se corrige.
         if (pagos.existeAprobadoDe(actual.idLiquidacion()) || pagos.existePendienteDe(actual.idLiquidacion())) {
             throw new ConflictoDominioException(
                     "Esta entrega ya tiene un pago aprobado o en curso: ya no se puede corregir");

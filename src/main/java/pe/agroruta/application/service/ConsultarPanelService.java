@@ -14,6 +14,8 @@ import pe.agroruta.domain.model.Rol;
 import pe.agroruta.domain.port.in.ConsultarPanelUseCase;
 import pe.agroruta.domain.port.out.PanelRepositoryPort;
 
+// RFF-18: arma el panel de inicio del mes actual (hora de Lima).
+// Cómo: pide cada cifra al puerto del panel; al Operador no se le manda la ganancia (RFF-02).
 public class ConsultarPanelService implements ConsultarPanelUseCase {
 
     static final ZoneId LIMA = ZoneId.of("America/Lima");
@@ -33,6 +35,7 @@ public class ConsultarPanelService implements ConsultarPanelUseCase {
         YearMonth mes = YearMonth.now(reloj.withZone(LIMA));
         Instant inicio = inicioDe(mes);
         Instant fin = inicioDe(mes.plusMonths(1));
+        // Solo el Dueño ve la ganancia y la serie de los últimos 6 meses.
         boolean verGanancia = rol == Rol.DUENO;
 
         List<GananciaDelMes> serie = null;

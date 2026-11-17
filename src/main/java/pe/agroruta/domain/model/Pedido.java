@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
 
+// RFF-07 (Pedidos): pedido de un comprador sobre parte de un lote (o todo).
+// Cómo: Pedido.nuevo no deja pedir más kg de los disponibles; los métodos cambian el estado con sus reglas.
 /** Un pedido toma una parte de un lote, o todo el lote, según lo que pide el comprador. */
 public record Pedido(Long idPedido, Long idComprador, Long idLote, Long idDestinoVenta, BigDecimal cantidadKg,
                      Dinero precioAcordadoPorKg, EstadoPedido estadoPedido, String usuarioRegistro,
@@ -38,6 +40,7 @@ public record Pedido(Long idPedido, Long idComprador, Long idLote, Long idDestin
             throw new DominioException("La cantidad del pedido admite hasta 3 decimales");
         }
         BigDecimal cantidad = cantidadKg.setScale(3, RoundingMode.UNNECESSARY);
+        // RN-24: no se puede pedir más de lo que queda del lote.
         if (cantidad.compareTo(kgDisponibles) > 0) {
             throw new ConflictoDominioException("El lote " + lote.idLote() + " solo tiene "
                     + kgDisponibles.toPlainString() + " kg disponibles y el pedido pide " + cantidad.toPlainString());

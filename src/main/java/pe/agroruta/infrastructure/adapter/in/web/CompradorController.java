@@ -19,6 +19,7 @@ import pe.agroruta.domain.model.Comprador;
 import pe.agroruta.domain.model.TipoComprador;
 import pe.agroruta.domain.port.in.AdministrarCompradoresUseCase;
 
+// RFF-04: API /api/compradores (registrar, editar y listar).
 @RestController
 @RequestMapping("/api/compradores")
 public class CompradorController {

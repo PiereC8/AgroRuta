@@ -19,6 +19,8 @@ import pe.agroruta.domain.port.out.PreciosDestinoPort;
 import pe.agroruta.domain.port.out.LoteRepositoryPort;
 import pe.agroruta.domain.port.out.TarifaPort;
 
+// RFF-06: cotiza un lote en todos los destinos activos.
+// Cómo: toma los kg disponibles, trae precios y fletes por sus puertos y llama a CotizadorDestinos.
 public class CotizarFleteService implements CotizarFleteUseCase {
 
     private final LoteRepositoryPort lotes;
@@ -39,6 +41,7 @@ public class CotizarFleteService implements CotizarFleteUseCase {
     @Override
     public Cotizacion cotizar(Long idLote) {
         Lote lote = lotes.buscarPorId(idLote).orElseThrow(() -> new LoteNoEncontradoException(idLote));
+        // Se cotiza solo lo que queda sin pedido.
         BigDecimal disponibles = ReglasLote.kgDisponibles(lote, pedidos.vigentesDeLote(idLote));
         if (disponibles.signum() <= 0) {
             throw new DominioException("El lote no tiene kg disponibles: todo está comprometido en pedidos");

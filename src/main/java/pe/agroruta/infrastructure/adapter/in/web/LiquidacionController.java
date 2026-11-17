@@ -24,6 +24,7 @@ import pe.agroruta.domain.port.in.ConsultarLiquidacionesUseCase;
 import pe.agroruta.domain.port.in.RegistrarEntregaUseCase;
 import pe.agroruta.infrastructure.adapter.out.seguridad.ServicioJwt.DatosToken;
 
+// RFF-12: API de entrega y liquidaciones (/api/envios/{id}/entrega, /api/liquidaciones).
 @RestController
 public class LiquidacionController {
 

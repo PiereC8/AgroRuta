@@ -1,3 +1,4 @@
+// RFF-07: pantalla Pedidos (registrar con los kg disponibles del lote y cancelar).
 'use strict';
 
 (function () {
@@ -32,6 +33,7 @@
         await window.Ui.detalle({titulo, texto, contenido: window.Ui.el('span')});
     }
 
+    // RFF-07: formulario del pedido (comprador, lote, destino, kg y precio).
     async function registrar() {
         await cargarAuxiliares();
         const disponibles = lotes.filter((l) => Number(l.kgDisponibles) > 0);
@@ -126,6 +128,7 @@
     }
 
     // Solo un pedido pendiente (sin envío en curso); sus kilos vuelven a quedar disponibles en el lote.
+    // RFF-07: cancelar un pedido pendiente.
     async function cancelar(pedido) {
         const acepto = await window.Ui.confirmar({
             titulo: 'Cancelar el pedido ' + pedido.idPedido,

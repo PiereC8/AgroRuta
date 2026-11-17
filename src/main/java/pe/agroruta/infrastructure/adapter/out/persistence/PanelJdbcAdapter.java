@@ -16,6 +16,7 @@ import pe.agroruta.domain.model.EnvioEnCurso;
 import pe.agroruta.domain.model.EstadoEnvio;
 import pe.agroruta.domain.port.out.PanelRepositoryPort;
 
+// RFF-18: consultas SQL que suman ganancia, merma, envíos en curso y cobros.
 @Component
 public class PanelJdbcAdapter implements PanelRepositoryPort {
 

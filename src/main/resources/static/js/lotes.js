@@ -1,3 +1,4 @@
+// RFF-05 y RFF-06: pantalla Lotes (registrar, ver historial y cotizar dónde vender).
 'use strict';
 
 (function () {
@@ -19,6 +20,7 @@
         return new Date().toLocaleDateString('en-CA');
     }
 
+    // RFF-05: formulario para registrar un lote.
     async function registrar() {
         const creado = await window.Ui.panel({
             titulo: 'Registrar lote',
@@ -40,6 +42,7 @@
         }
     }
 
+    // RFF-05: historial del lote.
     function bloqueHistorial(eventos) {
         const bloque = el('section', 'bloque');
         bloque.appendChild(el('h3', null, 'Historial'));
@@ -54,6 +57,7 @@
         return bloque;
     }
 
+    // RFF-06: muestra la cotización por destino y cuál conviene.
     function bloqueCotizacion(cotizacion, error) {
         const bloque = el('section', 'bloque');
         bloque.appendChild(el('h3', null, '¿A dónde conviene enviarlo?'));

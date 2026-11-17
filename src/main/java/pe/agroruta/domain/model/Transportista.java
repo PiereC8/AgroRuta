@@ -2,6 +2,7 @@ package pe.agroruta.domain.model;
 
 import java.util.regex.Pattern;
 
+// RFF-04: transportista; su teléfono se usa para mandarle el enlace por WhatsApp.
 public record Transportista(Long idTransportista, String nombreTransportista, String telefonoTransportista,
                             boolean transportistaActivo) {
 

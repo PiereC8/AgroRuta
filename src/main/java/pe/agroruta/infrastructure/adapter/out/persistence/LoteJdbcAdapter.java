@@ -23,6 +23,8 @@ import pe.agroruta.domain.model.Lote;
 import pe.agroruta.domain.model.TipoEventoLote;
 import pe.agroruta.domain.port.out.LoteRepositoryPort;
 
+// RFF-05: guarda lotes y su historial en MySQL (JdbcTemplate).
+// buscarParaActualizar usa FOR UPDATE para que dos pedidos a la vez no tomen los mismos kg (RFF-07).
 @Component
 public class LoteJdbcAdapter implements LoteRepositoryPort {
 

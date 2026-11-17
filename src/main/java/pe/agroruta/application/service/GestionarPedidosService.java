@@ -26,6 +26,7 @@ import pe.agroruta.domain.port.out.LoteRepositoryPort;
 import pe.agroruta.domain.port.out.PedidoRepositoryPort;
 import pe.agroruta.domain.port.out.TransaccionPort;
 
+// RFF-07: registrar, listar y ver pedidos.
 public class GestionarPedidosService implements GestionarPedidosUseCase {
 
     private final PedidoRepositoryPort pedidos;
@@ -63,11 +64,13 @@ public class GestionarPedidosService implements GestionarPedidosUseCase {
         Dinero precio = comando.precioAcordadoPorKg() == null ? null : new Dinero(comando.precioAcordadoPorKg());
         Instant ahora = reloj.instant();
 
+        // Transacción: bloquea el lote, calcula lo disponible, guarda el pedido y actualiza el estado del lote.
         return transaccion.ejecutar(() -> {
             Lote lote = lotes.buscarParaActualizar(comando.idLote())
                     .orElseThrow(() -> new LoteNoEncontradoException(comando.idLote()));
             List<Pedido> vigentes = pedidos.vigentesDeLote(lote.idLote());
             BigDecimal disponibles = ReglasLote.kgDisponibles(lote, vigentes);
+            // Si no se indica la cantidad, el pedido toma todo lo disponible.
             BigDecimal cantidad = comando.cantidadKg() == null ? disponibles : comando.cantidadKg();
 
             Pedido guardado = pedidos.guardarNuevo(Pedido.nuevo(comprador.idComprador(), lote, disponibles,

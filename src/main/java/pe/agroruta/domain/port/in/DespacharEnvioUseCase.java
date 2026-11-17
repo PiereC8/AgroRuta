@@ -4,6 +4,7 @@ import java.util.List;
 
 import pe.agroruta.domain.model.Envio;
 
+// RFF-08: puerto de entrada del despacho.
 public interface DespacharEnvioUseCase {
 
     Envio despachar(Long idPedido, Long idVehiculo, String usuario);

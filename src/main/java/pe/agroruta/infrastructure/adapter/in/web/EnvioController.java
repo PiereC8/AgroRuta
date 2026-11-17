@@ -28,6 +28,7 @@ import pe.agroruta.domain.port.in.AvisarDespachoUseCase;
 import pe.agroruta.domain.port.in.DespacharEnvioUseCase;
 import pe.agroruta.infrastructure.adapter.out.seguridad.ServicioJwt.DatosToken;
 
+// RFF-08: API /api/envios (despachar, salir en ruta, listar, cancelar).
 @RestController
 @RequestMapping("/api/envios")
 public class EnvioController {

@@ -1,5 +1,6 @@
 package pe.agroruta.domain.model;
 
+// RFF-04: destino de venta (mercado o ciudad). esLocal = no paga flete.
 public record DestinoVenta(Long idDestinoVenta, String nombreDestino, String ciudadDestino, boolean esLocal,
                            boolean destinoActivo) {
 

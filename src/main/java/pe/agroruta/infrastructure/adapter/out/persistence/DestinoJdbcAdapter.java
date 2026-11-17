@@ -23,6 +23,7 @@ import pe.agroruta.domain.port.out.DestinoRepositoryPort;
 import pe.agroruta.domain.port.out.PreciosDestinoPort;
 import pe.agroruta.domain.port.out.UbicacionDestinoPort;
 
+// RFF-04: guarda y lee destinos, precios y tarifas en MySQL (JdbcTemplate).
 @Component
 public class DestinoJdbcAdapter implements DestinoRepositoryPort, PreciosDestinoPort, UbicacionDestinoPort {
 

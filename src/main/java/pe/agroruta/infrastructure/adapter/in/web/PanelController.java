@@ -18,6 +18,7 @@ import pe.agroruta.domain.model.Panel;
 import pe.agroruta.domain.port.in.ConsultarPanelUseCase;
 import pe.agroruta.infrastructure.adapter.out.seguridad.ServicioJwt.DatosToken;
 
+// RFF-18: API GET /api/panel/resumen.
 @RestController
 @RequestMapping("/api/panel")
 public class PanelController {

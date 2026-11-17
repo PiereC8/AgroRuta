@@ -10,6 +10,8 @@ import pe.agroruta.domain.model.Vehiculo;
 import pe.agroruta.domain.port.in.AdministrarTransporteUseCase;
 import pe.agroruta.domain.port.out.TransporteRepositoryPort;
 
+// RFF-04: registrar y listar transportistas y vehículos.
+// Cómo: el vehículo debe ser de un transportista activo y su placa no se puede repetir.
 public class AdministrarTransporteService implements AdministrarTransporteUseCase {
 
     private final TransporteRepositoryPort transporte;

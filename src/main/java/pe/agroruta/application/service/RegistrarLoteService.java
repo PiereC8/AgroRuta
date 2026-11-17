@@ -10,6 +10,8 @@ import pe.agroruta.domain.model.TipoEventoLote;
 import pe.agroruta.domain.port.in.RegistrarLoteUseCase;
 import pe.agroruta.domain.port.out.LoteRepositoryPort;
 
+// RFF-05: registra un lote de cosecha.
+// Cómo: Lote.nuevo valida y se guarda junto con el primer evento de su historial.
 public class RegistrarLoteService implements RegistrarLoteUseCase {
 
     private final LoteRepositoryPort lotes;

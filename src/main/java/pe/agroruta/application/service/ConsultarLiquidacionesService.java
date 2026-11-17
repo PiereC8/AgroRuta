@@ -8,6 +8,7 @@ import pe.agroruta.domain.model.RecursoNoEncontradoException;
 import pe.agroruta.domain.port.in.ConsultarLiquidacionesUseCase;
 import pe.agroruta.domain.port.out.LiquidacionRepositoryPort;
 
+// RFF-12: consulta la liquidación de un envío o la lista de liquidaciones.
 public class ConsultarLiquidacionesService implements ConsultarLiquidacionesUseCase {
 
     private final LiquidacionRepositoryPort liquidaciones;

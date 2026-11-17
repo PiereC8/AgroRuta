@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
 
+// RFF-12 (Entrega): cálculo de la ganancia real después de flete, merma y rechazo.
 /**
  * Resultado de una entrega: cuánto llegó, cuánto se perdió y cuánto se ganó de verdad.
  *
@@ -36,12 +37,14 @@ public record Liquidacion(Long idLiquidacion, Long idLote, Long idPedido, Long i
         BigDecimal rechazo = cantidad("rechazada", rechazoKg);
 
         BigDecimal suma = recibido.add(merma).add(rechazo);
+        // Recibido + merma + rechazo debe ser igual a lo despachado.
         if (suma.compareTo(despachado) != 0) {
             throw new DominioException("Lo recibido, la merma y lo rechazado suman " + suma.toPlainString()
                     + " kg, pero lo despachado fue " + despachado.toPlainString() + " kg");
         }
 
         Dinero precio = pedido.precioAcordadoPorKg();
+        // Fórmulas del comentario de arriba (RFF-12).
         Dinero ingresoReal = precio.multiplicar(recibido);
         Dinero costoFlete = costoFletePorKg.multiplicar(despachado);
         Dinero gananciaReal = ingresoReal.restar(costoFlete);

@@ -5,6 +5,7 @@ import java.time.LocalDate;
 
 import pe.agroruta.domain.model.Lote;
 
+// RFF-05: puerto de entrada para registrar lotes.
 public interface RegistrarLoteUseCase {
 
     Lote registrar(Comando comando);

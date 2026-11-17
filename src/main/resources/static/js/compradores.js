@@ -1,3 +1,4 @@
+// RFF-04: pantalla Compradores (lista, registrar y editar).
 'use strict';
 
 (function () {

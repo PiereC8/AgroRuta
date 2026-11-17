@@ -5,6 +5,7 @@ import java.util.List;
 
 import pe.agroruta.domain.model.Pedido;
 
+// RFF-07: puerto de entrada de pedidos.
 public interface GestionarPedidosUseCase {
 
     Pedido registrar(Comando comando);

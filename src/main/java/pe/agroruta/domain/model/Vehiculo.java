@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.regex.Pattern;
 
+// RFF-04: vehículo de un transportista con placa y capacidad en kg.
+// verificarCapacidad lo usa el despacho (RFF-08) para no cargar más de lo que aguanta.
 public record Vehiculo(Long idVehiculo, Long idTransportista, String placaVehiculo, BigDecimal capacidadKg,
                        boolean vehiculoActivo) {
 
