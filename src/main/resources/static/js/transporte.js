@@ -11,7 +11,77 @@
     const vistaTransportistas = window.Ui.el('div');
     const vistaVehiculos = window.Ui.el('div');
     let transportistas = [];
+    let vehiculos = [];
     let pestanaActual = 0;
+
+    // RFF-23: cada pestaña tiene su barra de búsqueda y filtros, y su tabla debajo.
+    const barraTransportistas = window.Ui.el('div');
+    const listaTransportistas = window.Ui.el('div');
+    const barraVehiculos = window.Ui.el('div');
+    const listaVehiculos = window.Ui.el('div');
+    vistaTransportistas.append(barraTransportistas, listaTransportistas);
+    vistaVehiculos.append(barraVehiculos, listaVehiculos);
+
+    const filtrosTransportistas = window.Ui.barraFiltros(barraTransportistas, [
+        {id: 'texto', tipo: 'busqueda', etiqueta: 'Buscar', marcador: 'Nombre o teléfono…'},
+        // Sin teléfono no se le puede mandar el enlace por WhatsApp al despachar.
+        {id: 'telefono', tipo: 'select', etiqueta: 'Teléfono', opciones: [['SI', 'Con teléfono'], ['NO', 'Sin teléfono']]},
+        {id: 'vehiculos', tipo: 'select', etiqueta: 'Vehículos', opciones: [['SI', 'Con vehículos'], ['NO', 'Sin vehículos']]}
+    ], pintarTransportistas);
+
+    const filtrosVehiculos = window.Ui.barraFiltros(barraVehiculos, [
+        {id: 'texto', tipo: 'busqueda', etiqueta: 'Buscar', marcador: 'Placa o transportista…'},
+        {id: 'transportista', tipo: 'select', etiqueta: 'Transportista'},
+        // Para despachar un pedido grande hace falta un vehículo que lo cargue.
+        {id: 'capacidad', tipo: 'select', etiqueta: 'Carga al menos',
+            opciones: [['1000', '1,000 kg'], ['5000', '5,000 kg'], ['10000', '10,000 kg'], ['20000', '20,000 kg']]}
+    ], pintarVehiculos);
+
+    const vehiculosDe = (idTransportista) => vehiculos.filter((v) => v.idTransportista === idTransportista).length;
+
+    function pintarTransportistas() {
+        const f = filtrosTransportistas.valores();
+        const visibles = transportistas.filter((t) => window.Ui.coincide(f.texto, t.nombreTransportista,
+                t.telefonoTransportista)
+            && (!f.telefono || (f.telefono === 'SI') === Boolean(t.telefonoTransportista))
+            && (!f.vehiculos || (f.vehiculos === 'SI') === (vehiculosDe(t.idTransportista) > 0)));
+        filtrosTransportistas.contar(visibles.length, transportistas.length);
+        const filtrando = Object.values(f).some(Boolean);
+        window.Ui.tabla(listaTransportistas, [
+            {titulo: 'Nombre', clase: 'largo', valor: (t) => t.nombreTransportista},
+            {titulo: 'Teléfono', valor: (t) => t.telefonoTransportista},
+            {titulo: 'Vehículos', valor: (t) => vehiculosDe(t.idTransportista)}
+        ], visibles, {
+            acciones: puedeEscribir
+                ? (t) => [window.Ui.boton('Editar', 'boton-secundario', () => registrarTransportista(t))]
+                : undefined,
+            vacio: filtrando
+                ? {titulo: 'Ningún transportista coincide', texto: 'Cambia la búsqueda o pulsa «Limpiar».'}
+                : {titulo: 'Aún no hay transportistas',
+                    texto: puedeEscribir ? 'Registra al primero para poder asignarle vehículos.'
+                        : 'El Dueño del negocio los registra.'}
+        });
+    }
+
+    function pintarVehiculos() {
+        const f = filtrosVehiculos.valores();
+        const visibles = vehiculos.filter((v) => window.Ui.coincide(f.texto, v.placaVehiculo, nombreDe(v.idTransportista))
+            && (!f.transportista || String(v.idTransportista) === f.transportista)
+            && (!f.capacidad || Number(v.capacidadKg) >= Number(f.capacidad)));
+        filtrosVehiculos.contar(visibles.length, vehiculos.length);
+        const filtrando = Object.values(f).some(Boolean);
+        window.Ui.tabla(listaVehiculos, [
+            {titulo: 'Placa', valor: (v) => v.placaVehiculo},
+            {titulo: 'Transportista', clase: 'largo', valor: (v) => nombreDe(v.idTransportista)},
+            {titulo: 'Capacidad', valor: (v) => window.Ui.kilos(v.capacidadKg)}
+        ], visibles, {
+            vacio: filtrando
+                ? {titulo: 'Ningún vehículo coincide', texto: 'Cambia la búsqueda o pulsa «Limpiar».'}
+                : {titulo: 'Aún no hay vehículos',
+                    texto: puedeEscribir ? 'Registra un vehículo para poder despachar pedidos.'
+                        : 'El Dueño del negocio los registra.'}
+        });
+    }
 
     function telefonoValido(valor) {
         return !valor || /^[0-9+() -]{6,20}$/.test(valor) ? null : 'Escribe solo números, por ejemplo 987654321.';
@@ -88,30 +158,12 @@
     async function cargar() {
         window.Ui.errorDePagina('');
         try {
-            const [listaTransportistas, vehiculos] = await Promise.all([
+            [transportistas, vehiculos] = await Promise.all([
                 window.Api.pedir('/api/transportistas'), window.Api.pedir('/api/vehiculos')]);
-            transportistas = listaTransportistas;
-            window.Ui.tabla(vistaTransportistas, [
-                {titulo: 'Nombre', clase: 'largo', valor: (t) => t.nombreTransportista},
-                {titulo: 'Teléfono', valor: (t) => t.telefonoTransportista},
-                {titulo: 'Vehículos', valor: (t) => vehiculos.filter((v) => v.idTransportista === t.idTransportista).length}
-            ], transportistas, {
-                acciones: puedeEscribir
-                    ? (t) => [window.Ui.boton('Editar', 'boton-secundario', () => registrarTransportista(t))]
-                    : undefined,
-                vacio: {titulo: 'Aún no hay transportistas',
-                    texto: puedeEscribir ? 'Registra al primero para poder asignarle vehículos.'
-                        : 'El Dueño del negocio los registra.'}
-            });
-            window.Ui.tabla(vistaVehiculos, [
-                {titulo: 'Placa', valor: (v) => v.placaVehiculo},
-                {titulo: 'Transportista', clase: 'largo', valor: (v) => nombreDe(v.idTransportista)},
-                {titulo: 'Capacidad', valor: (v) => window.Ui.kilos(v.capacidadKg)}
-            ], vehiculos, {
-                vacio: {titulo: 'Aún no hay vehículos',
-                    texto: puedeEscribir ? 'Registra un vehículo para poder despachar pedidos.'
-                        : 'El Dueño del negocio los registra.'}
-            });
+            filtrosVehiculos.opciones('transportista', window.Ui.opcionesUnicas(vehiculos, (v) => v.idTransportista,
+                (v) => nombreDe(v.idTransportista)));
+            pintarTransportistas();
+            pintarVehiculos();
         } catch (error) {
             window.Ui.errorDePagina(error.message);
         }

@@ -145,11 +145,34 @@
         }
     }
 
-    const lista = window.Ui.listaPaginada({
-        ruta: '/api/pedidos',
-        mas: $('mas'),
-        alCargar: (pedidos) => window.Ui.tabla($('lista'), [
+    // RFF-23: búsqueda y filtros de pedidos. Se traen todos y se filtran en el navegador, como en Lotes.
+    let pedidos = [];
+    const productoDe = (p) => (lotes.find((l) => l.idLote === p.idLote) || {}).productoLote;
+    const filtros = window.Ui.barraFiltros($('barra-filtros'), [
+        {id: 'texto', tipo: 'busqueda', etiqueta: 'Buscar', marcador: 'N.º, comprador, lote o destino…'},
+        {id: 'estado', tipo: 'select', etiqueta: 'Estado',
+            opciones: Object.entries(ESTADOS).map(([valor, [texto]]) => [valor, texto])},
+        {id: 'comprador', tipo: 'select', etiqueta: 'Comprador'},
+        {id: 'destino', tipo: 'select', etiqueta: 'Destino'},
+        {id: 'producto', tipo: 'select', etiqueta: 'Producto'},
+        {id: 'desde', tipo: 'fecha', etiqueta: 'Pedido desde'},
+        {id: 'hasta', tipo: 'fecha', etiqueta: 'Pedido hasta'}
+    ], pintar);
+
+    function pintar() {
+        const f = filtros.valores();
+        const visibles = pedidos.filter((p) => window.Ui.coincide(f.texto, p.idPedido, nombreComprador(p.idComprador),
+                nombreLote(p.idLote), nombreDestino(p.idDestinoVenta))
+            && (!f.estado || p.estadoPedido === f.estado)
+            && (!f.comprador || String(p.idComprador) === f.comprador)
+            && (!f.destino || String(p.idDestinoVenta) === f.destino)
+            && (!f.producto || productoDe(p) === f.producto)
+            && window.Ui.entreFechas(p.fechaPedido, f.desde, f.hasta));
+        filtros.contar(visibles.length, pedidos.length);
+        const filtrando = Object.values(f).some(Boolean);
+        window.Ui.tabla($('lista'), [
             {titulo: 'N.º', valor: (p) => p.idPedido},
+            {titulo: 'Fecha', valor: (p) => window.Ui.fecha(p.fechaPedido)},
             {titulo: 'Comprador', clase: 'largo', valor: (p) => nombreComprador(p.idComprador)},
             {titulo: 'Lote', clase: 'largo', valor: (p) => nombreLote(p.idLote)},
             {titulo: 'Destino', clase: 'largo', valor: (p) => nombreDestino(p.idDestinoVenta)},
@@ -158,19 +181,27 @@
             {titulo: 'Ingreso acordado', valor: (p) => window.Ui.dinero(p.ingresoAcordado)},
             {titulo: 'Estado', valor: (p) => window.Ui.etiqueta((ESTADOS[p.estadoPedido] || [p.estadoPedido])[0],
                 (ESTADOS[p.estadoPedido] || [])[1])}
-        ], pedidos, {
+        ], visibles, {
             acciones: (p) => p.estadoPedido === 'PENDIENTE'
                 ? [window.Ui.boton('Cancelar pedido', 'boton-secundario', () => cancelar(p))] : [],
-            vacio: {titulo: 'Aún no hay pedidos',
-                texto: 'Cuando un comprador te pida un lote, regístralo aquí para despacharlo.'}
-        })
-    });
+            vacio: filtrando
+                ? {titulo: 'Ningún pedido coincide', texto: 'Cambia la búsqueda o pulsa «Limpiar».'}
+                : {titulo: 'Aún no hay pedidos',
+                    texto: 'Cuando un comprador te pida un lote, regístralo aquí para despacharlo.'}
+        });
+    }
 
     async function cargar() {
         window.Ui.errorDePagina('');
         try {
             await cargarAuxiliares();
-            await lista.cargar();
+            pedidos = await window.Ui.cargarTodo('/api/pedidos');
+            filtros.opciones('comprador', window.Ui.opcionesUnicas(pedidos, (p) => p.idComprador,
+                (p) => nombreComprador(p.idComprador)));
+            filtros.opciones('destino', window.Ui.opcionesUnicas(pedidos, (p) => p.idDestinoVenta,
+                (p) => nombreDestino(p.idDestinoVenta)));
+            filtros.opciones('producto', window.Ui.opcionesUnicas(pedidos, productoDe));
+            pintar();
         } catch (error) {
             window.Ui.errorDePagina(error.message);
         }

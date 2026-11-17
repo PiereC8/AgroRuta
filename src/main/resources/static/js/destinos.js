@@ -281,24 +281,45 @@
         }
     }
 
+    // RFF-23: búsqueda y filtros de destinos, en el navegador.
+    let destinos = [];
+    const filtros = window.Ui.barraFiltros($('barra-filtros'), [
+        {id: 'texto', tipo: 'busqueda', etiqueta: 'Buscar', marcador: 'Nombre o ciudad…'},
+        {id: 'zona', tipo: 'select', etiqueta: 'Zona', opciones: [['LOCAL', 'Local'], ['TRANSPORTE', 'Con transporte']]},
+        {id: 'ciudad', tipo: 'select', etiqueta: 'Ciudad', todos: 'Todas'}
+    ], pintar);
+
+    function pintar() {
+        const f = filtros.valores();
+        const visibles = destinos.filter((d) => window.Ui.coincide(f.texto, d.nombreDestino, d.ciudadDestino)
+            && (!f.zona || (f.zona === 'LOCAL') === Boolean(d.esLocal))
+            && (!f.ciudad || d.ciudadDestino === f.ciudad));
+        filtros.contar(visibles.length, destinos.length);
+        const filtrando = Object.values(f).some(Boolean);
+        window.Ui.tabla($('lista'), [
+            {titulo: 'Destino', clase: 'largo', valor: (d) => d.nombreDestino},
+            {titulo: 'Ciudad', clase: 'largo', valor: (d) => d.ciudadDestino},
+            {titulo: 'Zona', valor: (d) => window.Ui.etiqueta(d.esLocal ? 'Local' : 'Con transporte',
+                d.esLocal ? '' : 'neutro')}
+        ], visibles, {
+            vacio: filtrando
+                ? {titulo: 'Ningún destino coincide', texto: 'Cambia la búsqueda o pulsa «Limpiar».'}
+                : {titulo: 'Aún no hay destinos',
+                    texto: puedeEscribir ? 'Registra el primer lugar donde vendes.' : 'El Dueño del negocio los registra.'},
+            acciones: puedeEscribir ? (d) => [
+                window.Ui.boton('Precio', 'boton-secundario', () => cambiarPrecio(d)),
+                window.Ui.boton('Flete', 'boton-secundario', () => cambiarFlete(d)),
+                window.Ui.boton('Ubicación', 'boton-secundario', () => cambiarUbicacion(d))
+            ] : null
+        });
+    }
+
     async function cargar() {
         window.Ui.errorDePagina('');
         try {
-            const destinos = await window.Api.pedir('/api/destinos');
-            window.Ui.tabla($('lista'), [
-                {titulo: 'Destino', clase: 'largo', valor: (d) => d.nombreDestino},
-                {titulo: 'Ciudad', clase: 'largo', valor: (d) => d.ciudadDestino},
-                {titulo: 'Zona', valor: (d) => window.Ui.etiqueta(d.esLocal ? 'Local' : 'Con transporte',
-                    d.esLocal ? '' : 'neutro')}
-            ], destinos, {
-                vacio: {titulo: 'Aún no hay destinos',
-                    texto: puedeEscribir ? 'Registra el primer lugar donde vendes.' : 'El Dueño del negocio los registra.'},
-                acciones: puedeEscribir ? (d) => [
-                    window.Ui.boton('Precio', 'boton-secundario', () => cambiarPrecio(d)),
-                    window.Ui.boton('Flete', 'boton-secundario', () => cambiarFlete(d)),
-                    window.Ui.boton('Ubicación', 'boton-secundario', () => cambiarUbicacion(d))
-                ] : null
-            });
+            destinos = await window.Api.pedir('/api/destinos');
+            filtros.opciones('ciudad', window.Ui.opcionesUnicas(destinos, (d) => d.ciudadDestino));
+            pintar();
         } catch (error) {
             window.Ui.errorDePagina(error.message);
         }

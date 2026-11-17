@@ -65,21 +65,57 @@
         }
     }
 
+    // RFF-23: búsqueda y filtros de compradores, en el navegador.
+    let compradores = [];
+    const filtros = window.Ui.barraFiltros($('barra-filtros'), [
+        {id: 'texto', tipo: 'busqueda', etiqueta: 'Buscar', marcador: 'Nombre, DNI/RUC, teléfono o correo…'},
+        {id: 'tipo', tipo: 'select', etiqueta: 'Tipo', opciones: Object.entries(TIPOS)},
+        {id: 'ciudad', tipo: 'select', etiqueta: 'Ciudad', todos: 'Todas'},
+        // Sin DNI o RUC no se le puede cobrar S/ 700 o más (comprobante).
+        {id: 'documento', tipo: 'select', etiqueta: 'Documento',
+            opciones: [['DNI', 'Con DNI'], ['RUC', 'Con RUC'], ['NINGUNO', 'Sin documento']]},
+        // Sin correo no le llega solo el enlace de seguimiento al despachar.
+        {id: 'correo', tipo: 'select', etiqueta: 'Correo', opciones: [['SI', 'Con correo'], ['NO', 'Sin correo']]}
+    ], pintar);
+
+    function tipoDocumento(c) {
+        if (!c.documentoComprador) {
+            return 'NINGUNO';
+        }
+        return c.documentoComprador.length === 11 ? 'RUC' : 'DNI';
+    }
+
+    function pintar() {
+        const f = filtros.valores();
+        const visibles = compradores.filter((c) => window.Ui.coincide(f.texto, c.nombreComprador, c.documentoComprador,
+                c.telefonoComprador, c.correoComprador, c.ciudadComprador)
+            && (!f.tipo || c.tipoComprador === f.tipo)
+            && (!f.ciudad || c.ciudadComprador === f.ciudad)
+            && (!f.documento || tipoDocumento(c) === f.documento)
+            && (!f.correo || (f.correo === 'SI') === Boolean(c.correoComprador)));
+        filtros.contar(visibles.length, compradores.length);
+        const filtrando = Object.values(f).some(Boolean);
+        window.Ui.tabla($('lista'), [
+            {titulo: 'Nombre', clase: 'largo', valor: (c) => c.nombreComprador},
+            {titulo: 'Tipo', valor: (c) => TIPOS[c.tipoComprador] || c.tipoComprador},
+            {titulo: 'Documento', valor: documentoConTipo},
+            {titulo: 'Ciudad', clase: 'largo', valor: (c) => c.ciudadComprador},
+            {titulo: 'Teléfono', valor: (c) => c.telefonoComprador},
+            {titulo: 'Correo', clase: 'largo', valor: (c) => c.correoComprador || '—'}
+        ], visibles, {
+            acciones: (c) => [window.Ui.boton('Editar', 'boton-secundario', () => registrar(c))],
+            vacio: filtrando
+                ? {titulo: 'Ningún comprador coincide', texto: 'Cambia la búsqueda o pulsa «Limpiar».'}
+                : {titulo: 'Aún no hay compradores', texto: 'Registra a quien le vendes para poder crear sus pedidos.'}
+        });
+    }
+
     async function cargar() {
         window.Ui.errorDePagina('');
         try {
-            const compradores = await window.Api.pedir('/api/compradores');
-            window.Ui.tabla($('lista'), [
-                {titulo: 'Nombre', clase: 'largo', valor: (c) => c.nombreComprador},
-                {titulo: 'Tipo', valor: (c) => TIPOS[c.tipoComprador] || c.tipoComprador},
-                {titulo: 'Documento', valor: documentoConTipo},
-                {titulo: 'Ciudad', clase: 'largo', valor: (c) => c.ciudadComprador},
-                {titulo: 'Teléfono', valor: (c) => c.telefonoComprador}
-            ], compradores, {
-                acciones: (c) => [window.Ui.boton('Editar', 'boton-secundario', () => registrar(c))],
-                vacio: {titulo: 'Aún no hay compradores',
-                    texto: 'Registra a quien le vendes para poder crear sus pedidos.'}
-            });
+            compradores = await window.Api.pedir('/api/compradores');
+            filtros.opciones('ciudad', window.Ui.opcionesUnicas(compradores, (c) => c.ciudadComprador));
+            pintar();
         } catch (error) {
             window.Ui.errorDePagina(error.message);
         }
