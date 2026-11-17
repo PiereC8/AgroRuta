@@ -50,9 +50,9 @@
             if (!e.sinSenal) {
                 return salio;
             }
-            // Alerta calculada por el servidor: el conductor dejó de mandar su posición.
-            const celda = el('span');
-            celda.append(document.createTextNode(salio + ' '), window.Ui.etiqueta(e.sinSenal, 'error'));
+            // Alerta calculada por el servidor: el conductor dejó de mandar su posición. Va en su propia línea.
+            const celda = el('span', 'novedad');
+            celda.append(el('span', null, salio), window.Ui.etiqueta(e.sinSenal, 'error'));
             return celda;
         }
         return 'Programado ' + window.Ui.fecha(e.fechaProgramada);
@@ -561,11 +561,11 @@
         const filtrando = filtro || Object.values(f).some(Boolean);
         window.Ui.tabla($('lista'), [
             {titulo: 'N.º', valor: (e) => e.idEnvio},
-            {titulo: 'Pedido', clase: 'largo', valor: resumenPedido},
-            {titulo: 'Destino', clase: 'largo', valor: (e) => destinoDe(destinoDeEnvio(e))},
+            {titulo: 'Pedido', clase: 'largo angosto', valor: resumenPedido},
+            {titulo: 'Destino', clase: 'largo angosto', valor: (e) => destinoDe(destinoDeEnvio(e))},
             {titulo: 'Vehículo', valor: (e) => placaDe(e.idVehiculo)},
             {titulo: 'Estado', valor: (e) => window.Ui.etiqueta(ESTADOS[e.estadoEnvio][0], ESTADOS[e.estadoEnvio][1])},
-            {titulo: 'Novedad', valor: novedad}
+            {titulo: 'Novedad', clase: 'largo angosto', valor: novedad}
         ], visibles, {
             vacio: {titulo: filtrando ? 'Ningún envío coincide' : 'Aún no hay envíos',
                 texto: filtrando ? 'Cambia el filtro o pulsa «Limpiar».' : 'Despacha un pedido para empezar.'},

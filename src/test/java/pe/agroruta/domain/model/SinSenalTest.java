@@ -22,8 +22,7 @@ class SinSenalTest {
 
         assertThat(alerta).isPresent();
         assertThat(alerta.get().tipoAlerta()).isEqualTo(TipoAlerta.SIN_SENAL);
-        assertThat(alerta.get().descripcionAlerta()).startsWith("Lleva 25 min sin señal del conductor")
-                .contains("ninguna posición");
+        assertThat(alerta.get().descripcionAlerta()).isEqualTo("Sin señal del conductor desde la salida (hace 25 min)");
     }
 
     @Test
@@ -32,7 +31,10 @@ class SinSenalTest {
         Instant ahora = ultima.plusSeconds(2 * 3600 + 5 * 60);
 
         assertThat(ReglasSeguimiento.sinSenal(envio(EstadoEnvio.EN_RUTA), ultima, ahora).orElseThrow()
-                .descripcionAlerta()).isEqualTo("Lleva 2 h 5 min sin señal del conductor");
+                .descripcionAlerta()).isEqualTo("Sin señal del conductor hace 2 h 5 min");
+        // Desde un día se cuenta en días y horas.
+        assertThat(ReglasSeguimiento.sinSenal(envio(EstadoEnvio.EN_RUTA), ultima, ultima.plusSeconds(88 * 3600 + 24 * 60))
+                .orElseThrow().descripcionAlerta()).isEqualTo("Sin señal del conductor hace 3 d 16 h");
         assertThat(ReglasSeguimiento.sinSenal(envio(EstadoEnvio.EN_RUTA), ultima, ultima.plusSeconds(60))).isEmpty();
         assertThat(ReglasSeguimiento.sinSenal(envio(EstadoEnvio.ENTREGADO), ultima, ahora)).isEmpty();
     }

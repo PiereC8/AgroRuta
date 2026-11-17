@@ -145,20 +145,24 @@ public final class ReglasSeguimiento {
             return java.util.Optional.empty();
         }
         String texto = ultimaPosicion == null || ultimaPosicion.isBefore(envio.fechaSalida())
-                ? "Lleva " + duracion(sinSenal) + " sin señal del conductor: no ha enviado ninguna posición desde "
-                        + "que inició la ruta"
-                : "Lleva " + duracion(sinSenal) + " sin señal del conductor";
+                ? "Sin señal del conductor desde la salida (hace " + duracion(sinSenal) + ")"
+                : "Sin señal del conductor hace " + duracion(sinSenal);
         return java.util.Optional.of(new AlertaEnvio(null, envio.idEnvio(), TipoAlerta.SIN_SENAL, texto, ahora));
     }
 
-    /** "25 min", "2 h", "2 h 5 min". */
+    /** "25 min", "2 h 5 min" y, desde un día, "3 d 16 h" (los minutos ya no importan). */
     static String duracion(Duration d) {
         long minutos = d.toMinutes();
         if (minutos < 60) {
             return minutos + " min";
         }
         long horas = minutos / 60;
-        long resto = minutos % 60;
-        return horas + " h" + (resto == 0 ? "" : " " + resto + " min");
+        if (horas < 24) {
+            long resto = minutos % 60;
+            return horas + " h" + (resto == 0 ? "" : " " + resto + " min");
+        }
+        long dias = horas / 24;
+        long restoHoras = horas % 24;
+        return dias + " d" + (restoHoras == 0 ? "" : " " + restoHoras + " h");
     }
 }

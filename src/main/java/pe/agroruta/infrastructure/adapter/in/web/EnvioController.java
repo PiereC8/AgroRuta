@@ -117,7 +117,7 @@ public class EnvioController {
             return de(envio, null);
         }
 
-        /** sinSenal: texto de la alerta «Lleva X sin señal del conductor», o null. */
+        /** sinSenal: texto de la alerta «Sin señal del conductor hace X», o null. */
         static EnvioRespuesta de(Envio envio, AlertaEnvio sinSenal) {
             return new EnvioRespuesta(envio.idEnvio(), envio.idPedido(), envio.idLote(), envio.idVehiculo(),
                     envio.idTransportista(), envio.estadoEnvio(), envio.fechaProgramada(), envio.fechaSalida(),

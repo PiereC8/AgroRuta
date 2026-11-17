@@ -1032,6 +1032,29 @@ a {
     min-width: 160px;
 }
 
+/* Columnas de texto que pueden angostarse más, para que las acciones quepan sin cortarse. */
+.tabla td.largo.angosto,
+.tabla th.largo.angosto {
+    min-width: 120px;
+}
+
+/* El botón más ancho de las acciones («Registrar entrega») siempre cabe entero. */
+.tabla td.celda-acciones {
+    min-width: 172px;
+}
+
+/* Novedad del envío: la fecha y, debajo, la alerta (que puede partirse en dos líneas). */
+.novedad {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.novedad .etiqueta-estado {
+    white-space: normal;
+}
+
 /* ---------- Código QR ---------- */
 
 .codigo-qr {
