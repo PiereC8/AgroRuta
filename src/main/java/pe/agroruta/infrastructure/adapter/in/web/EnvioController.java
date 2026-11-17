@@ -49,6 +49,10 @@ public class EnvioController {
     /**
      * Despacha y, aparte, deja listo el enlace del conductor y avisa al comprador por correo. Si el aviso falla, el
      * envío igual queda programado y los enlaces se pueden generar con el botón «Enlaces».
+     * <p>
+     * Requerimiento: despachar (RF-09 / RFF-08) + enlaces automáticos (RF-14 y RF-21 / RFF-09).
+     * Cómo: primero despacha; luego llama a AvisarDespachoUseCase dentro de un try para que un fallo no deshaga
+     * el despacho.
      */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)

@@ -85,10 +85,12 @@
         });
         if (creado) {
             cargar();
+            // RF-14 y RF-21 (RFF-09): el servidor ya armó los enlaces; aquí solo se muestran.
             await avisosDelDespacho(creado);
         }
     }
 
+    // RF-21 / RFF-09: enlace del conductor por WhatsApp. No usa ninguna API: wa.me abre WhatsApp con el mensaje escrito.
     // wa.me pide el número con código de país y solo dígitos. Un celular peruano de 9 dígitos se completa con 51.
     function numeroWhatsapp(telefono) {
         let digitos = String(telefono || '').replace(/\D/g, '').replace(/^00/, '');
@@ -98,6 +100,7 @@
         return digitos.length >= 8 ? digitos : null;
     }
 
+    // Arma el botón «Enviar por WhatsApp»; si el teléfono no sirve devuelve null y se usa el QR.
     function botonWhatsapp(url, nombre, telefono, idEnvio) {
         const numero = numeroWhatsapp(telefono);
         if (!numero) {
@@ -114,6 +117,7 @@
     }
 
     // Tras despachar: el enlace del conductor sale por WhatsApp con un toque y el del comprador ya se fue por correo.
+    // Ventana con dos bloques: Conductor (WhatsApp, o QR si no hay teléfono) y Comprador (a qué correo se avisó).
     async function avisosDelDespacho(r) {
         const contenido = el('div');
         if (!r.urlConductor) {

@@ -41,6 +41,7 @@
                         + 'Para cobrar S/ 700 o más hace falta el documento.'},
                 {id: 'telefonoComprador', etiqueta: 'Teléfono', tipo: 'telefono', validar: telefonoValido,
                     valor: c.telefonoComprador},
+                // RF-07 / RFF-04: correo opcional; si se llena, al despachar le llega su enlace (RF-14).
                 {id: 'correoComprador', etiqueta: 'Correo', tipo: 'correo', valor: c.correoComprador,
                     ayuda: 'Opcional. Al despachar su pedido le llega solo el enlace para seguirlo en el mapa.'},
                 {id: 'ciudadComprador', etiqueta: 'Ciudad', tipo: 'texto', requerido: true, valor: c.ciudadComprador}

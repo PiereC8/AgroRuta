@@ -23,7 +23,11 @@ import pe.agroruta.domain.port.out.NotificacionRepositoryPort;
 import pe.agroruta.domain.port.out.PedidoRepositoryPort;
 import pe.agroruta.domain.port.out.TransporteRepositoryPort;
 
-/** El correo va a la bandeja de salida: se envía en el siguiente minuto y se reintenta si falla. */
+/**
+ * RF-14 y RF-21 (finales: RFF-09 enlaces y RFF-22 avisos por correo): al despachar, arma los enlaces de seguimiento para que el operador no los copie a mano.
+ * Cómo: busca envío → pedido → comprador y transportista; genera los tokens; si el comprador tiene correo,
+ * deja el correo en la bandeja de salida (se envía en el siguiente minuto y se reintenta si falla).
+ */
 public class AvisarDespachoService implements AvisarDespachoUseCase {
 
     private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy", new Locale("es", "PE"))
@@ -52,6 +56,7 @@ public class AvisarDespachoService implements AvisarDespachoUseCase {
 
     @Override
     public Resultado avisar(String identificadorNegocio, Long idEnvio, String urlBase) {
+        // 1. Datos necesarios: el envío, su comprador (por el pedido) y el transportista.
         Envio envio = envios.buscarPorId(idEnvio)
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe el envío " + idEnvio));
         Comprador comprador = pedidos.buscarPorId(envio.idPedido()).map(Pedido::idComprador)
@@ -59,8 +64,10 @@ public class AvisarDespachoService implements AvisarDespachoUseCase {
         String correo = comprador == null ? null : comprador.correoComprador();
         Transportista transportista = transporte.buscarTransportista(envio.idTransportista()).orElse(null);
 
+        // 2. RFF-09: genera los enlaces (tokens con vencimiento).
         // Sin correo del comprador no se genera su enlace: lo puede pedir después con el botón «Enlaces».
         var generados = enlaces.generar(identificadorNegocio, idEnvio, correo == null ? TipoEnlace.CONDUCTOR : null);
+        // 3. RF-14 / RFF-22: correo al comprador con su enlace de seguimiento (va a la bandeja, no se envía aquí mismo).
         if (correo != null) {
             String url = urlBase + "/seguimiento.html#t=" + generados.tokenComprador();
             String cuerpo = "Hola, " + comprador.nombreComprador() + ":\n\n"
@@ -74,6 +81,7 @@ public class AvisarDespachoService implements AvisarDespachoUseCase {
                     TipoAviso.SEGUIMIENTO_ENVIO, "Tu pedido N.º " + envio.idPedido() + " está en camino", cuerpo),
                     correo, ahora));
         }
+        // 4. RF-21 / RFF-09: devuelve el enlace del conductor y su teléfono; la pantalla lo manda por WhatsApp.
         return new Resultado(urlBase + "/conductor.html#t=" + generados.tokenConductor(),
                 transportista == null ? null : transportista.nombreTransportista(),
                 transportista == null ? null : transportista.telefonoTransportista(), correo,

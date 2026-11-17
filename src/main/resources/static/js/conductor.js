@@ -9,7 +9,8 @@
     const token = new URLSearchParams(location.hash.slice(1)).get('t');
     // Marca para separar la cola por enlace: los últimos caracteres del token bastan y no lo guardan entero.
     const huellaEnlace = token ? token.slice(-16) : '';
-    // Si el conductor ya aceptó con este enlace y cierra o recarga la página, al volver retoma solo.
+    // RF-21 / RFF-10 (retoma solo): si el conductor ya aceptó con este enlace y cierra o recarga la página, al volver retoma solo.
+    // Cómo: se guarda en localStorage una marca con la huella del enlace (no el token entero).
     const CLAVE_ACEPTADO = 'agroruta-conductor-aceptado:' + huellaEnlace;
 
     function recordarAceptado(si) {
@@ -419,6 +420,7 @@
         });
     }
 
+    // RF-21 / RFF-10: al abrir la página, si ya había aceptado, vuelve a compartir sin pulsar el botón.
     // Solo si el permiso de ubicación sigue concedido: así no aparece ninguna ventana del navegador sin que la pida.
     function retomarSiYaAcepto() {
         if (!yaAcepto() || !navigator.permissions || !navigator.permissions.query) {

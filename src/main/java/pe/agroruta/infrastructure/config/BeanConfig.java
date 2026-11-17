@@ -248,6 +248,7 @@ public class BeanConfig {
         return new GenerarEnlacesEnvioService(envios, enlaces, generador, reloj);
     }
 
+    // RF-14 y RF-21 (RFF-09 y RFF-22): conecta el caso de uso de avisos con sus puertos (enlaces, repositorios y bandeja de correo).
     @Bean
     pe.agroruta.domain.port.in.AvisarDespachoUseCase avisarDespachoUseCase(GenerarEnlacesEnvioUseCase enlaces,
             EnvioRepositoryPort envios, PedidoRepositoryPort pedidos, CompradorRepositoryPort compradores,

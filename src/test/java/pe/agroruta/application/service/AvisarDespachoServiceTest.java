@@ -25,6 +25,10 @@ import pe.agroruta.domain.model.TipoEnlace;
 import pe.agroruta.domain.model.Transportista;
 import pe.agroruta.domain.port.in.GenerarEnlacesEnvioUseCase;
 
+/**
+ * Prueba RF-14 y RF-21 (RFF-09 y RFF-22) sin base de datos (RNF-11): usa repositorios falsos en memoria y revisa qué queda en la
+ * bandeja de correo según el comprador tenga o no correo.
+ */
 class AvisarDespachoServiceTest {
 
     private static final Instant AHORA = Instant.parse("2026-11-14T15:00:00Z");
