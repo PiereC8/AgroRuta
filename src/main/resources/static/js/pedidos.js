@@ -119,7 +119,8 @@
             },
             enviar: (v) => window.Api.pedir('/api/pedidos', {metodo: 'POST', cuerpo: {
                 idComprador: Number(v.idComprador), idLote: Number(v.idLote), idDestinoVenta: Number(v.idDestinoVenta),
-                cantidadKg: v.cantidadKg.replace(',', '.'), precioAcordadoPorKg: v.precioAcordadoPorKg}})
+                // Ui.panel ya entrega los campos 'numero' como número (con la coma pasada a punto).
+                cantidadKg: v.cantidadKg, precioAcordadoPorKg: v.precioAcordadoPorKg}})
         });
         if (creado) {
             window.Ui.aviso('Pedido registrado');
