@@ -44,9 +44,16 @@ class ReportesServiceTest {
             return filasPorInicio.getOrDefault(filtro.desde(), List.of());
         }
 
+        final Map<LocalDate, Dinero> cobradoPorInicio = new HashMap<>();
+
         @Override
         public List<String> productosConEntregas() {
             return productos;
+        }
+
+        @Override
+        public Dinero cobradoEntre(FiltroReporte filtro) {
+            return cobradoPorInicio.getOrDefault(filtro.desde(), Dinero.CERO);
         }
     }
 
@@ -105,6 +112,20 @@ class ReportesServiceTest {
         assertThat(resumen.comparaciones()).hasSize(6);
         assertThat(reporte.consultas).extracting(FiltroReporte::desde)
                 .containsExactly(LocalDate.of(2026, 11, 1), LocalDate.of(2026, 10, 1));
+    }
+
+    @Test
+    void lo_cobrado_se_cuenta_por_fecha_de_pago_y_lo_por_cobrar_por_fecha_de_entrega() {
+        reporte.filasPorInicio.put(LocalDate.of(2026, 11, 1), List.of(
+                fila("2026-11-03T15:00:00Z", "Ana", "Palta", "Lima", "5000.00", "1000.00", "200.00", "10")));
+        // En noviembre se cobró una entrega de octubre: cuenta como cobrado de noviembre.
+        reporte.cobradoPorInicio.put(LocalDate.of(2026, 11, 1), Dinero.de("9000.00"));
+
+        Resumen resumen = servicio.resumen(FiltroReporte.esteMes(LocalDate.of(2026, 11, 7)));
+
+        assertThat(resumen.actual().cobrado()).isEqualTo(Dinero.de("9000.00"));
+        assertThat(resumen.actual().porCobrar()).isEqualTo(Dinero.de("5000.00"));
+        assertThat(resumen.anterior().cobrado()).isEqualTo(Dinero.CERO);
     }
 
     @Test

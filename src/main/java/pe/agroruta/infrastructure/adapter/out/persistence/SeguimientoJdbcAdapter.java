@@ -80,6 +80,21 @@ public class SeguimientoJdbcAdapter implements SeguimientoRepositoryPort {
     }
 
     @Override
+    public java.util.Map<Long, Instant> ultimaPosicionDe(java.util.Collection<Long> idEnvios) {
+        java.util.Map<Long, Instant> ultimas = new java.util.HashMap<>();
+        if (idEnvios.isEmpty()) {
+            return ultimas;
+        }
+        String marcas = String.join(", ", java.util.Collections.nCopies(idEnvios.size(), "?"));
+        jdbc.query("SELECT id_envio, MAX(fecha_posicion) AS ultima FROM posicion_envio WHERE id_envio IN (" + marcas
+                        + ") GROUP BY id_envio",
+                rs -> {
+                    ultimas.put(rs.getLong("id_envio"), Sql.instante(rs.getTimestamp("ultima")));
+                }, idEnvios.toArray());
+        return ultimas;
+    }
+
+    @Override
     public AlertaEnvio guardarAlerta(AlertaEnvio alerta) {
         long id = Sql.insertar(jdbc, "INSERT INTO alerta_envio (id_envio, tipo_alerta, descripcion_alerta, "
                         + "fecha_alerta) VALUES (?, ?, ?, ?)",

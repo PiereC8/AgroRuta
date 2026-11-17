@@ -132,15 +132,27 @@ class AnalisisFinancieroTest {
     }
 
     @Test
-    void la_explicacion_nombra_las_dos_causas_mas_grandes_con_sus_montos() {
+    void la_explicacion_nombra_todas_las_causas_y_sus_montos_suman_la_diferencia() {
         Indicadores actual = periodo(5, "5000.00", "2400.00", "650.00");
         Indicadores anterior = periodo(4, "5800.00", "2000.00", "300.00");
 
         String texto = AnalisisFinanciero.explicacion(Veredicto.GANANDO_MENOS, actual, anterior);
 
         assertThat(texto).isEqualTo("Ganaste S/ 2,600.00 en este período. Es S/ 1,200.00 menos de ganancia que en "
-                + "el período anterior, cuando ganaste S/ 3,800.00. Por qué: se vendió S/ 450.00 menos y el flete "
-                + "costó S/ 400.00 más.");
+                + "el período anterior, cuando ganaste S/ 3,800.00. Por qué: se vendió S/ 450.00 menos, el flete "
+                + "costó S/ 400.00 más y la merma costó S/ 350.00 más.");
+    }
+
+    @Test
+    void la_explicacion_menciona_al_final_lo_que_mejoro() {
+        // Ventas -450, flete -400, merma +50: el cambio es -800.
+        Indicadores actual = periodo(5, "5400.00", "2400.00", "250.00");
+        Indicadores anterior = periodo(4, "5800.00", "2000.00", "300.00");
+
+        String texto = AnalisisFinanciero.explicacion(Veredicto.GANANDO_MENOS, actual, anterior);
+
+        assertThat(texto).contains("Es S/ 800.00 menos de ganancia").endsWith("Por qué: se vendió S/ 450.00 menos y "
+                + "el flete costó S/ 400.00 más, aunque la merma mejoró en S/ 50.00.");
     }
 
     @Test

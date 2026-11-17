@@ -126,4 +126,39 @@ public final class ReglasSeguimiento {
         double kmh = metros / 1000 / horas;
         return kmh < VELOCIDAD_MINIMA_KMH ? respaldo : kmh;
     }
+
+    /** Un envío en ruta sin posiciones del conductor por más de este tiempo genera la alerta «sin señal». */
+    public static final Duration SIN_SENAL = Duration.ofMinutes(10);
+
+    /**
+     * Alerta calculada (no se guarda) si el envío va en ruta y la última posición, o la salida si no hay ninguna,
+     * tiene más de {@link #SIN_SENAL}.
+     */
+    public static java.util.Optional<AlertaEnvio> sinSenal(Envio envio, Instant ultimaPosicion, Instant ahora) {
+        if (envio.estadoEnvio() != EstadoEnvio.EN_RUTA || envio.fechaSalida() == null) {
+            return java.util.Optional.empty();
+        }
+        Instant desde = ultimaPosicion == null || ultimaPosicion.isBefore(envio.fechaSalida())
+                ? envio.fechaSalida() : ultimaPosicion;
+        Duration sinSenal = Duration.between(desde, ahora);
+        if (sinSenal.compareTo(SIN_SENAL) <= 0) {
+            return java.util.Optional.empty();
+        }
+        String texto = ultimaPosicion == null || ultimaPosicion.isBefore(envio.fechaSalida())
+                ? "Lleva " + duracion(sinSenal) + " sin señal del conductor: no ha enviado ninguna posición desde "
+                        + "que inició la ruta"
+                : "Lleva " + duracion(sinSenal) + " sin señal del conductor";
+        return java.util.Optional.of(new AlertaEnvio(null, envio.idEnvio(), TipoAlerta.SIN_SENAL, texto, ahora));
+    }
+
+    /** "25 min", "2 h", "2 h 5 min". */
+    static String duracion(Duration d) {
+        long minutos = d.toMinutes();
+        if (minutos < 60) {
+            return minutos + " min";
+        }
+        long horas = minutos / 60;
+        long resto = minutos % 60;
+        return horas + " h" + (resto == 0 ? "" : " " + resto + " min");
+    }
 }

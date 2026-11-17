@@ -11,6 +11,9 @@ public interface EnvioRepositoryPort {
 
     void actualizar(Envio envio);
 
+    /** Guarda por qué se canceló el envío (null si no se indicó). */
+    void guardarMotivoCancelacion(Long idEnvio, String motivo);
+
     Optional<Envio> buscarPorId(Long idEnvio);
 
     List<Envio> listar(int pagina, int tamano);

@@ -93,8 +93,9 @@ public class ConsultarReportesService implements ConsultarReportesUseCase {
     }
 
     private Resumen resumen(FiltroReporte filtro, List<FilaEntrega> actuales, List<FilaEntrega> anteriores) {
-        Indicadores actual = Indicadores.de(actuales);
-        Indicadores anterior = Indicadores.de(anteriores);
+        // Ventas por fecha de entrega; cobrado por fecha de pago.
+        Indicadores actual = Indicadores.de(actuales).conCobrado(reportes.cobradoEntre(filtro));
+        Indicadores anterior = Indicadores.de(anteriores).conCobrado(reportes.cobradoEntre(filtro.periodoAnterior()));
         Veredicto veredicto = AnalisisFinanciero.veredicto(actual, anterior);
         return new Resumen(filtro, actual, anterior, veredicto,
                 AnalisisFinanciero.explicacion(veredicto, actual, anterior),

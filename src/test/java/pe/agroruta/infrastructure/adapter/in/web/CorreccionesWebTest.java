@@ -20,6 +20,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import pe.agroruta.domain.model.ConflictoDominioException;
@@ -63,10 +64,11 @@ class CorreccionesWebTest {
 
     @Test
     void el_operador_cancela_un_envio_del_negocio_de_su_token() throws Exception {
-        when(cancelar.cancelarEnvio(eq("sol_de_tacna"), eq(7L), eq("operador.demo"))).thenReturn(
+        when(cancelar.cancelarEnvio(eq("sol_de_tacna"), eq(7L), eq("Falla del camión"), eq("operador.demo"))).thenReturn(
                 new Envio(7L, 3L, 2L, 1L, 1L, EstadoEnvio.CANCELADO, AHORA, AHORA, null, "operador.demo"));
 
-        mvc.perform(post("/api/envios/7/cancelar").header("Authorization", bearer(Rol.OPERADOR)))
+        mvc.perform(post("/api/envios/7/cancelar").header("Authorization", bearer(Rol.OPERADOR))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"motivo\":\"Falla del camión\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.estadoEnvio").value("CANCELADO"));
     }

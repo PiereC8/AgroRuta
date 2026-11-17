@@ -13,11 +13,11 @@ public class ComprobanteSimulado implements ComprobantePort {
 
     @Override
     public ResultadoEmision emitir(DatosComprobante datos) {
-        return new ResultadoEmision(EstadoComprobante.ACEPTADO, null, null, AVISO);
+        return new ResultadoEmision(EstadoComprobante.SIMULADO, null, null, AVISO);
     }
 
     @Override
     public ResultadoEmision consultar(TipoComprobante tipo, String serie, int numero) {
-        return new ResultadoEmision(EstadoComprobante.ACEPTADO, null, null, AVISO);
+        return new ResultadoEmision(EstadoComprobante.SIMULADO, null, null, AVISO);
     }
 }

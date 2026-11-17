@@ -13,7 +13,6 @@ import pe.agroruta.domain.model.ComprobanteImpreso;
 import pe.agroruta.domain.model.ConflictoDominioException;
 import pe.agroruta.domain.model.DominioException;
 import pe.agroruta.domain.model.Envio;
-import pe.agroruta.domain.model.EstadoComprobante;
 import pe.agroruta.domain.model.EstadoPago;
 import pe.agroruta.domain.model.Liquidacion;
 import pe.agroruta.domain.model.Pago;
@@ -78,8 +77,7 @@ public class DescargarComprobanteService implements DescargarComprobanteUseCase 
         Comprobante comprobante = comprobantes.buscarPorPago(pago.idPago()).orElseThrow(
                 () -> new RecursoNoEncontradoException("El pago " + pago.idPago() + " todavía no tiene comprobante"));
         // Solo se imprime lo que SUNAT recibió: un PDF de un comprobante pendiente o rechazado confundiría al cliente.
-        if (comprobante.estadoComprobante() != EstadoComprobante.ACEPTADO
-                && comprobante.estadoComprobante() != EstadoComprobante.OBSERVADO) {
+        if (!comprobante.estadoComprobante().emitido()) {
             throw new ConflictoDominioException("El comprobante " + comprobante.numeroCompleto()
                     + " todavía no fue aceptado por SUNAT");
         }

@@ -2,7 +2,11 @@ package pe.agroruta.application.service;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.OptionalLong;
 
 import pe.agroruta.domain.model.AlertaEnvio;
@@ -78,8 +82,32 @@ public class ConsultarSeguimientoService implements ConsultarSeguimientoUseCase 
 
     @Override
     public List<AlertaEnvio> alertas(Long idEnvio) {
-        envio(idEnvio);
-        return seguimiento.alertas(idEnvio);
+        Envio envio = envio(idEnvio);
+        List<AlertaEnvio> guardadas = seguimiento.alertas(idEnvio);
+        Optional<AlertaEnvio> sinSenal = ReglasSeguimiento.sinSenal(envio,
+                seguimiento.ultimaPosicionDe(List.of(idEnvio)).get(idEnvio), reloj.instant());
+        if (sinSenal.isEmpty()) {
+            return guardadas;
+        }
+        List<AlertaEnvio> todas = new ArrayList<>();
+        todas.add(sinSenal.get());
+        todas.addAll(guardadas);
+        return todas;
+    }
+
+    @Override
+    public Map<Long, AlertaEnvio> sinSenal(List<Envio> lista) {
+        List<Envio> enRuta = lista.stream().filter(e -> e.estadoEnvio() == EstadoEnvio.EN_RUTA).toList();
+        Map<Long, AlertaEnvio> alertas = new HashMap<>();
+        if (enRuta.isEmpty()) {
+            return alertas;
+        }
+        Map<Long, Instant> ultimas = seguimiento.ultimaPosicionDe(enRuta.stream().map(Envio::idEnvio).toList());
+        Instant ahora = reloj.instant();
+        for (Envio e : enRuta) {
+            ReglasSeguimiento.sinSenal(e, ultimas.get(e.idEnvio()), ahora).ifPresent(a -> alertas.put(e.idEnvio(), a));
+        }
+        return alertas;
     }
 
     private Envio envio(Long idEnvio) {

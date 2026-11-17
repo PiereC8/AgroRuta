@@ -17,10 +17,12 @@ import pe.agroruta.domain.port.out.EnvioCorreoPort;
 import pe.agroruta.domain.port.out.PagoPort;
 import pe.agroruta.domain.port.out.RepresentacionComprobantePort;
 import pe.agroruta.domain.port.out.RutaPort;
+import pe.agroruta.domain.port.out.DatosFiscalesPort;
 import pe.agroruta.infrastructure.adapter.out.comprobante.ComprobantePdf;
+import pe.agroruta.infrastructure.adapter.out.comprobante.ComprobantePorNegocio;
+import pe.agroruta.infrastructure.adapter.out.comprobante.EmisorPorNegocio;
 import pe.agroruta.infrastructure.adapter.out.comprobante.ComprobanteSimulado;
 import pe.agroruta.infrastructure.adapter.out.comprobante.DatosEmisor;
-import pe.agroruta.infrastructure.adapter.out.comprobante.FacturacionDirectaAdapter;
 import pe.agroruta.infrastructure.adapter.out.correo.CorreoBrevoAdapter;
 import pe.agroruta.infrastructure.adapter.out.correo.CorreoSimuladoAdapter;
 import pe.agroruta.infrastructure.adapter.out.correo.CorreoSmtpAdapter;
@@ -104,15 +106,21 @@ public class ProveedoresExternosConfig {
         return new DatosEmisor(ruc, razonSocial, nombreComercial, domicilio, ubigeo, distrito, provincia, departamento);
     }
 
+    /** El emisor del negocio en curso; las variables EMISOR_* quedan como respaldo. */
     @Bean
-    ComprobantePort comprobantePort(ClienteHttp http, Clock reloj, DatosEmisor emisor,
+    EmisorPorNegocio emisorPorNegocio(DatosFiscalesPort datosFiscales, DatosEmisor emisor) {
+        return new EmisorPorNegocio(datosFiscales, emisor);
+    }
+
+    @Bean
+    ComprobantePort comprobantePort(ClienteHttp http, Clock reloj, DatosEmisor emisor, EmisorPorNegocio emisores,
                                     @Value("${agroruta.comprobantes.proveedor}") String proveedor,
                                     @Value("${agroruta.comprobantes.facturaciondirecta.url-base}") String urlBase,
                                     @Value("${agroruta.resiliencia.fallos-para-abrir:5}") int fallosParaAbrir,
                                     @Value("${agroruta.resiliencia.pausa-segundos:30}") int pausaSegundos) {
         if (usaSunatBeta(proveedor)) {
-            REGISTRO.info("Comprobantes: SUNAT BETA por facturaciondirecta.com (RUC emisor {})", emisor.ruc());
-            return new ComprobantePortConDisyuntor(new FacturacionDirectaAdapter(http, urlBase, emisor, reloj),
+            REGISTRO.info("Comprobantes: SUNAT BETA por facturaciondirecta.com (RUC de respaldo {})", emisor.ruc());
+            return new ComprobantePortConDisyuntor(new ComprobantePorNegocio(http, urlBase, emisores, reloj),
                     new Disyuntor("El proveedor de comprobantes", fallosParaAbrir, Duration.ofSeconds(pausaSegundos),
                             reloj));
         }
@@ -121,12 +129,12 @@ public class ProveedoresExternosConfig {
     }
 
     @Bean
-    RepresentacionComprobantePort representacionComprobantePort(DatosEmisor emisor,
+    RepresentacionComprobantePort representacionComprobantePort(EmisorPorNegocio emisores,
             @Value("${agroruta.comprobantes.proveedor}") String proveedor) {
         String aviso = usaSunatBeta(proveedor)
                 ? "Emitido en el ambiente de pruebas (beta) de SUNAT: no tiene validez tributaria."
                 : "Comprobante simulado para demostración: no fue enviado a SUNAT y no tiene validez tributaria.";
-        return new ComprobantePdf(emisor, aviso);
+        return impreso -> new ComprobantePdf(emisores.get(), aviso).pdf(impreso);
     }
 
     private static boolean usaSunatBeta(String proveedor) {

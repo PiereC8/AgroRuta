@@ -20,6 +20,15 @@ public record Indicadores(int entregas, BigDecimal kgDespachados, BigDecimal kgR
                 dinero(filas.stream().filter(f -> !f.cobrada()).toList(), FilaEntrega::ingresoReal));
     }
 
+    /**
+     * El mismo período con «cobrado» contado por fecha de pago: lo que entró en el período, aunque la entrega sea de
+     * antes. Las ventas, la ganancia y lo por cobrar siguen contándose por fecha de entrega.
+     */
+    public Indicadores conCobrado(Dinero cobradoPorFechaDePago) {
+        return new Indicadores(entregas, kgDespachados, kgRecibidos, mermaKg, rechazoKg, ingresoReal, fleteTotal,
+                gananciaReal, gananciaEsperada, perdidaMermaRechazo, cobradoPorFechaDePago, porCobrar);
+    }
+
     /** Ganancia sobre ingreso, con un decimal. Nulo si no hubo ingreso. */
     public BigDecimal margenPorcentaje() {
         if (ingresoReal.monto().signum() == 0) {

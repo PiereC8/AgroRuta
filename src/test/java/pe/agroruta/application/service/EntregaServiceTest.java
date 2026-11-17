@@ -239,8 +239,8 @@ class EntregaServiceTest {
         entrega.registrar(new RegistrarEntregaUseCase.Comando(1L, new BigDecimal("300"), BigDecimal.ZERO,
                 BigDecimal.ZERO, "operador.demo"));
 
-        // Se vendieron 300 de 1000 kg: quedan 700 por vender y el lote no está liquidado.
-        assertThat(lotes.buscarPorId(2L).orElseThrow().estadoLote()).isEqualTo(EstadoLote.REGISTRADO);
+        // Se vendieron 300 de 1000 kg: quedan 700 por vender y el lote queda «Entregado, con saldo».
+        assertThat(lotes.buscarPorId(2L).orElseThrow().estadoLote()).isEqualTo(EstadoLote.ENTREGADO);
         assertThat(new ConsultarLotesService(lotes, pedidos).obtener(2L).kgDisponibles()).isEqualByComparingTo("700");
     }
 }

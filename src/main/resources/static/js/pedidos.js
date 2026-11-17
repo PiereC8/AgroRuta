@@ -7,8 +7,10 @@
     }
 
     const $ = (id) => document.getElementById(id);
-    const ESTADOS = {PENDIENTE: ['Pendiente de despacho', 'espera'], DESPACHADO: ['Despachado', 'espera'],
+    const ESTADOS = {PENDIENTE: ['Pendiente de despacho', 'espera'], DESPACHADO: ['Asignado a envío', 'espera'],
         ENTREGADO: ['Entregado', ''], CANCELADO: ['Cancelado', 'neutro']};
+    // Pagos aprobados comparados con lo que hay que cobrar según la liquidación (sin entregar: nada que cobrar).
+    const COBRO = {POR_COBRAR: ['No', 'espera'], PARCIAL: ['Parcial', 'espera'], COBRADO: ['Sí', '']};
     let compradores = [];
     let destinos = [];
     let lotes = [];
@@ -180,7 +182,9 @@
             {titulo: 'Precio/kg', valor: (p) => window.Ui.dinero(p.precioAcordadoPorKg)},
             {titulo: 'Ingreso acordado', valor: (p) => window.Ui.dinero(p.ingresoAcordado)},
             {titulo: 'Estado', valor: (p) => window.Ui.etiqueta((ESTADOS[p.estadoPedido] || [p.estadoPedido])[0],
-                (ESTADOS[p.estadoPedido] || [])[1])}
+                (ESTADOS[p.estadoPedido] || [])[1])},
+            {titulo: 'Cobrado', valor: (p) => COBRO[p.cobrado]
+                ? window.Ui.etiqueta(COBRO[p.cobrado][0], COBRO[p.cobrado][1]) : '—'}
         ], visibles, {
             acciones: (p) => p.estadoPedido === 'PENDIENTE'
                 ? [window.Ui.boton('Cancelar pedido', 'boton-secundario', () => cancelar(p))] : [],

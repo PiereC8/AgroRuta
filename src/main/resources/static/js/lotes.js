@@ -10,7 +10,7 @@
     const el = window.Ui.el;
     const ESTADOS = {
         REGISTRADO: ['Disponible', ''], RESERVADO: ['Reservado', 'espera'], DESPACHADO: ['En camino', 'espera'],
-        ENTREGADO: ['Entregado', ''], LIQUIDADO: ['Liquidado', 'neutro']
+        ENTREGADO: ['Entregado, con saldo', ''], LIQUIDADO: ['Liquidado', 'neutro']
     };
     const EVENTOS = {CANCELACION: 'Cancelación', CORRECCION: 'Entrega corregida', REGISTRO: 'Registrado', RESERVA: 'Reservado por un pedido', DESPACHO: 'Despachado',
         ENTREGA: 'Entregado', LIQUIDACION: 'Liquidado'};

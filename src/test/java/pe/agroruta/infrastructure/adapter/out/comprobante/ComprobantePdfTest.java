@@ -66,6 +66,17 @@ class ComprobantePdfTest {
     }
 
     @Test
+    void una_boleta_del_simulador_no_dice_aceptado() throws Exception {
+        ComprobanteImpreso real = boleta();
+        Comprobante simulado = Comprobante.nuevo(1L, TipoComprobante.BOLETA, "B771", 1, LocalDate.of(2026, 11, 8),
+                AHORA).conResultado(new ResultadoEmision(EstadoComprobante.SIMULADO, null, null, "Prueba"), AHORA);
+
+        String texto = texto(new ComprobantePdf(EMISOR, AVISO).pdf(new ComprobanteImpreso(simulado, real.datos())));
+
+        assertThat(texto).contains("Simulado (sin validez tributaria)").doesNotContain("Aceptado");
+    }
+
+    @Test
     void una_factura_muestra_el_ruc_del_cliente() throws Exception {
         DatosComprobante datos = new DatosComprobante(TipoComprobante.FACTURA, "F001", 3, LocalDate.of(2026, 11, 8),
                 new DatosComprobante.Cliente("6", "20123456789", "MERCADO CENTRAL SAC", null), oregano(),

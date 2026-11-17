@@ -32,38 +32,59 @@
         }
     }
 
+    // Precios vigentes del destino como texto: «Palta Hass S/ 5.00 · Orégano S/ 8.00».
+    const textoPrecios = (d) => (d.precios || []).map((p) => p.productoLote + ' ' + window.Ui.dinero(p.precioPorKg))
+        .join(' · ');
+    const precioDe = (d, producto) => (d.precios || []).find((p) => producto
+        && p.productoLote.toLowerCase() === producto.trim().toLowerCase());
+
+    // Muestra los precios ya fijados y, si hay uno solo, abre el formulario con él para cambiarlo.
     async function cambiarPrecio(destino) {
+        const precios = destino.precios || [];
+        const unico = precios.length === 1 ? precios[0] : {};
         const guardado = await window.Ui.panel({
             titulo: 'Precio en ' + destino.nombreDestino,
-            texto: 'Cuánto esperas que te paguen por kilo de este producto en este destino.',
+            texto: 'Cuánto esperas que te paguen por kilo de este producto en este destino. '
+                + (precios.length ? 'Precios actuales: ' + textoPrecios(destino) + '. Para cambiar uno, escribe el '
+                    + 'mismo producto.' : 'Este destino todavía no tiene precios.'),
             textoEnviar: 'Guardar precio',
             campos: [
                 {id: 'productoLote', etiqueta: 'Producto', tipo: 'texto', requerido: true, marcador: 'Palta Hass',
-                    ayuda: 'Escríbelo igual que en tus lotes.'},
-                {id: 'precioPorKg', etiqueta: 'Precio por kilo (S/)', tipo: 'numero', requerido: true}
+                    ayuda: 'Escríbelo igual que en tus lotes.', valor: unico.productoLote},
+                {id: 'precioPorKg', etiqueta: 'Precio por kilo (S/)', tipo: 'numero', requerido: true,
+                    valor: unico.precioPorKg}
             ],
+            nota: (v) => {
+                const actual = precioDe(destino, v.productoLote);
+                return actual ? 'Precio actual de ' + actual.productoLote + ': ' + window.Ui.dinero(actual.precioPorKg)
+                    + ' por kilo; se reemplaza.' : '';
+            },
             enviar: (v) => window.Api.pedir('/api/destinos/' + destino.idDestinoVenta + '/precio', {
                 metodo: 'PUT', cuerpo: {productoLote: v.productoLote, precioPorKg: v.precioPorKg}
             })
         });
         if (guardado) {
             window.Ui.aviso('Precio guardado');
+            cargar();
         }
     }
 
     async function cambiarFlete(destino) {
         const guardado = await window.Ui.panel({
             titulo: 'Flete a ' + destino.nombreDestino,
-            texto: 'Cuánto cuesta transportar cada kilo hasta este destino.',
+            texto: 'Cuánto cuesta transportar cada kilo hasta este destino. ' + (destino.costoFletePorKg === null
+                || destino.costoFletePorKg === undefined ? 'Todavía no tiene flete.'
+                : 'Flete actual: ' + window.Ui.dinero(destino.costoFletePorKg) + ' por kilo.'),
             textoEnviar: 'Guardar flete',
             campos: [{id: 'costoFletePorKg', etiqueta: 'Flete por kilo (S/)', tipo: 'numero', requerido: true,
-                permiteCero: true}],
+                permiteCero: true, valor: destino.costoFletePorKg}],
             enviar: (v) => window.Api.pedir('/api/destinos/' + destino.idDestinoVenta + '/tarifa', {
                 metodo: 'PUT', cuerpo: {costoFletePorKg: v.costoFletePorKg}
             })
         });
         if (guardado) {
             window.Ui.aviso('Flete guardado');
+            cargar();
         }
     }
 
@@ -300,7 +321,12 @@
             {titulo: 'Destino', clase: 'largo', valor: (d) => d.nombreDestino},
             {titulo: 'Ciudad', clase: 'largo', valor: (d) => d.ciudadDestino},
             {titulo: 'Zona', valor: (d) => window.Ui.etiqueta(d.esLocal ? 'Local' : 'Con transporte',
-                d.esLocal ? '' : 'neutro')}
+                d.esLocal ? '' : 'neutro')},
+            {titulo: 'Flete/kg', valor: (d) => d.costoFletePorKg !== null && d.costoFletePorKg !== undefined
+                ? window.Ui.dinero(d.costoFletePorKg)
+                : d.esLocal ? 'No aplica' : window.Ui.etiqueta('Sin flete', 'espera')},
+            {titulo: 'Precios/kg', clase: 'largo', valor: (d) => textoPrecios(d)
+                || window.Ui.etiqueta('Sin precios', 'espera')}
         ], visibles, {
             vacio: filtrando
                 ? {titulo: 'Ningún destino coincide', texto: 'Cambia la búsqueda o pulsa «Limpiar».'}

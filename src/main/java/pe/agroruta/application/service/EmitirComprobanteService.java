@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 
 import pe.agroruta.domain.model.Comprobante;
 import pe.agroruta.domain.model.DatosComprobante;
-import pe.agroruta.domain.model.EstadoComprobante;
 import pe.agroruta.domain.model.EstadoPago;
 import pe.agroruta.domain.model.Pago;
 import pe.agroruta.domain.model.RecursoNoEncontradoException;
@@ -95,13 +94,13 @@ public class EmitirComprobanteService implements EmitirComprobanteUseCase {
     public Comprobante reintentar(Long idComprobante) {
         Comprobante comprobante = obtener(idComprobante);
         // También se puede reintentar uno rechazado, por ejemplo después de corregir la configuración.
-        return comprobante.estadoComprobante() == EstadoComprobante.ACEPTADO ? comprobante : intentar(comprobante);
+        return comprobante.estadoComprobante().definitivo() ? comprobante : intentar(comprobante);
     }
 
     @Override
     public Comprobante consultar(Long idComprobante) {
         Comprobante comprobante = obtener(idComprobante);
-        if (comprobante.estadoComprobante() == EstadoComprobante.ACEPTADO) {
+        if (comprobante.estadoComprobante().definitivo()) {
             return comprobante;
         }
         try {

@@ -10,7 +10,8 @@
     const ESTADOS_PAGO = {APROBADO: ['Aprobado', ''], PENDIENTE: ['Pendiente', 'espera'], RECHAZADO: ['Rechazado', 'error']};
     const ESTADOS_COMPROBANTE = {
         PENDIENTE: ['Pendiente: se está enviando a SUNAT', 'espera'], ACEPTADO: ['Aceptado por SUNAT', ''],
-        OBSERVADO: ['Emitido con observaciones', 'espera'], RECHAZADO: ['No se pudo emitir', 'error']
+        OBSERVADO: ['Emitido con observaciones', 'espera'], RECHAZADO: ['No se pudo emitir', 'error'],
+        SIMULADO: ['Simulado: sin validez tributaria', 'neutro']
     };
 
     let pedidos = [];
@@ -93,7 +94,7 @@
                 contenido.appendChild(el('p', 'suave', comprobante.mensajeSunat));
             }
             const enlaces = el('p');
-            if (comprobante.estadoComprobante === 'ACEPTADO' || comprobante.estadoComprobante === 'OBSERVADO') {
+            if (['ACEPTADO', 'OBSERVADO', 'SIMULADO'].includes(comprobante.estadoComprobante)) {
                 const pdf = window.Ui.boton('Descargar PDF', 'boton-secundario', () => descargarPdf(pago.idPago, pdf));
                 enlaces.append(pdf, document.createTextNode('   '));
             }

@@ -67,6 +67,29 @@ public class ReporteJdbcAdapter implements ReporteRepositoryPort {
     }
 
     @Override
+    public Dinero cobradoEntre(FiltroReporte filtro) {
+        StringBuilder sql = new StringBuilder("SELECT COALESCE(SUM(pg.monto), 0) FROM pago pg "
+                + "JOIN liquidacion l ON l.id_liquidacion = pg.id_liquidacion ")
+                .append(BASE.substring("FROM liquidacion l ".length()))
+                .append("WHERE pg.estado_pago = 'APROBADO' AND pg.fecha_actualizacion >= ? "
+                        + "AND pg.fecha_actualizacion < ? ");
+        List<Object> parametros = new ArrayList<>();
+        parametros.add(Sql.marca(filtro.desde().atStartOfDay(LIMA).toInstant()));
+        parametros.add(Sql.marca(filtro.hasta().plusDays(1).atStartOfDay(LIMA).toInstant()));
+        if (filtro.producto() != null) {
+            sql.append("AND lo.producto_lote = ? ");
+            parametros.add(filtro.producto());
+        }
+        if (filtro.idDestino() != null) {
+            sql.append("AND p.id_destino_venta = ? ");
+            parametros.add(filtro.idDestino());
+        }
+        java.math.BigDecimal total = jdbc.queryForObject(sql.toString(), java.math.BigDecimal.class,
+                parametros.toArray());
+        return new Dinero(total == null ? java.math.BigDecimal.ZERO : total);
+    }
+
+    @Override
     public List<String> productosConEntregas() {
         return jdbc.queryForList("SELECT DISTINCT lo.producto_lote FROM liquidacion l "
                 + "JOIN lote lo ON lo.id_lote = l.id_lote ORDER BY lo.producto_lote", String.class);

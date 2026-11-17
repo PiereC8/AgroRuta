@@ -99,9 +99,15 @@ class CorreccionesServiceTest {
         enlaces.guardar(new EnlaceEnvio("sol", 1L, TipoEnlace.CONDUCTOR, "hash:c", AHORA.plusSeconds(3600)));
         enlaces.guardar(new EnlaceEnvio("sol", 1L, TipoEnlace.COMPRADOR, "hash:b", AHORA.plusSeconds(3600)));
 
-        var cancelado = cancelar.cancelarEnvio("sol", 1L, "dueno.demo");
+        assertThatThrownBy(() -> cancelar.cancelarEnvio("sol", 1L, "  ", "dueno.demo"))
+                .isInstanceOf(DominioException.class).hasMessageContaining("indica el motivo");
+
+        var cancelado = cancelar.cancelarEnvio("sol", 1L, " Se malogró el camión ", "dueno.demo");
 
         assertThat(cancelado.estadoEnvio()).isEqualTo(EstadoEnvio.CANCELADO);
+        assertThat(envios.motivosCancelacion).containsEntry(1L, "Se malogró el camión");
+        assertThat(lotes.eventos).extracting(EventoLote::descripcionEvento)
+                .anyMatch(d -> d.contains("motivo: Se malogró el camión"));
         assertThat(pedidos.buscarPorId(1L).orElseThrow().estadoPedido()).isEqualTo(EstadoPedido.PENDIENTE);
         // La mercadería no se vende dos veces: el pedido sigue pendiente y conserva sus kg reservados en el lote.
         assertThat(lotes.buscarPorId(1L).orElseThrow().estadoLote()).isEqualTo(EstadoLote.RESERVADO);
@@ -115,7 +121,7 @@ class CorreccionesServiceTest {
     @Test
     void despues_de_cancelar_se_despacha_de_nuevo_incluso_en_el_mismo_vehiculo() {
         despacho.despachar(1L, 1L, "operador.demo");
-        cancelar.cancelarEnvio("sol", 1L, "dueno.demo");
+        cancelar.cancelarEnvio("sol", 1L, null, "dueno.demo");
 
         var otro = despacho.despachar(1L, 1L, "operador.demo");
 
@@ -127,7 +133,7 @@ class CorreccionesServiceTest {
     void no_se_cancela_un_envio_ya_entregado() {
         entregar("1000", "0", "0");
 
-        assertThatThrownBy(() -> cancelar.cancelarEnvio("sol", 1L, "dueno.demo"))
+        assertThatThrownBy(() -> cancelar.cancelarEnvio("sol", 1L, null, "dueno.demo"))
                 .isInstanceOf(ConflictoDominioException.class).hasMessageContaining("ENTREGADO");
     }
 
@@ -140,7 +146,7 @@ class CorreccionesServiceTest {
         assertThatThrownBy(() -> cancelar.cancelarPedido(1L, "dueno.demo"))
                 .isInstanceOf(ConflictoDominioException.class).hasMessageContaining("cancela primero su envío");
 
-        cancelar.cancelarEnvio("sol", 1L, "dueno.demo");
+        cancelar.cancelarEnvio("sol", 1L, null, "dueno.demo");
         var pedido = cancelar.cancelarPedido(1L, "dueno.demo");
 
         assertThat(pedido.estadoPedido()).isEqualTo(EstadoPedido.CANCELADO);

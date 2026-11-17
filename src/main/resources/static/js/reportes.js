@@ -171,7 +171,8 @@
             tarjeta('Flete', soles(a.fleteTotal)),
             tarjeta('Merma y rechazo', soles(a.perdidaMermaRechazo), numero.format(Number(a.mermaKg) + Number(a.rechazoKg)) + ' kg perdidos'),
             tarjeta('Margen', a.margenPorcentaje === null ? '—' : numero.format(a.margenPorcentaje) + ' %'),
-            tarjeta('Por cobrar', soles(a.porCobrar), 'Cobrado: ' + soles(a.cobrado)));
+            tarjeta('Por cobrar', soles(a.porCobrar), 'De las entregas del período'),
+            tarjeta('Cobrado del período', soles(a.cobrado), 'Por fecha de pago'));
     }
 
     function pintarCausas(r) {

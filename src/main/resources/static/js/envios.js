@@ -46,7 +46,14 @@
             return 'Entregado ' + window.Ui.fecha(e.fechaEntrega);
         }
         if (e.estadoEnvio === 'EN_RUTA') {
-            return 'Salió ' + window.Ui.fecha(e.fechaSalida);
+            const salio = 'Salió ' + window.Ui.fecha(e.fechaSalida);
+            if (!e.sinSenal) {
+                return salio;
+            }
+            // Alerta calculada por el servidor: el conductor dejó de mandar su posición.
+            const celda = el('span');
+            celda.append(document.createTextNode(salio + ' '), window.Ui.etiqueta(e.sinSenal, 'error'));
+            return celda;
         }
         return 'Programado ' + window.Ui.fecha(e.fechaProgramada);
     }
@@ -255,18 +262,57 @@
         }
     }
 
-    // RFF-08: cancelar el envío antes de la entrega.
+    // Motivos para cancelar un envío que ya salió. Si la carga se perdió no se cancela: se registra como merma.
+    const MOTIVOS_CANCELACION = [
+        {valor: 'PERDIDA', texto: 'La carga se perdió o se dañó en el camino'},
+        {valor: 'Falla del vehículo', texto: 'Falla del vehículo'},
+        {valor: 'El comprador anuló la compra', texto: 'El comprador anuló la compra'},
+        {valor: 'OTRO', texto: 'Otro motivo'}
+    ];
+
+    // RFF-08: cancelar el envío antes de la entrega. Si ya salió, el motivo es obligatorio.
     async function cancelarEnvio(envio) {
         const enRuta = envio.estadoEnvio === 'EN_RUTA';
-        const acepto = await window.Ui.confirmar({
-            titulo: 'Cancelar el envío ' + envio.idEnvio,
-            texto: (enRuta ? 'El vehículo ' + placaDe(envio.idVehiculo) + ' ya salió. ' : '')
-                + 'El envío queda cancelado, el vehículo queda libre y el pedido vuelve a «pendiente de despacho» para '
-                + 'mandarlo en otro vehículo; sus kilos siguen reservados para ese pedido. Los enlaces del conductor y del '
-                + 'comprador dejan de funcionar.',
-            textoAceptar: 'Cancelar envío',
-            enviar: () => window.Api.pedir('/api/envios/' + envio.idEnvio + '/cancelar', {metodo: 'POST'})
-        });
+        const explicacion = 'El envío queda cancelado, el vehículo queda libre y el pedido vuelve a «pendiente de '
+            + 'despacho» para mandarlo en otro vehículo; sus kilos siguen reservados para ese pedido. Los enlaces del '
+            + 'conductor y del comprador dejan de funcionar.';
+        const cancelar = (motivo) => window.Api.pedir('/api/envios/' + envio.idEnvio + '/cancelar',
+            {metodo: 'POST', cuerpo: {motivo}});
+        let acepto;
+        if (enRuta) {
+            const respuesta = await window.Ui.panel({
+                titulo: 'Cancelar el envío ' + envio.idEnvio,
+                texto: 'El vehículo ' + placaDe(envio.idVehiculo) + ' ya salió: indica por qué se cancela. '
+                    + explicacion + ' Si la carga se perdió, no se cancela: se registra la entrega con esos kilos '
+                    + 'como merma.',
+                textoEnviar: 'Continuar',
+                campos: [
+                    {id: 'causa', etiqueta: 'Motivo', tipo: 'select', requerido: true, opciones: MOTIVOS_CANCELACION},
+                    {id: 'detalle', etiqueta: 'Detalle', marcador: 'Qué pasó',
+                        validar: (texto, todos) => todos.causa === 'OTRO' && !texto
+                            ? 'Escribe el motivo.' : texto.length > 200 ? 'Hasta 200 caracteres.' : null}
+                ],
+                enviar: async (v) => {
+                    if (v.causa === 'PERDIDA') {
+                        return {registrarMerma: true};
+                    }
+                    const motivo = v.causa === 'OTRO' ? v.detalle : v.causa + (v.detalle ? ': ' + v.detalle : '');
+                    return cancelar(motivo);
+                }
+            });
+            if (respuesta && respuesta.registrarMerma) {
+                await registrarEntrega(envio);
+                return;
+            }
+            acepto = respuesta !== null;
+        } else {
+            acepto = await window.Ui.confirmar({
+                titulo: 'Cancelar el envío ' + envio.idEnvio,
+                texto: explicacion,
+                textoAceptar: 'Cancelar envío',
+                enviar: () => cancelar(null)
+            });
+        }
         if (acepto) {
             window.Ui.aviso('Envío cancelado: el pedido puede despacharse de nuevo');
             cargar();
@@ -439,8 +485,9 @@
                 if (listaAlertas.length > 0) {
                     alertas.appendChild(el('h3', null, 'Alertas'));
                     for (const a of listaAlertas) {
-                        alertas.appendChild(el('p', 'aviso aviso--atencion', (ALERTAS[a.tipoAlerta] || a.tipoAlerta) + ' · '
-                            + window.Ui.fecha(a.fechaAlerta)));
+                        alertas.appendChild(el('p', 'aviso aviso--atencion', a.tipoAlerta === 'SIN_SENAL'
+                            ? a.descripcionAlerta
+                            : (ALERTAS[a.tipoAlerta] || a.tipoAlerta) + ' · ' + window.Ui.fecha(a.fechaAlerta)));
                     }
                 }
             } catch (error) {

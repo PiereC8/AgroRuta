@@ -67,6 +67,11 @@ public class EnvioJdbcAdapter implements EnvioRepositoryPort {
     }
 
     @Override
+    public void guardarMotivoCancelacion(Long idEnvio, String motivo) {
+        jdbc.update("UPDATE envio SET motivo_cancelacion = ? WHERE id_envio = ?", motivo, idEnvio);
+    }
+
+    @Override
     public Optional<Envio> buscarPorId(Long idEnvio) {
         return jdbc.query("SELECT " + COLUMNAS + " FROM envio WHERE id_envio = ?", FILA, idEnvio)
                 .stream().findFirst();

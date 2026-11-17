@@ -16,4 +16,7 @@ public interface ConsultarSeguimientoUseCase {
     List<Posicion> recorrido(Long idEnvio);
 
     List<AlertaEnvio> alertas(Long idEnvio);
+
+    /** Para la lista de envíos: alerta «sin señal» de cada envío en ruta que la tenga. */
+    java.util.Map<Long, AlertaEnvio> sinSenal(List<pe.agroruta.domain.model.Envio> envios);
 }

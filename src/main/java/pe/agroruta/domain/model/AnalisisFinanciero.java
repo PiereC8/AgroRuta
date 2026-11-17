@@ -101,9 +101,13 @@ public final class AnalisisFinanciero {
         return monto.esNegativo() ? perdio + soles(new Dinero(monto.monto().negate())) : gano + soles(monto);
     }
 
-    /** Las dos causas que más restaron, por ejemplo "se vendió S/ 450.00 menos y el flete costó S/ 400.00 más". */
+    /**
+     * Todas las causas, para que los montos del mensaje sumen la diferencia: primero las que restaron y al final las que
+     * sumaron, por ejemplo "se vendió S/ 450.00 menos y el flete costó S/ 400.00 más, aunque la merma mejoró en
+     * S/ 62.34".
+     */
     private static String motivos(List<Causa> causas) {
-        List<String> frases = causas.stream().filter(c -> c.efecto().esNegativo()).limit(2).map(c -> {
+        List<String> restaron = causas.stream().filter(c -> c.efecto().esNegativo()).map(c -> {
             Dinero monto = new Dinero(c.efecto().monto().negate());
             return switch (c.concepto()) {
                 case VENTAS -> "se vendió " + soles(monto) + " menos";
@@ -111,7 +115,24 @@ public final class AnalisisFinanciero {
                 case FLETE -> "el flete costó " + soles(monto) + " más";
             };
         }).toList();
-        return String.join(" y ", frases);
+        List<String> sumaron = causas.stream().filter(c -> c.efecto().monto().signum() > 0).map(c -> {
+            Dinero monto = c.efecto();
+            return switch (c.concepto()) {
+                case VENTAS -> "se vendió " + soles(monto) + " más";
+                case MERMA -> "la merma mejoró en " + soles(monto);
+                case FLETE -> "el flete bajó " + soles(monto);
+            };
+        }).toList();
+        String texto = enumerar(restaron);
+        return sumaron.isEmpty() ? texto : texto + ", aunque " + enumerar(sumaron);
+    }
+
+    /** "a", "a y b", "a, b y c". */
+    private static String enumerar(List<String> frases) {
+        if (frases.size() <= 1) {
+            return String.join("", frases);
+        }
+        return String.join(", ", frases.subList(0, frases.size() - 1)) + " y " + frases.get(frases.size() - 1);
     }
 
     private static String soles(Dinero dinero) {

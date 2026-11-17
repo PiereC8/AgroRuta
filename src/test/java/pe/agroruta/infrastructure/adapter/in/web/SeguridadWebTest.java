@@ -94,6 +94,8 @@ class SeguridadWebTest {
     @MockitoBean
     AltaNegocioUseCase altaNegocio;
     @MockitoBean
+    pe.agroruta.domain.port.in.RegistrarDatosFiscalesUseCase registrarDatosFiscales;
+    @MockitoBean
     IniciarSesionUseCase iniciarSesion;
     @MockitoBean
     RegistrarLoteUseCase registrarLote;
@@ -102,11 +104,17 @@ class SeguridadWebTest {
     @MockitoBean
     AdministrarDestinosUseCase administrarDestinos;
     @MockitoBean
+    pe.agroruta.domain.port.in.ConsultarCondicionesDestinosUseCase consultarCondicionesDestinos;
+    @MockitoBean
     CotizarFleteUseCase cotizarFlete;
     @MockitoBean
     AdministrarCompradoresUseCase administrarCompradores;
     @MockitoBean
     GestionarPedidosUseCase gestionarPedidos;
+    @MockitoBean
+    pe.agroruta.domain.port.in.ConsultarCobroPedidosUseCase consultarCobroPedidos;
+    @MockitoBean
+    pe.agroruta.domain.port.in.ConsultarSeguimientoUseCase consultarSeguimiento;
     @MockitoBean
     AdministrarTransporteUseCase administrarTransporte;
     @MockitoBean
@@ -320,6 +328,24 @@ class SeguridadWebTest {
         mvc.perform(put("/api/destinos/1/tarifa").header("Authorization", dueno)
                 .contentType(MediaType.APPLICATION_JSON).content("{\"costoFletePorKg\":1.2}"))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void la_lista_de_destinos_trae_el_flete_y_los_precios_vigentes() throws Exception {
+        when(administrarDestinos.listarDestinos()).thenReturn(java.util.List.of(
+                new DestinoVenta(1L, "Mercado Lima", "Lima", false, true),
+                new DestinoVenta(2L, "Mercado Tacna", "Tacna", true, true)));
+        when(consultarCondicionesDestinos.vigentes()).thenReturn(java.util.Map.of(1L,
+                new pe.agroruta.domain.model.CondicionesDestino(Dinero.de("1.20"),
+                        java.util.Map.of("Palta Hass", Dinero.de("5.00")))));
+
+        mvc.perform(get("/api/destinos").header("Authorization", bearer("chacra_demo", "operador.demo", Rol.OPERADOR)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].costoFletePorKg").value(1.20))
+                .andExpect(jsonPath("$[0].precios[0].productoLote").value("Palta Hass"))
+                .andExpect(jsonPath("$[0].precios[0].precioPorKg").value(5.00))
+                .andExpect(jsonPath("$[1].costoFletePorKg").doesNotExist())
+                .andExpect(jsonPath("$[1].precios").isEmpty());
     }
 
     @Test

@@ -28,11 +28,22 @@ public record Envio(Long idEnvio, Long idPedido, Long idLote, Long idVehiculo, L
                 fechaProgramada, fechaSalida, ahora, usuarioDespacho);
     }
 
-    /** Se cancela un envío programado o en ruta (por ejemplo, si el camión falla). */
-    public Envio cancelar() {
+    public static final int LARGO_MAXIMO_MOTIVO = 255;
+
+    /**
+     * Se cancela un envío programado o en ruta (por ejemplo, si el camión falla). Si ya salió, hay que decir por qué:
+     * la carga está en el camino y la cancelación queda en el historial con su motivo.
+     */
+    public Envio cancelar(String motivo) {
         if (estadoEnvio != EstadoEnvio.PROGRAMADO && estadoEnvio != EstadoEnvio.EN_RUTA) {
             throw new ConflictoDominioException("El envío " + idEnvio + " está " + estadoEnvio
                     + " y solo se cancela si está programado o en ruta");
+        }
+        if (estadoEnvio == EstadoEnvio.EN_RUTA && (motivo == null || motivo.isBlank())) {
+            throw new DominioException("El envío ya salió: indica el motivo para cancelarlo");
+        }
+        if (motivo != null && motivo.strip().length() > LARGO_MAXIMO_MOTIVO) {
+            throw new DominioException("El motivo puede tener hasta " + LARGO_MAXIMO_MOTIVO + " caracteres");
         }
         return new Envio(idEnvio, idPedido, idLote, idVehiculo, idTransportista, EstadoEnvio.CANCELADO,
                 fechaProgramada, fechaSalida, fechaEntrega, usuarioDespacho);

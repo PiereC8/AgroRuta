@@ -29,14 +29,21 @@ public class CorreccionesController {
     }
 
     @PostMapping("/api/envios/{idEnvio}/cancelar")
-    public EnvioRespuesta cancelarEnvio(@PathVariable Long idEnvio, @AuthenticationPrincipal DatosToken usuario) {
+    public EnvioRespuesta cancelarEnvio(@PathVariable Long idEnvio,
+                                        @RequestBody(required = false) CancelarEnvioSolicitud solicitud,
+                                        @AuthenticationPrincipal DatosToken usuario) {
         return EnvioRespuesta.de(cancelar.cancelarEnvio(usuario.identificadorNegocio(), idEnvio,
-                usuario.nombreUsuario()));
+                solicitud == null ? null : solicitud.motivo(), usuario.nombreUsuario()));
+    }
+
+    /** motivo: obligatorio si el envío va en ruta. */
+    public record CancelarEnvioSolicitud(String motivo) {
     }
 
     @PostMapping("/api/pedidos/{idPedido}/cancelar")
     public PedidoRespuesta cancelarPedido(@PathVariable Long idPedido, @AuthenticationPrincipal DatosToken usuario) {
-        return PedidoRespuesta.de(cancelar.cancelarPedido(idPedido, usuario.nombreUsuario()));
+        return PedidoRespuesta.de(cancelar.cancelarPedido(idPedido, usuario.nombreUsuario()),
+                pe.agroruta.domain.model.EstadoCobro.SIN_ENTREGAR);
     }
 
     @PutMapping("/api/envios/{idEnvio}/entrega")

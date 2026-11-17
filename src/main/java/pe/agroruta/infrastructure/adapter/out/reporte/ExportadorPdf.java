@@ -207,10 +207,13 @@ public class ExportadorPdf implements ExportadorReportePort {
         PdfPTable cobros = new PdfPTable(3);
         cobros.setWidthPercentage(100);
         cobros.addCell(tarjeta("Entregas", String.valueOf(a.entregas())));
-        cobros.addCell(tarjeta("Cobrado", soles(a.cobrado())));
+        cobros.addCell(tarjeta("Cobrado del período", soles(a.cobrado())));
         cobros.addCell(tarjeta("Por cobrar", soles(a.porCobrar())));
-        cobros.setSpacingAfter(12);
+        cobros.setSpacingAfter(4);
         documento.add(cobros);
+        Paragraph criterio = new Paragraph("Ventas: por fecha de entrega · Cobrado: por fecha de pago.", TEXTO_GRIS);
+        criterio.setSpacingAfter(12);
+        documento.add(criterio);
     }
 
     private PdfPCell tarjeta(String etiqueta, String valor) {

@@ -36,7 +36,8 @@ public final class ReglasLote {
      *   <li>DESPACHADO: al menos un envío del lote va en ruta.</li>
      *   <li>RESERVADO: hay pedidos por despachar o por entregar, pero ninguno va en ruta.</li>
      *   <li>LIQUIDADO: todo el lote se entregó y no queda nada por vender.</li>
-     *   <li>REGISTRADO: no hay pedidos por atender; lo que no se vendió sigue disponible.</li>
+     *   <li>ENTREGADO: lo vendido ya se entregó, pero quedan kg sin vender (se pueden seguir vendiendo).</li>
+     *   <li>REGISTRADO: no hay pedidos por atender ni entregados; todo el lote sigue disponible.</li>
      * </ul>
      */
     public static EstadoLote estadoSegun(Lote lote, List<Pedido> pedidos, boolean hayEnvioEnRuta) {
@@ -50,8 +51,8 @@ public final class ReglasLote {
             return EstadoLote.RESERVADO;
         }
         boolean hayEntregados = vigentes.stream().anyMatch(p -> p.estadoPedido() == EstadoPedido.ENTREGADO);
-        if (hayEntregados && kgDisponibles(lote, vigentes).signum() == 0) {
-            return EstadoLote.LIQUIDADO;
+        if (hayEntregados) {
+            return kgDisponibles(lote, vigentes).signum() == 0 ? EstadoLote.LIQUIDADO : EstadoLote.ENTREGADO;
         }
         return EstadoLote.REGISTRADO;
     }

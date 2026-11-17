@@ -17,6 +17,9 @@ public interface SeguimientoRepositoryPort {
 
     List<Posicion> ultimasPosiciones(Long idEnvio, int cantidad);
 
+    /** Fecha de la última posición de cada envío (los envíos sin posiciones no aparecen). */
+    java.util.Map<Long, Instant> ultimaPosicionDe(java.util.Collection<Long> idEnvios);
+
     AlertaEnvio guardarAlerta(AlertaEnvio alerta);
 
     boolean existeAlertaDesde(Long idEnvio, TipoAlerta tipoAlerta, Instant desde);

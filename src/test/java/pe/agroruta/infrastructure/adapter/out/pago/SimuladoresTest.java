@@ -84,8 +84,8 @@ class SimuladoresTest {
                 Dinero.de("5"));
         ComprobanteSimulado emisor = new ComprobanteSimulado();
 
-        assertThat(emisor.emitir(datos).estado()).isEqualTo(EstadoComprobante.ACEPTADO);
+        assertThat(emisor.emitir(datos).estado()).isEqualTo(EstadoComprobante.SIMULADO);
         assertThat(emisor.emitir(datos).mensajeSunat()).contains("no tiene validez ante SUNAT");
-        assertThat(emisor.consultar(TipoComprobante.BOLETA, "B001", 1).estado()).isEqualTo(EstadoComprobante.ACEPTADO);
+        assertThat(emisor.consultar(TipoComprobante.BOLETA, "B001", 1).estado()).isEqualTo(EstadoComprobante.SIMULADO);
     }
 }

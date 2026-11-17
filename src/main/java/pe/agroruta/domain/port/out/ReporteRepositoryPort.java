@@ -2,6 +2,7 @@ package pe.agroruta.domain.port.out;
 
 import java.util.List;
 
+import pe.agroruta.domain.model.Dinero;
 import pe.agroruta.domain.model.FilaEntrega;
 import pe.agroruta.domain.model.FiltroReporte;
 
@@ -12,4 +13,10 @@ public interface ReporteRepositoryPort {
     List<FilaEntrega> entregas(FiltroReporte filtro, int limite);
 
     List<String> productosConEntregas();
+
+    /**
+     * Pagos aprobados dentro del período del filtro por FECHA DE PAGO (no de entrega), con los mismos filtros de
+     * producto y destino.
+     */
+    Dinero cobradoEntre(FiltroReporte filtro);
 }

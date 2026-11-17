@@ -2,6 +2,7 @@ package pe.agroruta.infrastructure.adapter.in.web;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,7 +19,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import pe.agroruta.domain.model.DestinoVenta;
 import pe.agroruta.domain.model.Dinero;
+import pe.agroruta.domain.model.CondicionesDestino;
 import pe.agroruta.domain.port.in.AdministrarDestinosUseCase;
+import pe.agroruta.domain.port.in.ConsultarCondicionesDestinosUseCase;
 
 // RFF-04: API /api/destinos (registrar, precio, tarifa y coordenadas).
 @RestController
@@ -26,21 +29,26 @@ import pe.agroruta.domain.port.in.AdministrarDestinosUseCase;
 public class DestinoController {
 
     private final AdministrarDestinosUseCase destinos;
+    private final ConsultarCondicionesDestinosUseCase condiciones;
 
-    public DestinoController(AdministrarDestinosUseCase destinos) {
+    public DestinoController(AdministrarDestinosUseCase destinos, ConsultarCondicionesDestinosUseCase condiciones) {
         this.destinos = destinos;
+        this.condiciones = condiciones;
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public DestinoRespuesta registrar(@Valid @RequestBody DestinoSolicitud solicitud) {
         return DestinoRespuesta.de(destinos.registrarDestino(
-                solicitud.nombreDestino(), solicitud.ciudadDestino(), solicitud.esLocal()));
+                solicitud.nombreDestino(), solicitud.ciudadDestino(), solicitud.esLocal()), CondicionesDestino.VACIAS);
     }
 
     @GetMapping
     public List<DestinoRespuesta> listar() {
-        return destinos.listarDestinos().stream().map(DestinoRespuesta::de).toList();
+        Map<Long, CondicionesDestino> vigentes = condiciones.vigentes();
+        return destinos.listarDestinos().stream()
+                .map(d -> DestinoRespuesta.de(d, vigentes.getOrDefault(d.idDestinoVenta(), CondicionesDestino.VACIAS)))
+                .toList();
     }
 
     @PutMapping("/{idDestinoVenta}/precio")
@@ -85,11 +93,18 @@ public class DestinoController {
     public record CoordenadasSolicitud(@NotNull Double latitud, @NotNull Double longitud) {
     }
 
+    /** costoFletePorKg: null si no tiene flete fijado. precios: precio esperado por kg de cada producto. */
     public record DestinoRespuesta(Long idDestinoVenta, String nombreDestino, String ciudadDestino,
-                                   boolean esLocal) {
-        static DestinoRespuesta de(DestinoVenta destino) {
+                                   boolean esLocal, BigDecimal costoFletePorKg, List<PrecioRespuesta> precios) {
+        static DestinoRespuesta de(DestinoVenta destino, CondicionesDestino condiciones) {
             return new DestinoRespuesta(destino.idDestinoVenta(), destino.nombreDestino(), destino.ciudadDestino(),
-                    destino.esLocal());
+                    destino.esLocal(),
+                    condiciones.costoFletePorKg() == null ? null : condiciones.costoFletePorKg().monto(),
+                    condiciones.preciosPorKg().entrySet().stream()
+                            .map(e -> new PrecioRespuesta(e.getKey(), e.getValue().monto())).toList());
         }
+    }
+
+    public record PrecioRespuesta(String productoLote, BigDecimal precioPorKg) {
     }
 }

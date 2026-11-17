@@ -2,6 +2,7 @@ package pe.agroruta.infrastructure.adapter.in.web;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,9 +23,11 @@ import com.fasterxml.jackson.annotation.JsonUnwrapped;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import pe.agroruta.domain.model.AlertaEnvio;
 import pe.agroruta.domain.model.Envio;
 import pe.agroruta.domain.model.EstadoEnvio;
 import pe.agroruta.domain.port.in.AvisarDespachoUseCase;
+import pe.agroruta.domain.port.in.ConsultarSeguimientoUseCase;
 import pe.agroruta.domain.port.in.DespacharEnvioUseCase;
 import pe.agroruta.infrastructure.adapter.out.seguridad.ServicioJwt.DatosToken;
 
@@ -37,13 +40,16 @@ public class EnvioController {
 
     private final DespacharEnvioUseCase envios;
     private final AvisarDespachoUseCase avisarDespacho;
+    private final ConsultarSeguimientoUseCase seguimiento;
     /** Dirección de las páginas cuando no las sirve este backend (por ejemplo, Vercel). Vacía: la del pedido. */
     private final String urlPublica;
 
     public EnvioController(DespacharEnvioUseCase envios, AvisarDespachoUseCase avisarDespacho,
+                           ConsultarSeguimientoUseCase seguimiento,
                            @Value("${agroruta.web.url-publica:}") String urlPublica) {
         this.envios = envios;
         this.avisarDespacho = avisarDespacho;
+        this.seguimiento = seguimiento;
         this.urlPublica = urlPublica.endsWith("/") ? urlPublica.substring(0, urlPublica.length() - 1) : urlPublica;
     }
 
@@ -79,7 +85,9 @@ public class EnvioController {
     @GetMapping
     public List<EnvioRespuesta> listar(@RequestParam(defaultValue = "0") int pagina,
                                        @RequestParam(defaultValue = "50") int tamano) {
-        return envios.listar(pagina, tamano).stream().map(EnvioRespuesta::de).toList();
+        List<Envio> lista = envios.listar(pagina, tamano);
+        Map<Long, AlertaEnvio> sinSenal = seguimiento.sinSenal(lista);
+        return lista.stream().map(e -> EnvioRespuesta.de(e, sinSenal.get(e.idEnvio()))).toList();
     }
 
     @GetMapping("/{idEnvio}")
@@ -104,11 +112,17 @@ public class EnvioController {
 
     public record EnvioRespuesta(Long idEnvio, Long idPedido, Long idLote, Long idVehiculo, Long idTransportista,
                                  EstadoEnvio estadoEnvio, Instant fechaProgramada, Instant fechaSalida,
-                                 Instant fechaEntrega, String usuarioDespacho) {
+                                 Instant fechaEntrega, String usuarioDespacho, String sinSenal) {
         static EnvioRespuesta de(Envio envio) {
+            return de(envio, null);
+        }
+
+        /** sinSenal: texto de la alerta «Lleva X sin señal del conductor», o null. */
+        static EnvioRespuesta de(Envio envio, AlertaEnvio sinSenal) {
             return new EnvioRespuesta(envio.idEnvio(), envio.idPedido(), envio.idLote(), envio.idVehiculo(),
                     envio.idTransportista(), envio.estadoEnvio(), envio.fechaProgramada(), envio.fechaSalida(),
-                    envio.fechaEntrega(), envio.usuarioDespacho());
+                    envio.fechaEntrega(), envio.usuarioDespacho(),
+                    sinSenal == null ? null : sinSenal.descripcionAlerta());
         }
     }
 }

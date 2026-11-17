@@ -67,7 +67,7 @@ public record PoliticaAvisos(BigDecimal mermaAltaPorcentaje) {
     private List<Aviso> deAlerta(AlertaDeEnvio a) {
         TipoAviso tipo = switch (a.tipo()) {
             case DETENIDO -> TipoAviso.ENVIO_DETENIDO;
-            case GPS_DESACTIVADO -> TipoAviso.GPS_DESACTIVADO;
+            case GPS_DESACTIVADO, SIN_SENAL -> TipoAviso.GPS_DESACTIVADO;
             case LLEGADA -> TipoAviso.ENVIO_LLEGADO;
             case RETRASO -> TipoAviso.ENVIO_RETRASADO;
         };

@@ -287,6 +287,13 @@ final class Falsos {
             }
         }
 
+        final java.util.Map<Long, String> motivosCancelacion = new java.util.HashMap<>();
+
+        @Override
+        public void guardarMotivoCancelacion(Long idEnvio, String motivo) {
+            motivosCancelacion.put(idEnvio, motivo);
+        }
+
         @Override
         public Optional<Envio> buscarPorId(Long idEnvio) {
             return envios.stream().filter(e -> e.idEnvio().equals(idEnvio)).findFirst();
@@ -581,6 +588,17 @@ final class Falsos {
         final List<Posicion> posiciones = new ArrayList<>();
         final List<AlertaEnvio> alertas = new ArrayList<>();
         final List<Long> consentimientos = new ArrayList<>();
+
+        @Override
+        public java.util.Map<Long, Instant> ultimaPosicionDe(java.util.Collection<Long> idEnvios) {
+            java.util.Map<Long, Instant> ultimas = new java.util.HashMap<>();
+            for (Posicion p : posiciones) {
+                if (idEnvios.contains(p.idEnvio())) {
+                    ultimas.merge(p.idEnvio(), p.fechaPosicion(), (a, b) -> a.isAfter(b) ? a : b);
+                }
+            }
+            return ultimas;
+        }
 
         @Override
         public Optional<Posicion> guardarPosicion(Posicion posicion) {

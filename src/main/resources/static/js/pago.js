@@ -14,6 +14,7 @@
         PENDIENTE: 'Pendiente: lo estamos enviando a SUNAT',
         ACEPTADO: 'Aceptado por SUNAT',
         OBSERVADO: 'Emitido con observaciones',
+        SIMULADO: 'Simulado: sin validez tributaria (no se envió a SUNAT)',
         RECHAZADO: 'No se pudo emitir, nos pondremos en contacto'
     };
 
@@ -166,7 +167,7 @@
         $('comp-mensaje').textContent = comprobante.mensaje || '';
         const enlaces = $('comp-enlaces');
         enlaces.replaceChildren();
-        if (comprobante.estado === 'ACEPTADO' || comprobante.estado === 'OBSERVADO') {
+        if (['ACEPTADO', 'OBSERVADO', 'SIMULADO'].includes(comprobante.estado)) {
             const boton = document.createElement('button');
             boton.type = 'button';
             boton.className = 'boton boton-secundario';

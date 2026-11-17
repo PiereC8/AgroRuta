@@ -70,6 +70,15 @@ import pe.agroruta.application.service.AdministrarCompradoresService;
 import pe.agroruta.application.service.AdministrarTransporteService;
 import pe.agroruta.application.service.DespacharEnvioService;
 import pe.agroruta.application.service.GestionarPedidosService;
+import pe.agroruta.application.service.ConsultarCobroPedidosService;
+import pe.agroruta.application.service.ConsultarCondicionesDestinosService;
+import pe.agroruta.domain.port.in.ConsultarCondicionesDestinosUseCase;
+import pe.agroruta.domain.port.out.CondicionesDestinoPort;
+import pe.agroruta.application.service.RegistrarDatosFiscalesService;
+import pe.agroruta.domain.port.in.RegistrarDatosFiscalesUseCase;
+import pe.agroruta.domain.port.out.DatosFiscalesPort;
+import pe.agroruta.domain.port.in.ConsultarCobroPedidosUseCase;
+import pe.agroruta.domain.port.out.CobroPedidoPort;
 import pe.agroruta.domain.port.in.AdministrarCompradoresUseCase;
 import pe.agroruta.domain.port.in.AdministrarTransporteUseCase;
 import pe.agroruta.domain.port.in.DespacharEnvioUseCase;
@@ -118,6 +127,21 @@ public class BeanConfig {
     @Bean
     RegistrarLoteUseCase registrarLoteUseCase(LoteRepositoryPort lotes, Clock reloj) {
         return new RegistrarLoteService(lotes, reloj);
+    }
+
+    @Bean
+    RegistrarDatosFiscalesUseCase registrarDatosFiscalesUseCase(DatosFiscalesPort datosFiscales) {
+        return new RegistrarDatosFiscalesService(datosFiscales);
+    }
+
+    @Bean
+    ConsultarCondicionesDestinosUseCase consultarCondicionesDestinosUseCase(CondicionesDestinoPort condiciones) {
+        return new ConsultarCondicionesDestinosService(condiciones);
+    }
+
+    @Bean
+    ConsultarCobroPedidosUseCase consultarCobroPedidosUseCase(CobroPedidoPort cobros) {
+        return new ConsultarCobroPedidosService(cobros);
     }
 
     @Bean

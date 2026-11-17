@@ -4,5 +4,7 @@ public enum TipoAlerta {
     GPS_DESACTIVADO,
     DETENIDO,
     LLEGADA,
-    RETRASO
+    RETRASO,
+    /** No se guarda: se calcula al consultar (envío en ruta sin posiciones recientes del conductor). */
+    SIN_SENAL
 }

@@ -178,7 +178,7 @@ class PaginasWebTest {
         String envios = mvc.perform(get("/js/envios.js")).andReturn().getResponse().getContentAsString();
 
         assertThat(envios).contains("GPS_DESACTIVADO").contains("DETENIDO").contains("LLEGADA")
-                .doesNotContain("DESVIO").doesNotContain("SIN_SENAL");
+                .contains("SIN_SENAL").doesNotContain("DESVIO");
     }
 
     @Test

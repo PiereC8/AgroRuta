@@ -46,10 +46,11 @@ public class CancelarOperacionService implements CancelarOperacionUseCase {
      * reservados en el lote, y los enlaces del conductor y del comprador dejan de valer.
      */
     @Override
-    public Envio cancelarEnvio(String identificadorNegocio, Long idEnvio, String usuario) {
+    public Envio cancelarEnvio(String identificadorNegocio, Long idEnvio, String motivo, String usuario) {
         Envio envio = envios.buscarPorId(idEnvio)
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe el envío " + idEnvio));
-        Envio cancelado = envio.cancelar();
+        Envio cancelado = envio.cancelar(motivo);
+        String motivoLimpio = motivo == null || motivo.isBlank() ? null : motivo.strip();
         Pedido pedido = pedidos.buscarPorId(envio.idPedido())
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe el pedido " + envio.idPedido()));
         pedido.volverAPendiente();
@@ -57,9 +58,11 @@ public class CancelarOperacionService implements CancelarOperacionUseCase {
         Instant ahora = reloj.instant();
         String etapa = envio.estadoEnvio() == EstadoEnvio.EN_RUTA ? "en ruta" : "programado";
         EventoLote evento = new EventoLote(TipoEventoLote.CANCELACION, "Se canceló el envío " + idEnvio + " ("
-                + etapa + "); el pedido " + pedido.idPedido() + " queda pendiente de despacho", usuario, ahora);
+                + etapa + (motivoLimpio == null ? "" : ", motivo: " + motivoLimpio) + "); el pedido "
+                + pedido.idPedido() + " queda pendiente de despacho", usuario, ahora);
         transaccion.ejecutar(() -> {
             envios.actualizar(cancelado);
+            envios.guardarMotivoCancelacion(idEnvio, motivoLimpio);
             pedidos.actualizarEstado(pedido.idPedido(), EstadoPedido.PENDIENTE);
             lotes.actualizarEstado(lote.idLote(), ReglasLote.estadoSegun(lote, pedidos.vigentesDeLote(lote.idLote()),
                     envios.existeEnRutaDeLote(lote.idLote())), evento);

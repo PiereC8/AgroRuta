@@ -59,7 +59,18 @@ class ReglasLoteTest {
 
         assertThat(ReglasLote.estadoSegun(LOTE, todoEntregado, false)).isEqualTo(EstadoLote.LIQUIDADO);
         // Entregó 3000 de 5000 kg: lo que queda se puede seguir vendiendo.
-        assertThat(ReglasLote.estadoSegun(LOTE, conStockSinVender, false)).isEqualTo(EstadoLote.REGISTRADO);
+        assertThat(ReglasLote.estadoSegun(LOTE, conStockSinVender, false)).isEqualTo(EstadoLote.ENTREGADO);
+    }
+
+    @Test
+    void un_lote_entregado_con_saldo_vuelve_a_reservado_si_se_le_hace_otro_pedido() {
+        var entregadoYOtroPendiente = List.of(pedido(1, "3000", EstadoPedido.ENTREGADO),
+                pedido(2, "1000", EstadoPedido.PENDIENTE));
+        var entregadoYOtroCancelado = List.of(pedido(1, "3000", EstadoPedido.ENTREGADO),
+                pedido(2, "2000", EstadoPedido.CANCELADO));
+
+        assertThat(ReglasLote.estadoSegun(LOTE, entregadoYOtroPendiente, false)).isEqualTo(EstadoLote.RESERVADO);
+        assertThat(ReglasLote.estadoSegun(LOTE, entregadoYOtroCancelado, false)).isEqualTo(EstadoLote.ENTREGADO);
     }
 
     @Test

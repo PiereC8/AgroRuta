@@ -28,7 +28,6 @@ import com.lowagie.text.pdf.PdfWriter;
 import pe.agroruta.domain.model.Comprobante;
 import pe.agroruta.domain.model.ComprobanteImpreso;
 import pe.agroruta.domain.model.DatosComprobante;
-import pe.agroruta.domain.model.EstadoComprobante;
 import pe.agroruta.domain.model.TipoComprobante;
 import pe.agroruta.domain.port.out.RepresentacionComprobantePort;
 
@@ -219,8 +218,11 @@ public class ComprobantePdf implements RepresentacionComprobantePort {
         Paragraph sunat = new Paragraph();
         sunat.setSpacingBefore(14);
         sunat.add(new Chunk("Estado ante SUNAT: ", NEGRITA));
-        sunat.add(new Chunk(comprobante.estadoComprobante() == EstadoComprobante.OBSERVADO
-                ? "Aceptado con observaciones" : "Aceptado", TEXTO));
+        sunat.add(new Chunk(switch (comprobante.estadoComprobante()) {
+            case OBSERVADO -> "Aceptado con observaciones";
+            case SIMULADO -> "Simulado (sin validez tributaria)";
+            default -> "Aceptado";
+        }, TEXTO));
         if (comprobante.mensajeSunat() != null && !comprobante.mensajeSunat().isBlank()) {
             sunat.add(new Chunk("\n" + comprobante.mensajeSunat(), TEXTO_GRIS));
         }
