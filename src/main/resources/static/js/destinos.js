@@ -39,21 +39,61 @@
         && p.productoLote.toLowerCase() === producto.trim().toLowerCase());
 
     // Muestra los precios ya fijados y, si hay uno solo, abre el formulario con él para cambiarlo.
+    // Productos para elegir: los de tus lotes y los que ya tienen precio en este destino (sin repetir).
+    async function productosParaPrecio(destino) {
+        let lotes = [];
+        try {
+            lotes = await window.Ui.cargarTodo('/api/lotes');
+        } catch (error) {
+            lotes = [];
+        }
+        const nombres = new Map();
+        for (const nombre of [...lotes.map((l) => l.productoLote), ...(destino.precios || []).map((p) => p.productoLote)]) {
+            if (nombre && !nombres.has(nombre.trim().toLowerCase())) {
+                nombres.set(nombre.trim().toLowerCase(), nombre.trim());
+            }
+        }
+        return [...nombres.values()].sort((a, b) => a.localeCompare(b, 'es'));
+    }
+
     async function cambiarPrecio(destino) {
         const precios = destino.precios || [];
         const unico = precios.length === 1 ? precios[0] : {};
+        const productos = await productosParaPrecio(destino);
+        // Con productos registrados se elige de la lista; si aún no hay ninguno, se escribe.
+        const campoProducto = productos.length
+            ? {id: 'productoLote', etiqueta: 'Producto', tipo: 'select', requerido: true, valor: unico.productoLote,
+                opciones: productos.map((p) => ({valor: p, texto: p}))}
+            : {id: 'productoLote', etiqueta: 'Producto', tipo: 'texto', requerido: true, marcador: 'Palta Hass',
+                ayuda: 'Todavía no tienes lotes: escríbelo igual que lo registrarás.', valor: unico.productoLote};
+        let productoAnterior = unico.productoLote || '';
+        let precioPuesto = unico.precioPorKg === undefined ? null : String(unico.precioPorKg);
         const guardado = await window.Ui.panel({
             titulo: 'Precio en ' + destino.nombreDestino,
             texto: 'Cuánto esperas que te paguen por kilo de este producto en este destino. '
-                + (precios.length ? 'Precios actuales: ' + textoPrecios(destino) + '. Para cambiar uno, escribe el '
-                    + 'mismo producto.' : 'Este destino todavía no tiene precios.'),
+                + (precios.length ? 'Precios actuales: ' + textoPrecios(destino) + '.'
+                    : 'Este destino todavía no tiene precios.'),
             textoEnviar: 'Guardar precio',
             campos: [
-                {id: 'productoLote', etiqueta: 'Producto', tipo: 'texto', requerido: true, marcador: 'Palta Hass',
-                    ayuda: 'Escríbelo igual que en tus lotes.', valor: unico.productoLote},
+                campoProducto,
                 {id: 'precioPorKg', etiqueta: 'Precio por kilo (S/)', tipo: 'numero', requerido: true,
                     valor: unico.precioPorKg}
             ],
+            // Al elegir otro producto, el precio muestra el que ya tiene en este destino (o queda vacío).
+            alCambiar: (v, entradas) => {
+                if ((v.productoLote || '') === productoAnterior) {
+                    return;
+                }
+                productoAnterior = v.productoLote || '';
+                const campo = entradas.get('precioPorKg').entrada;
+                if (campo.value.trim() !== '' && campo.value !== precioPuesto) {
+                    return;
+                }
+                const actual = precioDe(destino, v.productoLote);
+                precioPuesto = actual ? String(actual.precioPorKg) : '';
+                campo.value = precioPuesto;
+                campo.dispatchEvent(new Event('input', {bubbles: true}));
+            },
             nota: (v) => {
                 const actual = precioDe(destino, v.productoLote);
                 return actual ? 'Precio actual de ' + actual.productoLote + ': ' + window.Ui.dinero(actual.precioPorKg)

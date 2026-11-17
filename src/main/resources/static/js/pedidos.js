@@ -53,11 +53,19 @@
         const cotizaciones = new Map();
         let precioSugerido = null;
         let cantidadSugerida = null;
+        // Solo se sugiere al cambiar el lote (o el destino, para el precio): si se sugiriera en cada tecla, borrar
+        // la cantidad la volvería a llenar y no se podría escribir otra.
+        let loteSugerido = null;
+        let parSugerido = null;
 
         // Al elegir un lote, el pedido propone todos los kilos que le quedan (se pueden bajar).
         function sugerirCantidad(valores, entradas) {
             const lote = disponibles.find((l) => String(l.idLote) === valores.idLote);
             const campo = entradas.get('cantidadKg').entrada;
+            if (valores.idLote === loteSugerido) {
+                return;
+            }
+            loteSugerido = valores.idLote;
             if (lote && (campo.value.trim() === '' || campo.value === cantidadSugerida)) {
                 cantidadSugerida = String(Number(lote.kgDisponibles));
                 campo.value = cantidadSugerida;
@@ -66,9 +74,11 @@
         }
 
         async function sugerirPrecio(valores, entradas) {
-            if (!valores.idLote || !valores.idDestinoVenta) {
+            const par = valores.idLote + '|' + valores.idDestinoVenta;
+            if (!valores.idLote || !valores.idDestinoVenta || par === parSugerido) {
                 return;
             }
+            parSugerido = par;
             let cotizacion = cotizaciones.get(valores.idLote);
             if (!cotizacion) {
                 cotizacion = await window.Api.pedir('/api/lotes/' + valores.idLote + '/cotizacion').catch(() => null);
